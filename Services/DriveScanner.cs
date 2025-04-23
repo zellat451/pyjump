@@ -3,7 +3,6 @@ using System.Text.RegularExpressions;
 using Google.Apis.Drive.v3.Data;
 using pyjump.Entities;
 using pyjump.Forms;
-using pyjump.Infrastructure;
 using static pyjump.Services.Statics;
 
 namespace pyjump.Services
@@ -143,7 +142,11 @@ namespace pyjump.Services
 
                 string folderId = entry.Id;
 
-                string query = $"'{folderId}' in parents and trashed = false";
+                string query;
+                if (entry.LastChecked != null && entry.LastChecked != DateTime.MinValue)
+                    query = $"'{folderId}' in parents and trashed = false and (modifiedTime > '{entry.LastChecked:yyyy-MM-ddTHH:mm:ssZ}' or createdTime > '{entry.LastChecked:yyyy-MM-ddTHH:mm:ssZ}')";
+                else
+                    query = $"'{folderId}' in parents and trashed = false";
                 string pageToken = null;
 
                 do
@@ -161,6 +164,12 @@ namespace pyjump.Services
                     catch (Exception ex)
                     {
                         logForm.Log($"❌ Failed to list contents of folder {folderId}: {ex.Message}");
+                        break;
+                    }
+
+                    if (result.Files == null || result.Files.Count == 0)
+                    {
+                        logForm.Log($"✅ No files found in folder {entry.Name}");
                         break;
                     }
 

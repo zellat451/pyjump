@@ -32,6 +32,7 @@
             btnEditWhitelist = new Button();
             btnScanWhitelist = new Button();
             btnEditFiles = new Button();
+            btnResetWhitelistTimes = new Button();
             SuspendLayout();
             // 
             // btnScanFile
@@ -74,11 +75,22 @@
             btnEditFiles.UseVisualStyleBackColor = true;
             btnEditFiles.Click += btnEditFiles_Click;
             // 
+            // btnResetWhitelistTimes
+            // 
+            btnResetWhitelistTimes.Location = new Point(73, 86);
+            btnResetWhitelistTimes.Name = "btnResetWhitelistTimes";
+            btnResetWhitelistTimes.Size = new Size(139, 30);
+            btnResetWhitelistTimes.TabIndex = 7;
+            btnResetWhitelistTimes.Text = "Reset Whitelist Times";
+            btnResetWhitelistTimes.UseVisualStyleBackColor = true;
+            btnResetWhitelistTimes.Click += btnResetWhitelistTimes_Click;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
+            Controls.Add(btnResetWhitelistTimes);
             Controls.Add(btnEditFiles);
             Controls.Add(btnScanWhitelist);
             Controls.Add(btnEditWhitelist);
@@ -94,5 +106,6 @@
         private Button btnEditWhitelist;
         private Button btnScanWhitelist;
         private Button btnEditFiles;
+        private Button btnResetWhitelistTimes;
     }
 }

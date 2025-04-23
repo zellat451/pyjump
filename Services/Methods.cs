@@ -83,16 +83,7 @@ namespace pyjump.Services
                 // check existing file entries
                 var existingEntries = db.Files.ToList();
 
-                // 1. entries existing in the database but not in the new list > remove the entries from the database
-                var toRemove = existingEntries.Where(x => !allFileEntries.Select(y => y.Id).Contains(x.Id)).ToList();
-                foreach (var entry in toRemove)
-                {
-                    db.Files.Remove(entry);
-                    logForm.Log($"Removed file entry: {entry.Name}");
-                    Debug.WriteLine($"Removed file entry: {entry.Name}");
-                }
-
-                // 2. entries existing in the new list but not in the database > add the entries to the database
+                // 1. entries existing in the new list but not in the database > add the entries to the database
                 var toAdd = allFileEntries.Where(x => !existingEntries.Select(y => y.Id).Contains(x.Id)).ToList();
                 foreach (var entry in toAdd)
                 {
@@ -101,7 +92,7 @@ namespace pyjump.Services
                     Debug.WriteLine($"Added file entry: {entry.Name}");
                 }
 
-                // 3. entries existing in both lists > update the entries in the database if
+                // 2. entries existing in both lists > update the entries in the database if
                 // the name | url | resource key | last modified date | owner | folder type | folder name is different
                 foreach (var entry in existingEntries)
                 {
