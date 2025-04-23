@@ -1,4 +1,3 @@
-using System.Security.Policy;
 using pyjump.Forms;
 using pyjump.Services;
 
@@ -13,50 +12,12 @@ namespace pyjump
             InitializeComponent();
         }
 
-        private void btnFullScan_Click(object sender, EventArgs e)
-        {
-            InitializeEverything();
-            Console.Write("Full Scan started...");
-            Methods.FullScan();
-            ClearEverything();
-        }
-
-        private void btnFullScanComplete_Click(object sender, EventArgs e)
-        {
-            InitializeEverything();
-            Console.Write("Full Scan complete started...");
-            ClearEverything();
-        }
-
-        private void btnRemoveBrokenJumps_Click(object sender, EventArgs e)
-        {
-            InitializeEverything();
-            Console.Write("Remove Broken Jumps started...");
-            ClearEverything();
-        }
-
-        private void btnRemoveBrokenWhitelist_Click(object sender, EventArgs e)
-        {
-            InitializeEverything();
-            Console.Write("Remove Broken Whitelist started...");
-            ClearEverything();
-        }
-
-        private void btnEditWhitelist_Click(object sender, EventArgs e)
-        {
-            using (var form = new WhitelistEditorForm())
-            {
-                form.WhitelistEditorForm_Load(sender, e);
-                form.ShowDialog();
-            }
-        }
-
-        private async void btnLoadWhitelist_Click(object sender, EventArgs e)
+        private async void btnScanFiles_Click(object sender, EventArgs e)
         {
             InitializeEverything();
             try
             {
-                await Methods.LoadWhitelist(_logForm);
+                await Methods.ScanFiles(_logForm);
                 // update UI or show results here
             }
             catch (Exception ex)
@@ -69,6 +30,42 @@ namespace pyjump
             }
         }
 
+        private async void btnScanWhitelist_Click(object sender, EventArgs e)
+        {
+            InitializeEverything();
+            try
+            {
+                await Methods.ScanWhitelist(_logForm);
+                // update UI or show results here
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Something went wrong: {ex.Message}");
+            }
+            finally
+            {
+                ClearEverything();
+            }
+        }
+
+        private void btnEditWhitelist_Click(object sender, EventArgs e)
+        {
+            using (var form = new WhitelistEditorForm())
+            {
+                form.WhitelistEditorForm_Load(sender, e);
+                form.ShowDialog();
+            }
+        }
+
+        private void btnEditFiles_Click(object sender, EventArgs e)
+        {
+            using (var form = new FilesEditorForm())
+            {
+                form.FilesEditorForm_Load(sender, e);
+                form.ShowDialog();
+            }
+        }
+
         private void InitializeEverything()
         {
             this.Enabled = false;
@@ -77,14 +74,12 @@ namespace pyjump
             _logForm = new LogForm();
             _logForm.Show();
 
-            GoogleServiceManager.Initialize();
-            Statics.Initialize();
+            ScopedServices.Initialize();
         }
 
         private void ClearEverything()
         {
-            GoogleServiceManager.Clear();
-            Statics.Clear();
+            ScopedServices.Clear();
 
             _logForm.Hide();
             _logForm = null;

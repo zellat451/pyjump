@@ -28,57 +28,25 @@
         /// </summary>
         private void InitializeComponent()
         {
-            btnFullScan = new Button();
-            btnFullScanComplete = new Button();
-            btnRemoveBrokenJumps = new Button();
-            btnRemoveBrokenWhitelist = new Button();
+            btnScanFile = new Button();
             btnEditWhitelist = new Button();
-            btnLoadWhitelist = new Button();
+            btnScanWhitelist = new Button();
+            btnEditFiles = new Button();
             SuspendLayout();
             // 
-            // btnFullScan
+            // btnScanFile
             // 
-            btnFullScan.Location = new Point(46, 59);
-            btnFullScan.Name = "btnFullScan";
-            btnFullScan.Size = new Size(233, 91);
-            btnFullScan.TabIndex = 0;
-            btnFullScan.Text = "fullScan";
-            btnFullScan.UseVisualStyleBackColor = true;
-            btnFullScan.Click += btnFullScan_Click;
-            // 
-            // btnFullScanComplete
-            // 
-            btnFullScanComplete.Location = new Point(449, 96);
-            btnFullScanComplete.Name = "btnFullScanComplete";
-            btnFullScanComplete.Size = new Size(284, 129);
-            btnFullScanComplete.TabIndex = 1;
-            btnFullScanComplete.Text = "fullScan complete";
-            btnFullScanComplete.UseVisualStyleBackColor = true;
-            btnFullScanComplete.Click += btnFullScanComplete_Click;
-            // 
-            // btnRemoveBrokenJumps
-            // 
-            btnRemoveBrokenJumps.Location = new Point(46, 274);
-            btnRemoveBrokenJumps.Name = "btnRemoveBrokenJumps";
-            btnRemoveBrokenJumps.Size = new Size(284, 129);
-            btnRemoveBrokenJumps.TabIndex = 2;
-            btnRemoveBrokenJumps.Text = "remove Broken Jumps";
-            btnRemoveBrokenJumps.UseVisualStyleBackColor = true;
-            btnRemoveBrokenJumps.Click += btnRemoveBrokenJumps_Click;
-            // 
-            // btnRemoveBrokenWhitelist
-            // 
-            btnRemoveBrokenWhitelist.Location = new Point(449, 274);
-            btnRemoveBrokenWhitelist.Name = "btnRemoveBrokenWhitelist";
-            btnRemoveBrokenWhitelist.Size = new Size(284, 129);
-            btnRemoveBrokenWhitelist.TabIndex = 3;
-            btnRemoveBrokenWhitelist.Text = "remove Broken Whitelists";
-            btnRemoveBrokenWhitelist.UseVisualStyleBackColor = true;
-            btnRemoveBrokenWhitelist.Click += btnRemoveBrokenWhitelist_Click;
+            btnScanFile.Location = new Point(30, 251);
+            btnScanFile.Name = "btnScanFile";
+            btnScanFile.Size = new Size(233, 91);
+            btnScanFile.TabIndex = 0;
+            btnScanFile.Text = "Scan Files";
+            btnScanFile.UseVisualStyleBackColor = true;
+            btnScanFile.Click += btnScanFiles_Click;
             // 
             // btnEditWhitelist
             // 
-            btnEditWhitelist.Location = new Point(333, 12);
+            btnEditWhitelist.Location = new Point(348, 12);
             btnEditWhitelist.Name = "btnEditWhitelist";
             btnEditWhitelist.Size = new Size(107, 45);
             btnEditWhitelist.TabIndex = 4;
@@ -86,27 +54,35 @@
             btnEditWhitelist.UseVisualStyleBackColor = true;
             btnEditWhitelist.Click += btnEditWhitelist_Click;
             // 
-            // btnLoadWhitelist
+            // btnScanWhitelist
             // 
-            btnLoadWhitelist.Location = new Point(46, 165);
-            btnLoadWhitelist.Name = "btnLoadWhitelist";
-            btnLoadWhitelist.Size = new Size(233, 87);
-            btnLoadWhitelist.TabIndex = 5;
-            btnLoadWhitelist.Text = "Load Whitelist";
-            btnLoadWhitelist.UseVisualStyleBackColor = true;
-            btnLoadWhitelist.Click += btnLoadWhitelist_Click;
+            btnScanWhitelist.Location = new Point(30, 122);
+            btnScanWhitelist.Name = "btnScanWhitelist";
+            btnScanWhitelist.Size = new Size(233, 87);
+            btnScanWhitelist.TabIndex = 5;
+            btnScanWhitelist.Text = "Scan Whitelist";
+            btnScanWhitelist.UseVisualStyleBackColor = true;
+            btnScanWhitelist.Click += btnScanWhitelist_Click;
+            // 
+            // btnEditFiles
+            // 
+            btnEditFiles.Location = new Point(518, 12);
+            btnEditFiles.Name = "btnEditFiles";
+            btnEditFiles.Size = new Size(107, 45);
+            btnEditFiles.TabIndex = 6;
+            btnEditFiles.Text = "Edit Files";
+            btnEditFiles.UseVisualStyleBackColor = true;
+            btnEditFiles.Click += btnEditFiles_Click;
             // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
-            Controls.Add(btnLoadWhitelist);
+            Controls.Add(btnEditFiles);
+            Controls.Add(btnScanWhitelist);
             Controls.Add(btnEditWhitelist);
-            Controls.Add(btnRemoveBrokenWhitelist);
-            Controls.Add(btnRemoveBrokenJumps);
-            Controls.Add(btnFullScanComplete);
-            Controls.Add(btnFullScan);
+            Controls.Add(btnScanFile);
             Name = "Form1";
             Text = "pyjump";
             ResumeLayout(false);
@@ -114,11 +90,9 @@
 
         #endregion
 
-        private Button btnFullScan;
-        private Button btnFullScanComplete;
-        private Button btnRemoveBrokenJumps;
-        private Button btnRemoveBrokenWhitelist;
+        private Button btnScanFile;
         private Button btnEditWhitelist;
-        private Button btnLoadWhitelist;
+        private Button btnScanWhitelist;
+        private Button btnEditFiles;
     }
 }
