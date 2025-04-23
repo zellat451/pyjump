@@ -1,14 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-
-namespace pyjump.Forms
+﻿namespace pyjump.Forms
 {
     public partial class LogForm : Form
     {
@@ -19,9 +9,12 @@ namespace pyjump.Forms
 
         public void Log(string message)
         {
+            if (!IsHandleCreated)
+                return; // Prevent errors if form hasn't fully loaded
+
             if (InvokeRequired)
             {
-                Invoke(new Action(() => Log(message)));
+                BeginInvoke(new Action(() => Log(message)));
                 return;
             }
 

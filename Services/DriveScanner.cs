@@ -1,4 +1,6 @@
-﻿using System.Text.Json;
+﻿using System.Collections.Concurrent;
+using System.Drawing.Interop;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using Google.Apis.Drive.v3.Data;
 using pyjump.Entities;
@@ -21,20 +23,34 @@ namespace pyjump.Services
         }
 
         private readonly HashSet<string> _visitedFolderIds;
-        private readonly List<WhitelistEntry> _foundFolderNames;
+        private readonly ConcurrentBag<WhitelistEntry> _foundFolderNames;
         private readonly List<string> _storiesKeywords;
+
+        private SemaphoreSlim _throttle;
 
         public async Task<List<WhitelistEntry>> GetAllFolderNamesRecursiveAsync(List<string> folderUrls, LogForm logForm)
         {
+            _throttle = new SemaphoreSlim(10);
+
             // find whitelist entries from maind drives
             var rootFolderIds = folderUrls.Select(ExtractFolderIdFromUrl).Where(id => id != null).Distinct();
 
-            foreach (var folderId in rootFolderIds)
+            var throttledTasks = new List<Task>();
+            foreach (var id in rootFolderIds)
             {
-                await TraverseFolderAsync(folderId, string.Empty, logForm);
+                throttledTasks.Add(SafeTraverse(id, logForm));
             }
+            await Task.WhenAll(throttledTasks);
 
-            return _foundFolderNames;
+            _throttle.Dispose();
+
+            return _foundFolderNames.ToList();
+        }
+        private async Task SafeTraverse(string id, LogForm logForm)
+        {
+            await _throttle.WaitAsync();
+            try { await TraverseFolderAsync(id, string.Empty, logForm); }
+            finally { _throttle.Release(); }
         }
 
         private async Task TraverseFolderAsync(string folderId, string parentName, LogForm logForm)
@@ -47,6 +63,7 @@ namespace pyjump.Services
             Google.Apis.Drive.v3.Data.File folderMetadata;
             try
             {
+                await _throttle.WaitAsync();
                 folderMetadata = await ScopedServices.DriveService.Files.Get(folderId).ExecuteAsync();
             }
             catch (Google.GoogleApiException ex)
@@ -58,6 +75,10 @@ namespace pyjump.Services
             {
                 logForm.Log($"❌ Unexpected error getting metadata for {folderId}: {ex.Message}");
                 return;
+            }
+            finally
+            {
+                _throttle.Release();
             }
 
             if (folderMetadata.MimeType != GoogleMimeTypes.Folder)
@@ -80,6 +101,7 @@ namespace pyjump.Services
             _foundFolderNames.Add(whitelistEntry);
             logForm.Log($"✅ Found folder: {whitelistEntry.Name} ({folderMetadata.Id})");
 
+            var subTasks = new List<Task>();
             string query = $"'{folderId}' in parents and trashed = false";
             string pageToken = null;
 
@@ -88,6 +110,7 @@ namespace pyjump.Services
                 FileList result;
                 try
                 {
+                    await _throttle.WaitAsync();
                     var request = ScopedServices.DriveService.Files.List();
                     request.Q = query;
                     request.Fields = "nextPageToken, files(id, name, mimeType, shortcutDetails)";
@@ -100,28 +123,30 @@ namespace pyjump.Services
                     logForm.Log($"❌ Failed to list contents of folder {folderId}: {ex.Message}");
                     return;
                 }
+                finally
+                {
+                    _throttle.Release();
+                }
 
                 foreach (var file in result.Files)
                 {
                     if (file.MimeType == GoogleMimeTypes.Folder)
                     {
-                        await TraverseFolderAsync(file.Id, whitelistEntry.Name, logForm);
+                        subTasks.Add(TraverseFolderAsync(file.Id, whitelistEntry.Name, logForm));
                     }
-                    else if (file.MimeType == GoogleMimeTypes.Shortcut)
+                    else if (file.MimeType == GoogleMimeTypes.Shortcut &&
+                             file.ShortcutDetails?.TargetMimeType == GoogleMimeTypes.Folder &&
+                             file.ShortcutDetails?.TargetId != null)
                     {
-                        var targetMime = file.ShortcutDetails?.TargetMimeType;
-                        var targetId = file.ShortcutDetails?.TargetId;
-
-                        if (targetMime == GoogleMimeTypes.Folder && targetId != null)
-                        {
-                            await TraverseFolderAsync(targetId, whitelistEntry.Name, logForm);
-                        }
+                        subTasks.Add(TraverseFolderAsync(file.ShortcutDetails.TargetId, whitelistEntry.Name, logForm));
                     }
                 }
 
                 pageToken = result.NextPageToken;
 
             } while (pageToken != null);
+
+            await Task.WhenAll(subTasks);
         }
 
         private string ExtractFolderIdFromUrl(string url)
