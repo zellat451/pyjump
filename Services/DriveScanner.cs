@@ -1,13 +1,11 @@
 ﻿using System.Text.RegularExpressions;
-using Google.Apis.Drive.v3;
 using Google.Apis.Drive.v3.Data;
 using pyjump.Entities;
 using pyjump.Forms;
-using pyjump.Infrastructure;
 
 namespace pyjump.Services
 {
-    public class DriveFolderScanner
+    public class DriveScanner
     {
         private readonly HashSet<string> _visitedFolderIds = new();
         private readonly List<WhitelistEntry> _foundFolderNames = new();

@@ -18,7 +18,7 @@ namespace pyjump.Services
         {
             var drives = Statics.MainDrives;
 
-            var scanner = new DriveFolderScanner();
+            var scanner = new DriveScanner();
             var allWhitelistEntries = await scanner.GetAllFolderNamesRecursiveAsync(drives.Data.Select(x => x.Url).ToList(), logForm);
 
             // check existing whitelist entries
