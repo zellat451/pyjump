@@ -1,4 +1,6 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.Concurrent;
+using System.Diagnostics;
+using pyjump.Entities;
 using pyjump.Forms;
 using pyjump.Infrastructure;
 using static pyjump.Services.Statics;
@@ -19,6 +21,7 @@ namespace pyjump.Services
 
             var scanner = new DriveScanner();
             var allWhitelistEntries = await scanner.GetAllFolderNamesRecursiveAsync(drives.Data.Select(x => x.Url).ToList(), logForm);
+            ConcurrentBag<WhitelistEntry> allWhitelistEntriesBag = [.. allWhitelistEntries];
 
             // check existing whitelist entries
             using (var db = new AppDbContext())
@@ -26,25 +29,20 @@ namespace pyjump.Services
                 var existingEntries = db.Whitelist.ToList();
 
                 // 1. entries existing in the database but not in the new list > remove the entries from the database
-                var toRemove = existingEntries.Where(x => !allWhitelistEntries.Select(y => y.Id).Contains(x.Id)).ToList();
-                foreach (var entry in toRemove)
-                {
-                    db.Whitelist.Remove(entry);
-                    logForm.Log($"Removed entry: {entry.Name}");
-                    Debug.WriteLine($"Removed entry: {entry.Name}");
-                }
+                var toRemove = existingEntries.Where(x => !allWhitelistEntriesBag.Select(y => y.Id).Contains(x.Id)).ToList();
+                db.Whitelist.RemoveRange(toRemove);
+                logForm.Log($"Removed {toRemove.Count} entries from the database.");
+                Debug.WriteLine($"Removed {toRemove.Count} entries from the database.");
 
                 // 2. entries existing in the new list but not in the database > add the entries to the database
                 var toAdd = allWhitelistEntries.Where(x => !existingEntries.Select(y => y.Id).Contains(x.Id)).ToList();
-                foreach (var entry in toAdd)
-                {
-                    db.Whitelist.Add(entry);
-                    logForm.Log($"Added entry: {entry.Name}");
-                    Debug.WriteLine($"Added entry: {entry.Name}");
-                }
+                db.Whitelist.AddRange(toAdd);
+                logForm.Log($"Added {toAdd.Count} entries to the database.");
+                Debug.WriteLine($"Added {toAdd.Count} entries to the database.");
 
                 // 3. entries existing in both lists > update the entries in the database if the name | url | resource key | yype is different
-                foreach (var entry in existingEntries)
+                var toUpdate = new ConcurrentBag<WhitelistEntry>();
+                var tasks = existingEntries.Select(entry =>
                 {
                     var newEntry = allWhitelistEntries.FirstOrDefault(x => x.Id == entry.Id);
                     if (newEntry != null)
@@ -57,12 +55,16 @@ namespace pyjump.Services
                             entry.ResourceKey = newEntry.ResourceKey;
                             entry.LastChecked = null;
                             entry.Type = newEntry.Type;
-                            db.Whitelist.Update(entry);
-                            logForm.Log($"Updated entry: {entry.Name}");
-                            Debug.WriteLine($"Updated entry: {entry.Name}");
+
+                            toUpdate.Add(entry);
                         }
                     }
-                }
+                    return Task.CompletedTask;
+                });
+                await Task.WhenAll(tasks);
+                db.Whitelist.UpdateRange(toUpdate);
+                logForm.Log($"Updated {toUpdate.Count} entries in the database.");
+                Debug.WriteLine($"Updated {toUpdate.Count} entries in the database.");
 
                 // commit the changes to the database
                 db.SaveChanges();
@@ -79,30 +81,29 @@ namespace pyjump.Services
                 // get all files from the whitelist entries
                 var scanner = new DriveScanner();
                 var allFileEntries = await scanner.GetAllFilesInWhitelistAsync(whitelistEntries, logForm);
+                ConcurrentBag<FileEntry> allFileEntriesBag = [.. allFileEntries];
 
                 // check existing file entries
                 var existingEntries = db.Files.ToList();
 
                 // 1. entries existing in the new list but not in the database > add the entries to the database
-                var toAdd = allFileEntries.Where(x => !existingEntries.Select(y => y.Id).Contains(x.Id)).ToList();
-                foreach (var entry in toAdd)
-                {
-                    db.Files.Add(entry);
-                    logForm.Log($"Added file entry: {entry.Name}");
-                    Debug.WriteLine($"Added file entry: {entry.Name}");
-                }
+                var toAdd = allFileEntriesBag.Where(x => !existingEntries.Select(y => y.Id).Contains(x.Id)).ToList();
+                db.Files.AddRange(toAdd);
+                logForm.Log($"Added {toAdd.Count} file entries.");
+                Debug.WriteLine($"Added {toAdd.Count} file entries.");
 
                 // 2. entries existing in both lists > update the entries in the database if
                 // the name | url | resource key | last modified date | owner | folder id is different
-                foreach (var entry in existingEntries)
+                var toUpdate = new ConcurrentBag<FileEntry>();
+                var tasks = existingEntries.Select(entry =>
                 {
                     var newEntry = allFileEntries.FirstOrDefault(x => x.Id == entry.Id);
                     if (newEntry != null)
                     {
                         if (entry.Name != newEntry.Name
                             || entry.Url != newEntry.Url
-                            || entry.ResourceKey != newEntry.ResourceKey 
-                            || entry.LastModified != newEntry.LastModified 
+                            || entry.ResourceKey != newEntry.ResourceKey
+                            || entry.LastModified != newEntry.LastModified
                             || entry.Owner != newEntry.Owner
                             || entry.FolderId != newEntry.FolderId)
                         {
@@ -112,12 +113,16 @@ namespace pyjump.Services
                             entry.LastModified = newEntry.LastModified;
                             entry.Owner = newEntry.Owner;
                             entry.FolderId = newEntry.FolderId;
-                            db.Files.Update(entry);
-                            logForm.Log($"Updated file entry: {entry.Name}");
-                            Debug.WriteLine($"Updated file entry: {entry.Name}");
+
+                            toUpdate.Add(entry);
                         }
                     }
-                }
+                    return Task.CompletedTask;
+                });
+                await Task.WhenAll(tasks);
+                db.Files.UpdateRange(toUpdate);
+                logForm.Log($"Updated {toUpdate.Count} file entries.");
+                Debug.WriteLine($"Updated {toUpdate.Count} file entries.");
 
                 await db.SaveChangesAsync();
             }
