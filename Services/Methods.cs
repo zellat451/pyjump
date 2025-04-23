@@ -93,23 +93,25 @@ namespace pyjump.Services
                 }
 
                 // 2. entries existing in both lists > update the entries in the database if
-                // the name | url | resource key | last modified date | owner | folder type | folder name is different
+                // the name | url | resource key | last modified date | owner | folder id is different
                 foreach (var entry in existingEntries)
                 {
                     var newEntry = allFileEntries.FirstOrDefault(x => x.Id == entry.Id);
                     if (newEntry != null)
                     {
-                        if (entry.Name != newEntry.Name || entry.Url != newEntry.Url || entry.ResourceKey != newEntry.ResourceKey ||
-                            entry.LastModified != newEntry.LastModified || entry.Owner != newEntry.Owner
-                            || entry.Type != newEntry.Type || entry.FolderName != newEntry.FolderName)
+                        if (entry.Name != newEntry.Name
+                            || entry.Url != newEntry.Url
+                            || entry.ResourceKey != newEntry.ResourceKey 
+                            || entry.LastModified != newEntry.LastModified 
+                            || entry.Owner != newEntry.Owner
+                            || entry.FolderId != newEntry.FolderId)
                         {
                             entry.Name = newEntry.Name;
                             entry.Url = newEntry.Url;
                             entry.ResourceKey = newEntry.ResourceKey;
                             entry.LastModified = newEntry.LastModified;
                             entry.Owner = newEntry.Owner;
-                            entry.Type = newEntry.Type;
-                            entry.FolderName = newEntry.FolderName;
+                            entry.FolderId = newEntry.FolderId;
                             db.Files.Update(entry);
                             logForm.Log($"Updated file entry: {entry.Name}");
                             Debug.WriteLine($"Updated file entry: {entry.Name}");

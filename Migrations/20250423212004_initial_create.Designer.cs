@@ -11,14 +11,51 @@ using pyjump.Infrastructure;
 namespace pyjump.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250422211306_more_forgiving_whitelist2")]
-    partial class more_forgiving_whitelist2
+    [Migration("20250423212004_initial_create")]
+    partial class initial_create
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.4");
+
+            modelBuilder.Entity("pyjump.Entities.FileEntry", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FolderId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("LastModified")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Owner")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasDefaultValue("");
+
+                    b.Property<string>("ResourceKey")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT")
+                        .HasDefaultValue("");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FolderId");
+
+                    b.ToTable("Files");
+                });
 
             modelBuilder.Entity("pyjump.Entities.WhitelistEntry", b =>
                 {
@@ -49,6 +86,15 @@ namespace pyjump.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Whitelist");
+                });
+
+            modelBuilder.Entity("pyjump.Entities.FileEntry", b =>
+                {
+                    b.HasOne("pyjump.Entities.WhitelistEntry", null)
+                        .WithMany()
+                        .HasForeignKey("FolderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

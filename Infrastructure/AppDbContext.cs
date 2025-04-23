@@ -39,9 +39,6 @@ namespace pyjump.Infrastructure
                 .Property(e => e.Url)
                 .IsRequired();
             modelBuilder.Entity<FileEntry>()
-                .Property(e => e.FolderName)
-                .IsRequired();
-            modelBuilder.Entity<FileEntry>()
                 .Property(e => e.Name)
                 .IsRequired();
             modelBuilder.Entity<FileEntry>()
@@ -50,8 +47,13 @@ namespace pyjump.Infrastructure
                 .Property(e => e.Owner)
                 .HasDefaultValue(string.Empty);
             modelBuilder.Entity<FileEntry>()
-                .Property(e => e.Type)
+                .Property(e => e.FolderId)
                 .IsRequired();
+            modelBuilder.Entity<FileEntry>()
+                .HasOne<WhitelistEntry>()
+                .WithMany()
+                .HasForeignKey(e => e.FolderId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

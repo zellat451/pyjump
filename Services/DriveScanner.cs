@@ -209,16 +209,15 @@ namespace pyjump.Services
                             Url = string.IsNullOrEmpty(actualFile.ResourceKey)
                                 ? $"https://drive.google.com/file/d/{actualFile.Id}/view"
                                 : $"https://drive.google.com/file/d/{actualFile.Id}/view?resourcekey={Uri.EscapeDataString(actualFile.ResourceKey)}",
-                            FolderName = entry.Name,
                             Name = actualFile.Name,
                             LastModified = modifiedTime?.UtcDateTime ?? DateTime.MinValue,
                             Owner = actualFile.Owners?.FirstOrDefault()?.DisplayName ?? "Unknown",
-                            Type = entry.Type,
+                            FolderId = entry.Id,
                         };
                         entry.LastChecked = DateTime.UtcNow;
 
                         files.Add(fileEntry);
-                        logForm.Log($"📄 Found file: {fileEntry.Name} in {fileEntry.FolderName}");
+                        logForm.Log($"📄 Found file: {fileEntry.Name} in {entry.Name}");
                     }
 
                     pageToken = result.NextPageToken;

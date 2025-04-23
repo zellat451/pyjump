@@ -22,7 +22,7 @@ namespace pyjump.Migrations
                     b.Property<string>("Id")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("FolderName")
+                    b.Property<string>("FolderId")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
@@ -43,15 +43,13 @@ namespace pyjump.Migrations
                         .HasColumnType("TEXT")
                         .HasDefaultValue("");
 
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("Url")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("FolderId");
 
                     b.ToTable("Files");
                 });
@@ -85,6 +83,15 @@ namespace pyjump.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Whitelist");
+                });
+
+            modelBuilder.Entity("pyjump.Entities.FileEntry", b =>
+                {
+                    b.HasOne("pyjump.Entities.WhitelistEntry", null)
+                        .WithMany()
+                        .HasForeignKey("FolderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }
