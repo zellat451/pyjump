@@ -250,7 +250,21 @@ namespace pyjump.Services
                             continue;
                     }
 
-                    var modifiedTime = actualFile.ModifiedTimeDateTimeOffset ?? actualFile.CreatedTimeDateTimeOffset;
+                    var modifiedTime = (actualFile.ModifiedTimeDateTimeOffset ?? actualFile.CreatedTimeDateTimeOffset)?.UtcDateTime;
+                    if(modifiedTime == null)
+                    {
+                        if(!string.IsNullOrEmpty(actualFile.ModifiedTimeRaw) && actualFile.ModifiedTimeRaw != "1970-01-01T00:00:00Z")
+                            modifiedTime = DateTime.Parse(actualFile.ModifiedTimeRaw).ToUniversalTime();
+                        else if (!string.IsNullOrEmpty(actualFile.CreatedTimeRaw) && actualFile.CreatedTimeRaw != "1970-01-01T00:00:00Z")
+                            modifiedTime = DateTime.Parse(actualFile.CreatedTimeRaw).ToUniversalTime();
+                        else if (file.MimeType == GoogleMimeTypes.Shortcut)
+                        {
+                            if (!string.IsNullOrEmpty(file.ModifiedTimeRaw) && file.ModifiedTimeRaw != "1970-01-01T00:00:00Z")
+                                modifiedTime = DateTime.Parse(file.ModifiedTimeRaw).ToUniversalTime();
+                            else if (!string.IsNullOrEmpty(file.CreatedTimeRaw) && file.CreatedTimeRaw != "1970-01-01T00:00:00Z")
+                                modifiedTime = DateTime.Parse(file.CreatedTimeRaw).ToUniversalTime();
+                        }
+                    }
 
                     var fileEntry = new FileEntry
                     {
@@ -260,7 +274,7 @@ namespace pyjump.Services
                             ? $"https://drive.google.com/file/d/{actualFile.Id}/view"
                             : $"https://drive.google.com/file/d/{actualFile.Id}/view?resourcekey={Uri.EscapeDataString(actualFile.ResourceKey)}",
                         Name = actualFile.Name,
-                        LastModified = modifiedTime?.UtcDateTime ?? DateTime.MinValue,
+                        LastModified = modifiedTime ?? DateTime.MinValue,
                         Owner = actualFile.Owners?.FirstOrDefault()?.DisplayName ?? "Unknown",
                         FolderId = whitelist.Id,
                     };
