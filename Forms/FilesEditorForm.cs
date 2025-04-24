@@ -19,7 +19,7 @@ namespace pyjump.Forms
 
         public void FilesEditorForm_Load(object sender, EventArgs e)
         {
-            var entries = _context.Files.OrderBy(x => x.Name).ToList();
+            var entries = _context.Files.AsTracking().OrderBy(x => x.Name).ToList();
             _filesBinding = new BindingList<FileEntry>(entries);
             _filesBinding.AllowNew = true;
             _filesBinding.AllowRemove = true;
@@ -41,6 +41,8 @@ namespace pyjump.Forms
 
                 dataGridViewFiles.Columns.Add(deleteButtonColumn);
             }
+
+            countBox.Text = $"Total files: {_filesBinding.Count}";
         }
 
         private void FilesBinding_ListChanged(object sender, ListChangedEventArgs e)

@@ -18,7 +18,7 @@ namespace pyjump.Forms
 
         public void WhitelistEditorForm_Load(object sender, EventArgs e)
         {
-            var entries = _context.Whitelist.OrderBy(x => x.Name).ToList();
+            var entries = _context.Whitelist.AsTracking().OrderBy(x => x.Name).ToList();
             _whitelistBinding = new BindingList<WhitelistEntry>(entries);
             _whitelistBinding.AllowNew = true;
             _whitelistBinding.AllowRemove = true;
@@ -40,6 +40,8 @@ namespace pyjump.Forms
 
                 dataGridViewWhitelist.Columns.Add(deleteButtonColumn);
             }
+
+            countBox.Text = $"Total entries: {_whitelistBinding.Count}";
         }
 
         private void WhitelistBinding_ListChanged(object sender, ListChangedEventArgs e)
@@ -96,5 +98,9 @@ namespace pyjump.Forms
             _whitelistBinding.Remove(entry); // Update UI
         }
 
+        private void textBox1_TextChanged(object sender, EventArgs e)
+        {
+
+        }
     }
 }
