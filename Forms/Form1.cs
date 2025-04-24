@@ -65,6 +65,7 @@ namespace pyjump
                     {
                         entry.LastChecked = null;
                     }
+                    context.Whitelist.UpdateRange(entries);
                     context.SaveChanges();
                 }
 

@@ -9,7 +9,7 @@ namespace pyjump.Infrastructure
         public DbSet<FileEntry> Files { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder options)
-        => options.UseSqlite("Data Source=data.sqlite");
+        => options.UseSqlite("Data Source=data.sqlite").UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
