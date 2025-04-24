@@ -1,25 +1,51 @@
-﻿namespace pyjump.Forms
+﻿using System.Collections.Concurrent;
+using System.Windows.Forms;
+
+namespace pyjump.Forms
 {
     public partial class LogForm : Form
     {
         public LogForm()
         {
             InitializeComponent();
+            _logTimer = new();
+            _logTimer.Interval = 1000; // update once a second
+            _logTimer.Tick += (s, e) => FlushLogQueue();
+            _logTimer.Start();
         }
 
+        private readonly ConcurrentQueue<string> _logQueue = new();
+        private readonly System.Windows.Forms.Timer _logTimer;
         public void Log(string message)
         {
-            if (!IsHandleCreated)
-                return; // Prevent errors if form hasn't fully loaded
+            _logQueue.Enqueue($"[{DateTime.UtcNow:HH:mm:ss}] {message}");
+        }
 
-            if (InvokeRequired)
+        private void FlushLogQueue()
+        {
+            if (richTextBoxLog.Lines.Length > 1000)
             {
-                BeginInvoke(new Action(() => Log(message)));
-                return;
+                richTextBoxLog.Clear(); 
             }
 
-            richTextBoxLog.AppendText(message + Environment.NewLine);
-            richTextBoxLog.ScrollToCaret();
+            var nbMsg = _logQueue.Count;
+            while (_logQueue.TryDequeue(out var msg))
+            {
+                richTextBoxLog.AppendText(msg + Environment.NewLine);
+
+                var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs");
+                if (!Directory.Exists(path))
+                {
+                    Directory.CreateDirectory(path);
+                }
+                File.AppendAllText(Path.Combine(path, $"logform-{DateTime.UtcNow:yyyy-MM-dd}.log"), msg + Environment.NewLine);
+            }
+
+            if (nbMsg > 0)
+            {
+                richTextBoxLog.SelectionStart = richTextBoxLog.Text.Length;
+                richTextBoxLog.ScrollToCaret(); 
+            }
         }
     }
 }
