@@ -31,7 +31,7 @@ namespace pyjump.Services
         private readonly ConcurrentBag<WhitelistEntry> _foundFolderNames;
         private readonly ConcurrentBag<string> _storiesKeywords;
 
-        private readonly ConcurrentBag<(string folderId, string parentName)> _folderQueue;
+        private readonly ConcurrentBag<(string folderId, string resourceKey, string parentName)> _folderQueue;
 
         public async Task<List<WhitelistEntry>> GetAllFolderNamesRecursiveAsync(List<string> folderUrls, LogForm logForm)
         {
@@ -39,7 +39,7 @@ namespace pyjump.Services
             var rootFolderIds = folderUrls.Select(ExtractFolderIdFromUrl).Where(id => id != null).Distinct();
 
             foreach (var id in folderUrls.Select(ExtractFolderIdFromUrl).Where(id => id != null))
-                _folderQueue.Add((id, string.Empty));
+                _folderQueue.Add((id, string.Empty, string.Empty));
 
 
             while (!_folderQueue.IsEmpty)
@@ -47,13 +47,13 @@ namespace pyjump.Services
                 var success = _folderQueue.TryTake(out var folder);
                 if (!success)
                     continue;
-                await TraverseFolderAsync(folder.folderId, folder.parentName, logForm);
+                await TraverseFolderAsync(folder.folderId, folder.resourceKey, folder.parentName, logForm);
             }
 
             return _foundFolderNames.DistinctBy(x => x.Id).ToList();
         }
 
-        private async Task TraverseFolderAsync(string folderId, string parentName, LogForm logForm)
+        private async Task TraverseFolderAsync(string folderId, string resourceKey, string parentName, LogForm logForm)
         {
             if (_visitedFolderIds.ContainsKey(folderId))
                 return;
@@ -63,7 +63,18 @@ namespace pyjump.Services
             Google.Apis.Drive.v3.Data.File folderMetadata = null;
             try
             {
-                folderMetadata = await ScopedServices.DriveService.Files.Get(folderId).ExecuteAsync();
+                var request = ScopedServices.DriveService.Files.Get(folderId);
+                request.SupportsAllDrives = true;
+                if(!string.IsNullOrEmpty(resourceKey))
+                    request.RequestParameters.Add("resourceKey", new Google.Apis.Discovery.Parameter
+                    {
+                        Name = "resourceKey",
+                        IsRequired = false,
+                        ParameterType = "query",
+                        DefaultValue = resourceKey,
+                        Pattern = null
+                    });
+                folderMetadata = await request.ExecuteAsync();
             }
             catch (Google.GoogleApiException ex) when (ex.HttpStatusCode == HttpStatusCode.NotFound)
             {
@@ -114,6 +125,7 @@ namespace pyjump.Services
                     request.Q = query;
                     request.Fields = "nextPageToken, files(id, name, mimeType, shortcutDetails)";
                     request.PageToken = pageToken;
+                    request.SupportsAllDrives = true;
 
                     result = await request.ExecuteAsync();
                 }
@@ -127,13 +139,13 @@ namespace pyjump.Services
                 {
                     if (file.MimeType == GoogleMimeTypes.Folder)
                     {
-                        _folderQueue.Add((file.Id, whitelistEntry.Name));
+                        _folderQueue.Add((file.Id, file.ResourceKey, whitelistEntry.Name));
                     }
                     else if (file.MimeType == GoogleMimeTypes.Shortcut &&
                              file.ShortcutDetails?.TargetMimeType == GoogleMimeTypes.Folder &&
                              file.ShortcutDetails?.TargetId != null)
                     {
-                        _folderQueue.Add((file.ShortcutDetails.TargetId, whitelistEntry.Name));
+                        _folderQueue.Add((file.ShortcutDetails.TargetId, file.ShortcutDetails.TargetResourceKey, whitelistEntry.Name));
                     }
                 }
 
@@ -153,7 +165,7 @@ namespace pyjump.Services
         public async Task<List<FileEntry>> GetAllFilesInWhitelistAsync(WhitelistEntry whitelist, LogForm logForm)
         {
             var files = new List<FileEntry>();
-           
+
             if (whitelist.Type == FolderType.Blacklisted)
                 return files;
 
@@ -175,6 +187,7 @@ namespace pyjump.Services
                     request.Q = query;
                     request.Fields = "nextPageToken, files(id, name, mimeType, shortcutDetails, modifiedTime, createdTime, owners, resourceKey)";
                     request.PageToken = pageToken;
+                    request.SupportsAllDrives = true;
 
                     result = await request.ExecuteAsync();
                 }
@@ -209,8 +222,18 @@ namespace pyjump.Services
 
                         try
                         {
-                            actualFile = await ScopedServices.DriveService.Files.Get(targetId)
-                                .ExecuteAsync();
+                            var request = ScopedServices.DriveService.Files.Get(targetId);
+                            request.SupportsAllDrives = true;
+                            if (!string.IsNullOrEmpty(file.ShortcutDetails?.TargetResourceKey))
+                                request.RequestParameters.Add("resourceKey", new Google.Apis.Discovery.Parameter
+                                {
+                                    Name = "resourceKey",
+                                    IsRequired = false,
+                                    ParameterType = "query",
+                                    DefaultValue = file.ShortcutDetails?.TargetResourceKey,
+                                    Pattern = null
+                                });
+                            actualFile = await request.ExecuteAsync();
                         }
                         catch (Google.GoogleApiException ex) when (ex.HttpStatusCode == HttpStatusCode.NotFound)
                         {
@@ -249,7 +272,7 @@ namespace pyjump.Services
                 pageToken = result.NextPageToken;
 
             } while (pageToken != null);
-            
+
 
             return files.DistinctBy(x => x.Id).ToList();
         }
