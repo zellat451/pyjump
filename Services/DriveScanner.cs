@@ -365,18 +365,19 @@ namespace pyjump.Services
                             continue;
                     }
 
+                    var lowestTime = DateTime.Parse("1981-01-01T00:00:00Z").ToUniversalTime();
                     var modifiedTime = (actualFile.ModifiedTimeDateTimeOffset ?? actualFile.CreatedTimeDateTimeOffset)?.UtcDateTime;
-                    if (modifiedTime == null)
+                    if (modifiedTime == null || modifiedTime < lowestTime)
                     {
-                        if (!string.IsNullOrEmpty(actualFile.ModifiedTimeRaw) && actualFile.ModifiedTimeRaw != "1970-01-01T00:00:00Z")
+                        if (!string.IsNullOrEmpty(actualFile.ModifiedTimeRaw) && DateTime.TryParse(actualFile.ModifiedTimeRaw, out var d) && d.ToUniversalTime() > lowestTime)
                             modifiedTime = DateTime.Parse(actualFile.ModifiedTimeRaw).ToUniversalTime();
-                        else if (!string.IsNullOrEmpty(actualFile.CreatedTimeRaw) && actualFile.CreatedTimeRaw != "1970-01-01T00:00:00Z")
+                        else if (!string.IsNullOrEmpty(actualFile.CreatedTimeRaw) && DateTime.TryParse(actualFile.CreatedTimeRaw, out d) && d.ToUniversalTime() > lowestTime)
                             modifiedTime = DateTime.Parse(actualFile.CreatedTimeRaw).ToUniversalTime();
                         else if (file.MimeType == GoogleMimeTypes.Shortcut)
                         {
-                            if (!string.IsNullOrEmpty(file.ModifiedTimeRaw) && file.ModifiedTimeRaw != "1970-01-01T00:00:00Z")
+                            if (!string.IsNullOrEmpty(file.ModifiedTimeRaw) && DateTime.TryParse(file.ModifiedTimeRaw, out var d2) && d2.ToUniversalTime() > lowestTime)
                                 modifiedTime = DateTime.Parse(file.ModifiedTimeRaw).ToUniversalTime();
-                            else if (!string.IsNullOrEmpty(file.CreatedTimeRaw) && file.CreatedTimeRaw != "1970-01-01T00:00:00Z")
+                            else if (!string.IsNullOrEmpty(file.CreatedTimeRaw) && DateTime.TryParse(file.CreatedTimeRaw, out d2) && d2.ToUniversalTime() > lowestTime)
                                 modifiedTime = DateTime.Parse(file.CreatedTimeRaw).ToUniversalTime();
                         }
                     }
