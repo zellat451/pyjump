@@ -23,6 +23,8 @@ namespace pyjump.Forms
 
         private void FlushLogQueue()
         {
+            if (richTextBoxLog.IsDisposed || richTextBoxLog.Disposing) return;
+
             if (richTextBoxLog.Lines.Length > 1000)
             {
                 richTextBoxLog.Clear(); 
@@ -31,6 +33,8 @@ namespace pyjump.Forms
             var nbMsg = _logQueue.Count;
             while (_logQueue.TryDequeue(out var msg))
             {
+                if (richTextBoxLog.IsDisposed || richTextBoxLog.Disposing) return;
+
                 richTextBoxLog.AppendText(msg + Environment.NewLine);
 
                 var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs");

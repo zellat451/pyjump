@@ -435,32 +435,32 @@ namespace pyjump.Services
                 // separate the Jump / Story / Other / Blacklisted files (must join on Folder)
                 // we want 5 sheets: Jumps, Stories, Others, Jumps (Unfiltered) & Stories (Unfiltered)
                 // order them by descending date modified
-                var dataSheetJump = ownerFileEntries.Where(x => x.FolderId == allWhitelistEntries.FirstOrDefault(y => y.Type == Statics.FolderType.Jump).Id)
+                var dataSheetJump = ownerFileEntries.Where(x => x.FolderId == allWhitelistEntries.FirstOrDefault(y => y.Type == Statics.FolderType.Jump)?.Id)
                     .OrderByDescending(x => x.LastModified).ToList();
-                var dataSheetStory = ownerFileEntries.Where(x => x.FolderId == allWhitelistEntries.FirstOrDefault(y => y.Type == Statics.FolderType.Story).Id)
+                var dataSheetStory = ownerFileEntries.Where(x => x.FolderId == allWhitelistEntries.FirstOrDefault(y => y.Type == Statics.FolderType.Story)?.Id)
                     .OrderByDescending(x => x.LastModified).ToList();
-                var dataSheetOther = allFiles.Where(x => x.FolderId == allWhitelistEntries.FirstOrDefault(y => y.Type == Statics.FolderType.Other).Id)
+                var dataSheetOther = allFiles.Where(x => x.FolderId == allWhitelistEntries.FirstOrDefault(y => y.Type == Statics.FolderType.Other)?.Id)
                     .OrderByDescending(x => x.LastModified).ToList();
-                var dataSheetJumpUnfiltered = allFiles.Where(x => x.FolderId == allWhitelistEntries.FirstOrDefault(y => y.Type == Statics.FolderType.Jump).Id)
+                var dataSheetJumpUnfiltered = allFiles.Where(x => x.FolderId == allWhitelistEntries.FirstOrDefault(y => y.Type == Statics.FolderType.Jump)?.Id)
                     .OrderByDescending(x => x.LastModified).ToList();
-                var dataSheetStoryUnfiltered = allFiles.Where(x => x.FolderId == allWhitelistEntries.FirstOrDefault(y => y.Type == Statics.FolderType.Story).Id)
+                var dataSheetStoryUnfiltered = allFiles.Where(x => x.FolderId == allWhitelistEntries.FirstOrDefault(y => y.Type == Statics.FolderType.Story)?.Id)
                     .OrderByDescending(x => x.LastModified).ToList();
 
                 // 5. upload the data to the sheets
                 loadingForm.PrepareLoadingBar("Building Jumps sheet", dataSheetJump.Count);
-                await UploadToSheetAsync(dataSheetJump, Statics.Sheet.SHEET_J, logForm, loadingForm);
+                await UploadToSheetAsync(dataSheetJump, Statics.Sheet.SHEET_J, allWhitelistEntries, logForm, loadingForm);
 
                 loadingForm.PrepareLoadingBar("Building Stories sheet", dataSheetStory.Count);
-                await UploadToSheetAsync(dataSheetStory, Statics.Sheet.SHEET_S, logForm, loadingForm);
+                await UploadToSheetAsync(dataSheetStory, Statics.Sheet.SHEET_S, allWhitelistEntries, logForm, loadingForm);
 
                 loadingForm.PrepareLoadingBar("Building Others sheet", dataSheetOther.Count);
-                await UploadToSheetAsync(dataSheetOther, Statics.Sheet.SHEET_O, logForm, loadingForm);
+                await UploadToSheetAsync(dataSheetOther, Statics.Sheet.SHEET_O, allWhitelistEntries, logForm, loadingForm);
 
                 loadingForm.PrepareLoadingBar("Building Jumps (Unfiltered) sheet", dataSheetJumpUnfiltered.Count);
-                await UploadToSheetAsync(dataSheetJumpUnfiltered, Statics.Sheet.SHEET_J_1, logForm, loadingForm);
+                await UploadToSheetAsync(dataSheetJumpUnfiltered, Statics.Sheet.SHEET_J_1, allWhitelistEntries, logForm, loadingForm);
 
                 loadingForm.PrepareLoadingBar("Building Stories (Unfiltered) sheet", dataSheetStoryUnfiltered.Count);
-                await UploadToSheetAsync(dataSheetStoryUnfiltered, Statics.Sheet.SHEET_S_1, logForm, loadingForm);
+                await UploadToSheetAsync(dataSheetStoryUnfiltered, Statics.Sheet.SHEET_S_1, allWhitelistEntries, logForm, loadingForm);
             }
             catch (Exception e)
             {
@@ -468,8 +468,9 @@ namespace pyjump.Services
                 throw;
             }
         }
+        private static string EscapeForFormula(string input) => input?.Replace("\"", "\"\"") ?? string.Empty;
 
-        private static async Task UploadToSheetAsync(List<FileEntry> entries, string sheetName, LogForm logForm, LoadingForm loadingForm)
+        private static async Task UploadToSheetAsync(List<FileEntry> entries, string sheetName, List<WhitelistEntry> whitelist, LogForm logForm, LoadingForm loadingForm)
         {
             if (entries.Count == 0)
             {
@@ -495,12 +496,10 @@ namespace pyjump.Services
             int rowsNeeded = entries.Count + 1; // +1 for header row
             int colsNeeded = Statics.Sheet.SHEET_COLS;
 
-            // Step 2: Resize the sheet if needed
-            if (rowsNeeded > currentRowCount || colsNeeded > currentColCount)
+            // Step 2: Resize the sheet
+            var resizeRequest = new BatchUpdateSpreadsheetRequest
             {
-                var resizeRequest = new BatchUpdateSpreadsheetRequest
-                {
-                    Requests = new List<Request>
+                Requests = new List<Request>
             {
                 new Request
                 {
@@ -519,10 +518,10 @@ namespace pyjump.Services
                     }
                 }
             }
-                };
+            };
 
-                await service.Spreadsheets.BatchUpdate(resizeRequest, SingletonServices.SpreadsheetId).ExecuteAsync();
-            }
+            await service.Spreadsheets.BatchUpdate(resizeRequest, SingletonServices.SpreadsheetId).ExecuteAsync();
+
 
             // Step 3: Build data and clearing requests
             var dataRequests = new List<Request>();
@@ -545,16 +544,47 @@ namespace pyjump.Services
             var cellData = new List<RowData>();
             foreach (var entry in entries)
             {
+                var whitelistEntry = whitelist.FirstOrDefault(w => w.Id == entry.FolderId);
+                string locationName = whitelistEntry?.Name ?? "Unknown";
+                string locationUrl = whitelistEntry?.Url ?? "";
+                string escapedEntryName = EscapeForFormula(entry.Name);
+                string escapedLocationName = EscapeForFormula(locationName);
+
                 cellData.Add(new RowData
                 {
-                    Values = new List<CellData>
-            {
-                new CellData { UserEnteredValue = new ExtendedValue { StringValue = entry.Name } },
-                new CellData { UserEnteredValue = new ExtendedValue { StringValue = entry.Id } },
-                new CellData { UserEnteredValue = new ExtendedValue { StringValue = entry.Url } },
-                new CellData { UserEnteredValue = new ExtendedValue { StringValue = $"{entry.LastModified:yyyy-MM-dd HH:mm:ss}" } }
-            }
+                    Values =
+                    [
+                        new CellData
+                        {
+                            UserEnteredValue = new ExtendedValue
+                            {
+                                FormulaValue = $"=HYPERLINK(\"{entry.Url}\", \"{escapedEntryName}\")"
+                            }
+                        },
+                        new CellData
+                        {
+                            UserEnteredValue = new ExtendedValue
+                            {
+                                FormulaValue = $"=HYPERLINK(\"{locationUrl}\", \"{escapedLocationName}\")"
+                            }
+                        },
+                        new CellData
+                        {
+                            UserEnteredValue = new ExtendedValue
+                            {
+                                StringValue = entry.Owner
+                            }
+                        },
+                        new CellData
+                        {
+                            UserEnteredValue = new ExtendedValue
+                            {
+                                StringValue = $"{entry.LastModified:yyyy-MM-dd HH:mm:ss}"
+                            }
+                        }
+                    ]
                 });
+
                 loadingForm.IncrementProgress();
             }
 
