@@ -435,16 +435,35 @@ namespace pyjump.Services
                 // separate the Jump / Story / Other / Blacklisted files (must join on Folder)
                 // we want 5 sheets: Jumps, Stories, Others, Jumps (Unfiltered) & Stories (Unfiltered)
                 // order them by descending date modified
-                var dataSheetJump = ownerFileEntries.Where(x => x.FolderId == allWhitelistEntries.FirstOrDefault(y => y.Type == Statics.FolderType.Jump)?.Id)
-                    .OrderByDescending(x => x.LastModified).ToList();
-                var dataSheetStory = ownerFileEntries.Where(x => x.FolderId == allWhitelistEntries.FirstOrDefault(y => y.Type == Statics.FolderType.Story)?.Id)
-                    .OrderByDescending(x => x.LastModified).ToList();
-                var dataSheetOther = allFiles.Where(x => x.FolderId == allWhitelistEntries.FirstOrDefault(y => y.Type == Statics.FolderType.Other)?.Id)
-                    .OrderByDescending(x => x.LastModified).ToList();
-                var dataSheetJumpUnfiltered = allFiles.Where(x => x.FolderId == allWhitelistEntries.FirstOrDefault(y => y.Type == Statics.FolderType.Jump)?.Id)
-                    .OrderByDescending(x => x.LastModified).ToList();
-                var dataSheetStoryUnfiltered = allFiles.Where(x => x.FolderId == allWhitelistEntries.FirstOrDefault(y => y.Type == Statics.FolderType.Story)?.Id)
-                    .OrderByDescending(x => x.LastModified).ToList();
+
+                // Create a lookup from folder ID to whitelist entry type
+                var folderTypeLookup = allWhitelistEntries.ToDictionary(w => w.Id, w => w.Type);
+
+                // Filter and group files by folder type
+                var dataSheetJump = ownerFileEntries
+                    .Where(x => folderTypeLookup.TryGetValue(x.FolderId, out var type) && type == Statics.FolderType.Jump)
+                    .OrderByDescending(x => x.LastModified)
+                    .ToList();
+
+                var dataSheetStory = ownerFileEntries
+                    .Where(x => folderTypeLookup.TryGetValue(x.FolderId, out var type) && type == Statics.FolderType.Story)
+                    .OrderByDescending(x => x.LastModified)
+                    .ToList();
+
+                var dataSheetOther = allFiles
+                    .Where(x => folderTypeLookup.TryGetValue(x.FolderId, out var type) && type == Statics.FolderType.Other)
+                    .OrderByDescending(x => x.LastModified)
+                    .ToList();
+
+                var dataSheetJumpUnfiltered = allFiles
+                    .Where(x => folderTypeLookup.TryGetValue(x.FolderId, out var type) && type == Statics.FolderType.Jump)
+                    .OrderByDescending(x => x.LastModified)
+                    .ToList();
+
+                var dataSheetStoryUnfiltered = allFiles
+                    .Where(x => folderTypeLookup.TryGetValue(x.FolderId, out var type) && type == Statics.FolderType.Story)
+                    .OrderByDescending(x => x.LastModified)
+                    .ToList();
 
                 // 5. upload the data to the sheets
                 loadingForm.PrepareLoadingBar("Building Jumps sheet", dataSheetJump.Count);
