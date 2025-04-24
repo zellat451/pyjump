@@ -15,6 +15,8 @@ namespace pyjump.Services
         public static Spreadsheet ActiveSpreadsheet { get; set; }
         public static Sheet SheetHolder_J { get; set; }
         public static Sheet SheetHolder_S { get; set; }
+        public static Sheet SheetHolder_J_1 { get; set; }
+        public static Sheet SheetHolder_S_1 { get; set; }
 
         public static void Clear()
         {
@@ -23,6 +25,8 @@ namespace pyjump.Services
             ActiveSpreadsheet = null;
             SheetHolder_J = null;
             SheetHolder_S = null;
+            SheetHolder_J_1 = null;
+            SheetHolder_S_1 = null;
         }
 
         public static void Initialize()
@@ -32,8 +36,10 @@ namespace pyjump.Services
             var spreadsheet = SheetsService.Spreadsheets.Get(SingletonServices.SpreadsheetId).Execute();
             ActiveSpreadsheet = spreadsheet;
 
-            SheetHolder_J = EnsureSheetCreated(Statics.SHEET_J);
-            SheetHolder_S = EnsureSheetCreated(Statics.SHEET_S);
+            SheetHolder_J = EnsureSheetCreated(Statics.Sheet.SHEET_J);
+            SheetHolder_S = EnsureSheetCreated(Statics.Sheet.SHEET_S);
+            SheetHolder_J_1 = EnsureSheetCreated(Statics.Sheet.SHEET_J_1);
+            SheetHolder_S_1 = EnsureSheetCreated(Statics.Sheet.SHEET_S_1);
         }
 
         private static void InitializeServices()
@@ -74,8 +80,10 @@ namespace pyjump.Services
 
         private static Sheet EnsureSheetCreated(string sheetName)
         {
-            if (sheetName == Statics.SHEET_J && SheetHolder_J != null) { return SheetHolder_J; }
-            if (sheetName == Statics.SHEET_S && SheetHolder_S != null) { return SheetHolder_S; }
+            if (sheetName == Statics.Sheet.SHEET_J && SheetHolder_J != null) { return SheetHolder_J; }
+            if (sheetName == Statics.Sheet.SHEET_S && SheetHolder_S != null) { return SheetHolder_S; }
+            if (sheetName == Statics.Sheet.SHEET_J_1 && SheetHolder_J_1 != null) { return SheetHolder_J_1; }
+            if (sheetName == Statics.Sheet.SHEET_S_1 && SheetHolder_S_1 != null) { return SheetHolder_S_1; }
 
             var activeSpreadsheet = ActiveSpreadsheet;
             var existingSheet = activeSpreadsheet.Sheets.FirstOrDefault(s => s.Properties.Title == sheetName);
@@ -123,11 +131,11 @@ namespace pyjump.Services
 
                 SheetsService.Spreadsheets.BatchUpdate(updateDimBatch, SingletonServices.SpreadsheetId).Execute();
 
-                var row = new List<object>(new string[Statics.SHEET_J_COLS]);
-                row[Statics.SHEET_J_NAMECOL - 1] = "Name";
-                row[Statics.SHEET_J_LOCATIONCOL - 1] = "Location";
-                row[Statics.SHEET_J_DATECOL - 1] = "Last Updated";
-                row[Statics.SHEET_J_CREATORCOL - 1] = "Owner";
+                var row = new List<object>(new string[Statics.Sheet.SHEET_COLS]);
+                row[Statics.Sheet.SHEET_NAMECOL - 1] = "Name";
+                row[Statics.Sheet.SHEET_LOCATIONCOL - 1] = "Location";
+                row[Statics.Sheet.SHEET_DATECOL - 1] = "Last Updated";
+                row[Statics.Sheet.SHEET_CREATORCOL - 1] = "Owner";
 
                 var valueRange = new Google.Apis.Sheets.v4.Data.ValueRange
                 {
@@ -155,7 +163,7 @@ namespace pyjump.Services
                             StartRowIndex = 0,
                             EndRowIndex = 1,
                             StartColumnIndex = 0,
-                            EndColumnIndex = Statics.SHEET_J_COLS
+                            EndColumnIndex = Statics.Sheet.SHEET_COLS
                         },
                         Cell = new CellData
                         {
@@ -180,8 +188,10 @@ namespace pyjump.Services
                 existingSheet = ActiveSpreadsheet.Sheets.FirstOrDefault(s => s.Properties.Title == sheetName);
             }
 
-            if (sheetName == Statics.SHEET_J) { SheetHolder_J = existingSheet; }
-            if (sheetName == Statics.SHEET_S) { SheetHolder_S = existingSheet; }
+            if (sheetName == Statics.Sheet.SHEET_J) { SheetHolder_J = existingSheet; }
+            if (sheetName == Statics.Sheet.SHEET_S) { SheetHolder_S = existingSheet; }
+            if (sheetName == Statics.Sheet.SHEET_J_1) { SheetHolder_J_1 = existingSheet; }
+            if (sheetName == Statics.Sheet.SHEET_S_1) { SheetHolder_S_1 = existingSheet; }
 
             return existingSheet;
         }
