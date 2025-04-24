@@ -7,6 +7,8 @@ namespace pyjump.Infrastructure
     {
         public DbSet<WhitelistEntry> Whitelist { get; set; }
         public DbSet<FileEntry> Files { get; set; }
+        public DbSet<SimilarSet> SimilarSets { get; set; }
+        public DbSet<LNKSimilarSetFile> LNKSimilarSetFiles { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder options)
         => options.UseSqlite("Data Source=data.sqlite").UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
@@ -53,6 +55,30 @@ namespace pyjump.Infrastructure
                 .HasOne<WhitelistEntry>()
                 .WithMany()
                 .HasForeignKey(e => e.FolderId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<SimilarSet>()
+                .HasKey(e => e.Id);
+            modelBuilder.Entity<SimilarSet>()
+                .Property(e => e.Id)
+                .ValueGeneratedOnAdd();
+            modelBuilder.Entity<SimilarSet>()
+                .HasOne<FileEntry>()
+                .WithOne()
+                .HasForeignKey<SimilarSet>(e => e.OwnerFileEntryId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<LNKSimilarSetFile>()
+                .HasKey(e => new { e.SimilarSetId, e.FileEntryId });
+            modelBuilder.Entity<LNKSimilarSetFile>()
+                .HasOne<SimilarSet>()
+                .WithMany()
+                .HasForeignKey(e => e.SimilarSetId)
+                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<LNKSimilarSetFile>()
+                .HasOne<FileEntry>()
+                .WithMany()
+                .HasForeignKey(e => e.FileEntryId)
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }

@@ -73,6 +73,7 @@ namespace pyjump.Services
             {
                 whitelistEntries = db.Whitelist.ToList();
             }
+
             // get all files from the whitelist entries
             var scanner = new DriveScanner();
             foreach (var w in whitelistEntries)
