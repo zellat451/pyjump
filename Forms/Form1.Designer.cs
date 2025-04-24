@@ -58,7 +58,7 @@
             // 
             // btnScanWhitelist
             // 
-            btnScanWhitelist.Location = new Point(30, 122);
+            btnScanWhitelist.Location = new Point(30, 92);
             btnScanWhitelist.Name = "btnScanWhitelist";
             btnScanWhitelist.Size = new Size(233, 87);
             btnScanWhitelist.TabIndex = 5;
@@ -78,7 +78,7 @@
             // 
             // btnResetWhitelistTimes
             // 
-            btnResetWhitelistTimes.Location = new Point(73, 86);
+            btnResetWhitelistTimes.Location = new Point(71, 185);
             btnResetWhitelistTimes.Name = "btnResetWhitelistTimes";
             btnResetWhitelistTimes.Size = new Size(139, 30);
             btnResetWhitelistTimes.TabIndex = 7;
@@ -88,7 +88,7 @@
             // 
             // btnBuildSheets
             // 
-            btnBuildSheets.Location = new Point(439, 122);
+            btnBuildSheets.Location = new Point(461, 92);
             btnBuildSheets.Name = "btnBuildSheets";
             btnBuildSheets.Size = new Size(222, 87);
             btnBuildSheets.TabIndex = 8;
