@@ -63,10 +63,13 @@ namespace pyjump.Infrastructure
                 .Property(e => e.Id)
                 .ValueGeneratedOnAdd();
             modelBuilder.Entity<SimilarSet>()
+                .Property(e => e.OwnerFileEntryId)
+                .IsRequired();
+            modelBuilder.Entity<SimilarSet>()
                 .HasOne<FileEntry>()
                 .WithOne()
                 .HasForeignKey<SimilarSet>(e => e.OwnerFileEntryId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<LNKSimilarSetFile>()
                 .HasKey(e => new { e.SimilarSetId, e.FileEntryId });
