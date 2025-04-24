@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Drawing.Interop;
 using pyjump.Entities;
 using pyjump.Forms;
 using pyjump.Infrastructure;
@@ -73,7 +74,7 @@ namespace pyjump.Services
             }
         }
 
-        public static async Task ScanFiles(LogForm logForm)
+        public static async Task ScanFiles(LogForm logForm, LoadingForm loadingForm)
         {
             #region get whitelist all entries
             // get all whitelist entries from the database
@@ -159,7 +160,8 @@ namespace pyjump.Services
                     #region update the lastchecked date of the whitelist entry
                     if (scannedFileEntries.Count > 0)
                     {
-                        w.LastChecked = scannedFileEntries.Select(x => x.LastModified).Where(x => x.HasValue).OrderDescending().FirstOrDefault();
+                        // update the last checked date of the whitelist entry to today, midnight Utc
+                        w.LastChecked = DateTime.UtcNow.Date;
                         try
                         {
                             db.Whitelist.Update(w);
@@ -182,83 +184,199 @@ namespace pyjump.Services
                         throw;
                     }
                 }
+
+                loadingForm.SetProgress(loadingForm.GetProgress() + 1);
             }
 
-            // regroup the files under sets
             List<FileEntry> allFiles;
             using (var db = new AppDbContext())
             {
                 allFiles = db.Files.ToList();
             }
 
-            List<string> treatedIds = [];
-            foreach (var file in allFiles)
+            loadingForm.SetLabel("Treating sets for files");
+            loadingForm.SetProgress(0);
+            loadingForm.SetMax(allFiles.Count);
+
+            await TreatSetsForFiles(allFiles, logForm, loadingForm);
+        }
+    
+        private static async Task TreatSetsForFiles(List<FileEntry> fileEntries, LogForm logForm, LoadingForm loadingForm)
+        {
+            try
             {
-                // 1. check if the file is already treated
-                if (treatedIds.Contains(file.Id)) { continue; }
-
-                // 2. find all files with the same name and owner (contains the current file)
-                var similarFiles = allFiles.Where(x => x.Name == file.Name && x.Owner == file.Owner).ToList();
-
-                // 3. create a new set for the similar files (OwnerFileEntryId is the file with the most recent 'LastModified' date)
-                var similarSet = new SimilarSet
-                {
-                    OwnerFileEntryId = similarFiles.OrderByDescending(x => x.LastModified).FirstOrDefault()?.Id
-                };
+                // regroup the files under sets
+                List<FileEntry> allFiles;
                 using (var db = new AppDbContext())
                 {
-                    try
-                    {
-                        db.SimilarSets.Add(similarSet);
-                    }
-                    catch (Exception e)
-                    {
-                        logForm.Log($"Error adding similar set: {e.Message}");
-                        throw;
-                    }
-                    // 4. save the set to the database (this will generate the Id for the set)
-                    try
-                    {
-                        await db.SaveChangesAsync();
-                    }
-                    catch (Exception e)
-                    {
-                        logForm.Log($"Error saving changes to the database: {e.Message}");
-                        throw;
-                    }
+                    allFiles = db.Files.ToList();
                 }
-                using (var db = new AppDbContext())
+
+                List<string> treatedIds = [];
+                foreach (var file in fileEntries)
                 {
-                    // 4. add the similar files to the set
-                    foreach (var similarFile in similarFiles)
+                    // 1. check if the file is already treated
+                    if (treatedIds.Contains(file.Id))
                     {
-                        var lnkSimilarSetFile = new LNKSimilarSetFile
+                        loadingForm.SetProgress(loadingForm.GetProgress() + 1);
+                        continue;
+                    }
+
+                    // 2. find all files with the same name and owner (contains the current file)
+                    var similarFiles = allFiles.Where(x => x.Name == file.Name && x.Owner == file.Owner).ToList();
+                    similarFiles.AddRange(fileEntries.Where(x => x.Name == file.Name && x.Owner == file.Owner));
+                    similarFiles = similarFiles.DistinctBy(x => x.Id).ToList();
+
+                    // 3. check if a set already exists for the files
+                    LNKSimilarSetFile existingSet;
+                    using (var db = new AppDbContext())
+                    {
+                        var similarIds = similarFiles.Select(x => x.Id).ToList();
+                        existingSet = db.LNKSimilarSetFiles.FirstOrDefault(x => similarIds.Contains(x.FileEntryId));
+                    }
+                    if (existingSet == null)
+                    {
+                        // There is no set created for that file, or it would be registered in the LNKSimilarSetFile table
+                        // 3.a.1. create a new set for the similar files (OwnerFileEntryId is the file with the most recent 'LastModified' date)
+                        var similarSet = new SimilarSet
                         {
-                            SimilarSetId = similarSet.Id,
-                            FileEntryId = similarFile.Id
+                            OwnerFileEntryId = similarFiles.OrderByDescending(x => x.LastModified).FirstOrDefault()?.Id
                         };
-                        try
+                        using (var db = new AppDbContext())
                         {
-                            db.LNKSimilarSetFiles.Add(lnkSimilarSetFile);
+                            try
+                            {
+                                db.SimilarSets.Add(similarSet);
+                            }
+                            catch (Exception e)
+                            {
+                                logForm.Log($"Error adding similar set: {e.Message}");
+                                throw;
+                            }
+                            // 3.a.2. save the set to the database (this will generate the Id for the set)
+                            try
+                            {
+                                await db.SaveChangesAsync();
+                            }
+                            catch (Exception e)
+                            {
+                                logForm.Log($"Error saving changes to the database: {e.Message}");
+                                throw;
+                            }
                         }
-                        catch (Exception e)
+                        using (var db = new AppDbContext())
                         {
-                            logForm.Log($"Error adding file to similar set: {e.Message}");
-                            throw;
+                            // 3.a.3. add the similar files to the set
+                            foreach (var similarFile in similarFiles)
+                            {
+                                var lnkSimilarSetFile = new LNKSimilarSetFile
+                                {
+                                    SimilarSetId = similarSet.Id,
+                                    FileEntryId = similarFile.Id
+                                };
+                                try
+                                {
+                                    db.LNKSimilarSetFiles.Add(lnkSimilarSetFile);
+                                }
+                                catch (Exception e)
+                                {
+                                    logForm.Log($"Error adding file to similar set: {e.Message}");
+                                    throw;
+                                }
+                                treatedIds.Add(similarFile.Id);
+                            }
+                            // 3.a.4. save the changes to the database
+                            try
+                            {
+                                await db.SaveChangesAsync();
+                            }
+                            catch (Exception e)
+                            {
+                                logForm.Log($"Error saving changes to the database: {e.Message}");
+                                throw;
+                            }
                         }
-                        treatedIds.Add(similarFile.Id);
                     }
-                    // 5. save the changes to the database
-                    try
+                    else
                     {
-                        await db.SaveChangesAsync();
+                        // There is already a set created for that file
+                        // 3.b.1. check in similarFiles all the files that are not in a set
+                        var similarIds = similarFiles.Select(x => x.Id).ToList();
+                        var filesNotInSet = similarFiles.Where(x => !existingSet.FileEntryId.Contains(x.Id)).Distinct().ToList();
+
+                        // 3.b.2. add the files to the set
+                        using (var db = new AppDbContext())
+                        {
+                            foreach (var similarFile in filesNotInSet)
+                            {
+                                var lnkSimilarSetFile = new LNKSimilarSetFile
+                                {
+                                    SimilarSetId = existingSet.SimilarSetId,
+                                    FileEntryId = similarFile.Id
+                                };
+                                try
+                                {
+                                    if (!db.LNKSimilarSetFiles.Contains(lnkSimilarSetFile))
+                                        db.LNKSimilarSetFiles.Add(lnkSimilarSetFile);
+                                }
+                                catch (Exception e)
+                                {
+                                    logForm.Log($"Error adding file to similar set: {e.Message}");
+                                    throw;
+                                }
+                                treatedIds.Add(similarFile.Id);
+                            }
+
+                            // 3.b.3. save the changes to the database
+                            try
+                            {
+                                await db.SaveChangesAsync();
+                            }
+                            catch (Exception e)
+                            {
+                                logForm.Log($"Error saving changes to the database: {e.Message}");
+                                throw;
+                            }
+                        }
+
+                        // 3.b.4. update the owner file entry id of the set
+                        using (var db = new AppDbContext())
+                        {
+                            var set = db.SimilarSets.FirstOrDefault(x => x.Id == existingSet.SimilarSetId);
+                            if (set != null)
+                            {
+                                set.OwnerFileEntryId = similarFiles.OrderByDescending(x => x.LastModified).FirstOrDefault()?.Id;
+                                try
+                                {
+                                    db.SimilarSets.Update(set);
+                                }
+                                catch (Exception e)
+                                {
+                                    logForm.Log($"Error updating similar set: {e.Message}");
+                                    throw;
+                                }
+                            }
+
+                            // 3.b.5. save the changes to the database
+                            try
+                            {
+                                await db.SaveChangesAsync();
+                            }
+                            catch (Exception e)
+                            {
+                                logForm.Log($"Error saving changes to the database: {e.Message}");
+                                throw;
+                            }
+                        }
                     }
-                    catch (Exception e)
-                    {
-                        logForm.Log($"Error saving changes to the database: {e.Message}");
-                        throw;
-                    }
+
+                    loadingForm.SetProgress(loadingForm.GetProgress() + 1);
                 }
+            }
+            catch (Exception e)
+            {
+                logForm.Log($"Error treating sets for files: {e.Message}");
+                throw;
             }
         }
     }

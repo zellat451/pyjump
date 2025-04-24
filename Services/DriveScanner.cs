@@ -178,6 +178,11 @@ namespace pyjump.Services
 
                     result = await request.ExecuteAsync();
                 }
+                catch (Google.GoogleApiException ex) when (ex.HttpStatusCode == HttpStatusCode.NotFound)
+                {
+                    logForm.Log($"⚠️ Folder {folderId} not found or inaccessible (404). Skipping.");
+                    break;
+                }
                 catch (Exception ex)
                 {
                     logForm.Log($"❌ Failed to list contents of folder {folderId}: {ex.Message}");
@@ -206,6 +211,11 @@ namespace pyjump.Services
                         {
                             actualFile = await ScopedServices.DriveService.Files.Get(targetId)
                                 .ExecuteAsync();
+                        }
+                        catch (Google.GoogleApiException ex) when (ex.HttpStatusCode == HttpStatusCode.NotFound)
+                        {
+                            logForm.Log($"⚠️ Shortcut target {targetId} not found or inaccessible (404). Skipping.");
+                            continue;
                         }
                         catch (Exception ex)
                         {

@@ -13,15 +13,33 @@ namespace pyjump
             InitializeComponent();
         }
 
+        private LoadingForm InitProgressBar()
+        {
+            var loadingForm = new LoadingForm();
+            loadingForm.Show();
+            return loadingForm;
+        }
+
         private async void btnScanFiles_Click(object sender, EventArgs e)
         {
             try
             {
                 InitializeEverything();
                 _logForm.Log("Starting file scan...");
-                await Methods.ScanFiles(_logForm);
+
+                var loadingForm = InitProgressBar();
+                loadingForm.SetLabel("Scanning files");
+                using (var dbContext = new AppDbContext())
+                {
+                    var count = dbContext.Whitelist.Count();
+                    loadingForm.SetMax(count);
+                }
+
+                await Methods.ScanFiles(_logForm, loadingForm);
                 _logForm.Log("File scan completed.");
                 MessageBox.Show("File scan completed.");
+
+                loadingForm.Close();
             }
             catch (Exception ex)
             {
@@ -114,9 +132,7 @@ namespace pyjump
         {
             ScopedServices.Clear();
 
-            _logForm.Hide();
-            _logForm = null;
-
+            _logForm.Close();
             this.Enabled = true;
             Cursor.Current = Cursors.Default;
         }
