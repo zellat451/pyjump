@@ -1,22 +1,62 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace pyjump.Migrations
 {
     /// <inheritdoc />
-    public partial class fileEntrySet : Migration
+    public partial class initial_migration : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.CreateTable(
+                name: "Whitelist",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "TEXT", nullable: false),
+                    ResourceKey = table.Column<string>(type: "TEXT", nullable: true, defaultValue: ""),
+                    Name = table.Column<string>(type: "TEXT", nullable: false),
+                    Url = table.Column<string>(type: "TEXT", nullable: false),
+                    LastChecked = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    Type = table.Column<string>(type: "TEXT", nullable: true, defaultValue: "")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Whitelist", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Files",
+                columns: table => new
+                {
+                    Id = table.Column<string>(type: "TEXT", nullable: false),
+                    ResourceKey = table.Column<string>(type: "TEXT", nullable: true, defaultValue: ""),
+                    Url = table.Column<string>(type: "TEXT", nullable: false),
+                    Name = table.Column<string>(type: "TEXT", nullable: false),
+                    LastModified = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    Owner = table.Column<string>(type: "TEXT", nullable: true, defaultValue: ""),
+                    FolderId = table.Column<string>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Files", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Files_Whitelist_FolderId",
+                        column: x => x.FolderId,
+                        principalTable: "Whitelist",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.CreateTable(
                 name: "SimilarSets",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
-                    OwnerFileEntryId = table.Column<string>(type: "TEXT", nullable: true)
+                    OwnerFileEntryId = table.Column<string>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -26,7 +66,7 @@ namespace pyjump.Migrations
                         column: x => x.OwnerFileEntryId,
                         principalTable: "Files",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.SetNull);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -54,6 +94,11 @@ namespace pyjump.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_Files_FolderId",
+                table: "Files",
+                column: "FolderId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_LNKSimilarSetFiles_FileEntryId",
                 table: "LNKSimilarSetFiles",
                 column: "FileEntryId");
@@ -73,6 +118,12 @@ namespace pyjump.Migrations
 
             migrationBuilder.DropTable(
                 name: "SimilarSets");
+
+            migrationBuilder.DropTable(
+                name: "Files");
+
+            migrationBuilder.DropTable(
+                name: "Whitelist");
         }
     }
 }

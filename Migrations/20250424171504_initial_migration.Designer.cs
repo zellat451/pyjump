@@ -11,8 +11,8 @@ using pyjump.Infrastructure;
 namespace pyjump.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250424165739_fileEntrySet")]
-    partial class fileEntrySet
+    [Migration("20250424171504_initial_migration")]
+    partial class initial_migration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -79,6 +79,7 @@ namespace pyjump.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("OwnerFileEntryId")
+                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
@@ -149,7 +150,8 @@ namespace pyjump.Migrations
                     b.HasOne("pyjump.Entities.FileEntry", null)
                         .WithOne()
                         .HasForeignKey("pyjump.Entities.SimilarSet", "OwnerFileEntryId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }
