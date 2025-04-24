@@ -15,7 +15,7 @@ namespace pyjump.Services
         {
             var settPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "appsettings.json");
             var stream = new FileStream(settPath, FileMode.Open, FileAccess.Read);
-            JsonNode json = JsonNode.Parse(stream);
+            JsonNode json = JsonNode.Parse(stream, documentOptions: new JsonDocumentOptions() { CommentHandling = JsonCommentHandling.Skip });
             return json;
         }
 
