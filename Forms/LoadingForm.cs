@@ -35,6 +35,21 @@ namespace pyjump.Forms
             }
         }
 
+        public void PrepareLoadingBar(string labelText, int max)
+        {
+            if (InvokeRequired)
+            {
+                Invoke(() => PrepareLoadingBar(labelText, max));
+            }
+            else
+            {
+                LabelText = labelText;
+                progressBar.Maximum = max;
+                progressBar.Value = 0;
+                labelProgress.Text = $"{LabelText}... 0%";
+            }
+        }
+
         public void SetLabel(string text)
         {
             if (InvokeRequired)
@@ -44,6 +59,20 @@ namespace pyjump.Forms
             else
             {
                 LabelText = text;
+                int percent = (int)((progressBar.Value / (double)progressBar.Maximum) * 100);
+                labelProgress.Text = $"{LabelText}... {percent}%";
+            }
+        }
+
+        public void IncrementProgress(int value = 1)
+        {
+            if (InvokeRequired)
+            {
+                Invoke(() => IncrementProgress(value));
+            }
+            else
+            {
+                progressBar.Value = Math.Min(progressBar.Maximum, Math.Max(progressBar.Minimum, progressBar.Value + value));
                 int percent = (int)((progressBar.Value / (double)progressBar.Maximum) * 100);
                 labelProgress.Text = $"{LabelText}... {percent}%";
             }

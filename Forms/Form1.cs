@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using pyjump.Forms;
 using pyjump.Infrastructure;
 using pyjump.Services;
@@ -28,13 +29,7 @@ namespace pyjump
                 _logForm.Log("Starting file scan...");
 
                 var loadingForm = InitProgressBar();
-                loadingForm.SetLabel("Scanning files");
-                using (var dbContext = new AppDbContext())
-                {
-                    var count = dbContext.Whitelist.Count();
-                    loadingForm.SetMax(count);
-                }
-
+ 
                 await Methods.ScanFiles(_logForm, loadingForm);
                 _logForm.Log("File scan completed.");
                 MessageBox.Show("File scan completed.");
@@ -88,6 +83,32 @@ namespace pyjump
                 }
 
                 MessageBox.Show("All whitelist entries last checked times have been reset.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Something went wrong: {ex.Message}");
+            }
+            finally
+            {
+                ClearEverything();
+            }
+        }
+
+        private async void btnBuildSheets_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                InitializeEverything();
+                _logForm.Log("Building sheets...");
+
+                var loadingForm = InitProgressBar();
+
+                await Methods.BuildSheets(_logForm, loadingForm);
+
+                _logForm.Log("Sheets built successfully.");
+                MessageBox.Show("Sheets built successfully.");
+
+                loadingForm.Close();
             }
             catch (Exception ex)
             {

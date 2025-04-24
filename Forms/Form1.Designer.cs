@@ -33,6 +33,7 @@
             btnScanWhitelist = new Button();
             btnEditFiles = new Button();
             btnResetWhitelistTimes = new Button();
+            btnBuildSheets = new Button();
             SuspendLayout();
             // 
             // btnScanFile
@@ -85,11 +86,22 @@
             btnResetWhitelistTimes.UseVisualStyleBackColor = true;
             btnResetWhitelistTimes.Click += btnResetWhitelistTimes_Click;
             // 
+            // btnBuildSheets
+            // 
+            btnBuildSheets.Location = new Point(439, 122);
+            btnBuildSheets.Name = "btnBuildSheets";
+            btnBuildSheets.Size = new Size(222, 87);
+            btnBuildSheets.TabIndex = 8;
+            btnBuildSheets.Text = "Build sheets";
+            btnBuildSheets.UseVisualStyleBackColor = true;
+            btnBuildSheets.Click += btnBuildSheets_Click;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
+            Controls.Add(btnBuildSheets);
             Controls.Add(btnResetWhitelistTimes);
             Controls.Add(btnEditFiles);
             Controls.Add(btnScanWhitelist);
@@ -107,5 +119,6 @@
         private Button btnScanWhitelist;
         private Button btnEditFiles;
         private Button btnResetWhitelistTimes;
+        private Button btnBuildSheets;
     }
 }

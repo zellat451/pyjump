@@ -17,6 +17,7 @@ namespace pyjump.Services
         public static Sheet SheetHolder_S { get; set; }
         public static Sheet SheetHolder_J_1 { get; set; }
         public static Sheet SheetHolder_S_1 { get; set; }
+        public static Sheet SheetHolder_O { get; set; }
 
         public static void Clear()
         {
@@ -27,6 +28,7 @@ namespace pyjump.Services
             SheetHolder_S = null;
             SheetHolder_J_1 = null;
             SheetHolder_S_1 = null;
+            SheetHolder_O = null;
         }
 
         public static void Initialize()
@@ -40,6 +42,7 @@ namespace pyjump.Services
             SheetHolder_S = EnsureSheetCreated(Statics.Sheet.SHEET_S);
             SheetHolder_J_1 = EnsureSheetCreated(Statics.Sheet.SHEET_J_1);
             SheetHolder_S_1 = EnsureSheetCreated(Statics.Sheet.SHEET_S_1);
+            SheetHolder_O = EnsureSheetCreated(Statics.Sheet.SHEET_O);
         }
 
         private static void InitializeServices()

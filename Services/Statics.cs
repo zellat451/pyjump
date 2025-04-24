@@ -11,6 +11,8 @@
             public const string SHEET_J_1 = "Jumps (Unfiltered)";
             public const string SHEET_S_1 = "Stories (Unfiltered)";
 
+            public const string SHEET_O = "Others";
+
             public const int SHEET_NAMECOL = 1;
             public const int SHEET_LOCATIONCOL = 2;
             public const int SHEET_CREATORCOL = 3;
