@@ -16,7 +16,7 @@ namespace pyjump.Services
 
             var scanner = new DriveScanner();
             var allWhitelistEntries = await scanner.GetAllFolderNamesRecursiveAsync(drives.Data.Select(x => x.Url).ToList(), logForm);
-            ConcurrentBag<WhitelistEntry> allWhitelistEntriesBag = [.. allWhitelistEntries]; 
+            ConcurrentBag<WhitelistEntry> allWhitelistEntriesBag = [.. allWhitelistEntries];
             #endregion
 
             // check existing whitelist entries
@@ -37,7 +37,7 @@ namespace pyjump.Services
                 var toAdd = allWhitelistEntries.Where(x => !existingEntries.Select(y => y.Id).Contains(x.Id)).ToList();
                 db.Whitelist.AddRange(toAdd);
                 logForm.Log($"Added {toAdd.Count} entries to the database.");
-                Debug.WriteLine($"Added {toAdd.Count} entries to the database."); 
+                Debug.WriteLine($"Added {toAdd.Count} entries to the database.");
                 #endregion
 
                 #region update existing whitelist entries
@@ -65,7 +65,7 @@ namespace pyjump.Services
                 await Task.WhenAll(tasks);
                 db.Whitelist.UpdateRange(toUpdate);
                 logForm.Log($"Updated {toUpdate.Count} entries in the database.");
-                Debug.WriteLine($"Updated {toUpdate.Count} entries in the database."); 
+                Debug.WriteLine($"Updated {toUpdate.Count} entries in the database.");
                 #endregion
 
                 // commit the changes to the database
@@ -81,7 +81,7 @@ namespace pyjump.Services
             using (var db = new AppDbContext())
             {
                 whitelistEntries = db.Whitelist.ToList();
-            } 
+            }
             #endregion
 
             // get all files from the whitelist entries
@@ -169,7 +169,7 @@ namespace pyjump.Services
                             logForm.Log($"Error updating whitelist entry: {e.Message}");
                             throw;
                         }
-                    } 
+                    }
                     #endregion
 
                     try
@@ -185,24 +185,28 @@ namespace pyjump.Services
             }
 
             // regroup the files under sets
+            List<FileEntry> allFiles;
             using (var db = new AppDbContext())
             {
-                var allFiles = db.Files.ToList();
+                allFiles = db.Files.ToList();
+            }
 
-                List<string> treatedIds = [];
-                foreach (var file in allFiles)
+            List<string> treatedIds = [];
+            foreach (var file in allFiles)
+            {
+                // 1. check if the file is already treated
+                if (treatedIds.Contains(file.Id)) { continue; }
+
+                // 2. find all files with the same name and owner (contains the current file)
+                var similarFiles = allFiles.Where(x => x.Name == file.Name && x.Owner == file.Owner).ToList();
+
+                // 3. create a new set for the similar files (OwnerFileEntryId is the file with the most recent 'LastModified' date)
+                var similarSet = new SimilarSet
                 {
-                    // 1. check if the file is already treated
-                    if (treatedIds.Contains(file.Id)) { continue; }
-
-                    // 2. find all files with the same name and owner (contains the current file)
-                    var similarFiles = allFiles.Where(x => x.Name == file.Name && x.Owner == file.Owner).ToList();
-
-                    // 3. create a new set for the similar files (OwnerFileEntryId is the file with the most recent 'LastModified' date)
-                    var similarSet = new SimilarSet
-                    {
-                        OwnerFileEntryId = similarFiles.OrderByDescending(x => x.LastModified).FirstOrDefault()?.Id
-                    };
+                    OwnerFileEntryId = similarFiles.OrderByDescending(x => x.LastModified).FirstOrDefault()?.Id
+                };
+                using (var db = new AppDbContext())
+                {
                     try
                     {
                         db.SimilarSets.Add(similarSet);
@@ -212,7 +216,19 @@ namespace pyjump.Services
                         logForm.Log($"Error adding similar set: {e.Message}");
                         throw;
                     }
-
+                    // 4. save the set to the database (this will generate the Id for the set)
+                    try
+                    {
+                        await db.SaveChangesAsync();
+                    }
+                    catch (Exception e)
+                    {
+                        logForm.Log($"Error saving changes to the database: {e.Message}");
+                        throw;
+                    }
+                }
+                using (var db = new AppDbContext())
+                {
                     // 4. add the similar files to the set
                     foreach (var similarFile in similarFiles)
                     {
@@ -232,17 +248,16 @@ namespace pyjump.Services
                         }
                         treatedIds.Add(similarFile.Id);
                     }
-                }
-
-                // 5. save the changes to the database
-                try
-                {
-                    await db.SaveChangesAsync();
-                }
-                catch (Exception e)
-                {
-                    logForm.Log($"Error saving changes to the database: {e.Message}");
-                    throw;
+                    // 5. save the changes to the database
+                    try
+                    {
+                        await db.SaveChangesAsync();
+                    }
+                    catch (Exception e)
+                    {
+                        logForm.Log($"Error saving changes to the database: {e.Message}");
+                        throw;
+                    }
                 }
             }
         }
