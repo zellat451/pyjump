@@ -31,15 +31,15 @@ namespace pyjump.Services
         private readonly ConcurrentBag<WhitelistEntry> _foundFolderNames;
         private readonly ConcurrentBag<string> _storiesKeywords;
 
-        private readonly ConcurrentBag<(string folderId, string resourceKey, string parentName)> _folderQueue;
+        private readonly ConcurrentBag<(string folderId, string resourceKey, string driveId, string parentName)> _folderQueue;
 
         public async Task<List<WhitelistEntry>> GetAllFolderNamesRecursiveAsync(List<string> folderUrls, LogForm logForm)
         {
             // find whitelist entries from maind drives
-            var rootFolderIds = folderUrls.Select(ExtractFolderIdFromUrl).Where(id => id != null).Distinct();
+            var rootFolderIds = folderUrls.Select(ExtractFolderInfosFromUrl).Where(inf => !string.IsNullOrEmpty(inf.folderId)).Distinct();
 
-            foreach (var id in folderUrls.Select(ExtractFolderIdFromUrl).Where(id => id != null))
-                _folderQueue.Add((id, string.Empty, string.Empty));
+            foreach (var inf in rootFolderIds)
+                _folderQueue.Add((inf.folderId, inf.resourceKey, inf.driveId, string.Empty));
 
 
             while (!_folderQueue.IsEmpty)
@@ -47,13 +47,13 @@ namespace pyjump.Services
                 var success = _folderQueue.TryTake(out var folder);
                 if (!success)
                     continue;
-                await TraverseFolderAsync(folder.folderId, folder.resourceKey, folder.parentName, logForm);
+                await TraverseFolderAsync(folder.folderId, folder.resourceKey, folder.driveId, folder.parentName, logForm);
             }
 
             return _foundFolderNames.DistinctBy(x => x.Id).ToList();
         }
 
-        private async Task TraverseFolderAsync(string folderId, string resourceKey, string parentName, LogForm logForm)
+        private async Task TraverseFolderAsync(string folderId, string resourceKey, string driveId, string parentName, LogForm logForm)
         {
             if (_visitedFolderIds.ContainsKey(folderId))
                 return;
@@ -65,7 +65,7 @@ namespace pyjump.Services
             {
                 var request = ScopedServices.DriveService.Files.Get(folderId);
                 request.SupportsAllDrives = true;
-                if(!string.IsNullOrEmpty(resourceKey))
+                if (!string.IsNullOrEmpty(resourceKey))
                     request.RequestParameters.Add("resourceKey", new Google.Apis.Discovery.Parameter
                     {
                         Name = "resourceKey",
@@ -74,11 +74,28 @@ namespace pyjump.Services
                         DefaultValue = resourceKey,
                         Pattern = null
                     });
+                if (!string.IsNullOrEmpty(driveId))
+                {
+                    request.RequestParameters.Add("driveId", new Google.Apis.Discovery.Parameter
+                    {
+                        Name = "driveId",
+                        IsRequired = false,
+                        ParameterType = "query",
+                        DefaultValue = driveId,
+                        Pattern = null
+                    });
+                }
                 folderMetadata = await request.ExecuteAsync();
             }
             catch (Google.GoogleApiException ex) when (ex.HttpStatusCode == HttpStatusCode.NotFound)
             {
-                logForm.Log($"⚠️ Folder {folderId} not found or inaccessible (404). Skipping.");
+                var url = BuildFolderUrl(folderId, resourceKey, driveId);
+
+                if (!string.IsNullOrEmpty(resourceKey))
+                    logForm.Log($"⚠️ Folder: {folderId}, ResourceKey: {resourceKey} not found or inaccessible (404). Skipping.");
+                else
+                    logForm.Log($"⚠️ Folder {folderId} not found or inaccessible (404). Skipping.");
+                logForm.Log($"🔗 Folder {folderId} URL: {url}");
             }
             catch (Google.GoogleApiException ex)
             {
@@ -101,9 +118,7 @@ namespace pyjump.Services
                 Name = parentName == string.Empty
                     ? folderMetadata.Name
                     : Path.Combine(parentName, folderMetadata.Name),
-                Url = string.IsNullOrEmpty(folderMetadata.ResourceKey)
-                    ? $"https://drive.google.com/drive/folders/{folderMetadata.Id}"
-                    : $"https://drive.google.com/drive/folders/{folderMetadata.Id}?resourcekey={Uri.EscapeDataString(folderMetadata.ResourceKey)}",
+                Url = BuildFolderUrl(folderMetadata.Id, folderMetadata.ResourceKey, folderMetadata.DriveId),
             };
             whitelistEntry.Type = (_storiesKeywords.Any(s => whitelistEntry.Name.Contains(s, StringComparison.OrdinalIgnoreCase)))
                 ? FolderType.Story
@@ -139,13 +154,13 @@ namespace pyjump.Services
                 {
                     if (file.MimeType == GoogleMimeTypes.Folder)
                     {
-                        _folderQueue.Add((file.Id, file.ResourceKey, whitelistEntry.Name));
+                        _folderQueue.Add((file.Id, file.ResourceKey, file.DriveId, whitelistEntry.Name));
                     }
                     else if (file.MimeType == GoogleMimeTypes.Shortcut &&
                              file.ShortcutDetails?.TargetMimeType == GoogleMimeTypes.Folder &&
                              file.ShortcutDetails?.TargetId != null)
                     {
-                        _folderQueue.Add((file.ShortcutDetails.TargetId, file.ShortcutDetails.TargetResourceKey, whitelistEntry.Name));
+                        _folderQueue.Add((file.ShortcutDetails.TargetId, file.ShortcutDetails.TargetResourceKey, file.DriveId, whitelistEntry.Name));
                     }
                 }
 
@@ -155,11 +170,94 @@ namespace pyjump.Services
 
         }
 
-        private string ExtractFolderIdFromUrl(string url)
+        private (string folderId, string resourceKey, string driveId) ExtractFolderInfosFromUrl(string url)
         {
-            // Matches /folders/<ID> or open?id=<ID>
-            var match = Regex.Match(url, @"(?:folders/|id=)([a-zA-Z0-9_-]+)");
-            return match.Success ? match.Groups[1].Value : null;
+            // Initialize default values
+            string folderId = null;
+            string resourceKey = null;
+            string driveId = null;
+
+            // Matches for folderId, resourceKey, and driveId in the URL
+            var folderMatch = Regex.Match(url, @"(?:folders/|id=)([a-zA-Z0-9_-]+)");
+            if (folderMatch.Success)
+            {
+                folderId = folderMatch.Groups[1].Value;
+            }
+
+            // Check for resourceKey in the URL
+            var resourceKeyMatch = Regex.Match(url, @"(?:resourcekey=)([a-zA-Z0-9_-]+)");
+            if (resourceKeyMatch.Success)
+            {
+                resourceKey = resourceKeyMatch.Groups[1].Value;
+            }
+
+            // Check for driveId (tid) in the URL (Shared Drives)
+            var driveIdMatch = Regex.Match(url, @"(?:tid=)([a-zA-Z0-9_-]+)");
+            if (driveIdMatch.Success)
+            {
+                driveId = driveIdMatch.Groups[1].Value;
+            }
+
+            // Return tuple containing folderId, resourceKey, and driveId
+            return (folderId, resourceKey, driveId);
+        }
+
+        private string BuildFolderUrl(string folderId, string resourceKey, string tid)
+        {
+            // Construct the base URL for the folder
+            var url = $"https://drive.google.com/drive/folders/{folderId}";
+
+            // If a resourceKey is provided, add it to the URL
+            if (!string.IsNullOrEmpty(resourceKey))
+            {
+                url += $"?resourcekey={Uri.EscapeDataString(resourceKey)}";
+            }
+
+            // If a tid (Shared Drive ID) is provided, append it to the URL as a query parameter
+            if (!string.IsNullOrEmpty(tid))
+            {
+                // If there's already a query parameter (resourcekey), append the tid as another parameter
+                if (url.Contains("?"))
+                {
+                    url += $"&tid={Uri.EscapeDataString(tid)}";
+                }
+                else
+                {
+                    // Otherwise, add tid as the first query parameter
+                    url += $"?tid={Uri.EscapeDataString(tid)}";
+                }
+            }
+
+            return url;
+        }
+
+        private string BuildFileUrl(string fileId, string resourceKey, string tid)
+        {
+            // Construct the base URL for the file
+            var url = $"https://drive.google.com/file/d/{fileId}/view";
+
+            // If a resourceKey is provided, add it to the URL
+            if (!string.IsNullOrEmpty(resourceKey))
+            {
+                url += $"?resourcekey={Uri.EscapeDataString(resourceKey)}";
+            }
+
+            // If a tid (Shared Drive ID) is provided, append it to the URL as a query parameter
+            if (!string.IsNullOrEmpty(tid))
+            {
+                // If there's already a query parameter (resourcekey), append the tid as another parameter
+                if (url.Contains("?"))
+                {
+                    url += $"&tid={Uri.EscapeDataString(tid)}";
+                }
+                else
+                {
+                    // Otherwise, add tid as the first query parameter
+                    url += $"?tid={Uri.EscapeDataString(tid)}";
+                }
+            }
+
+            return url;
         }
 
         public async Task<List<FileEntry>> GetAllFilesInWhitelistAsync(WhitelistEntry whitelist, LogForm logForm)
@@ -233,11 +331,28 @@ namespace pyjump.Services
                                     DefaultValue = file.ShortcutDetails?.TargetResourceKey,
                                     Pattern = null
                                 });
+                            if (!string.IsNullOrEmpty(file.DriveId))
+                            {
+                                request.RequestParameters.Add("driveId", new Google.Apis.Discovery.Parameter
+                                {
+                                    Name = "driveId",
+                                    IsRequired = false,
+                                    ParameterType = "query",
+                                    DefaultValue = file.DriveId,
+                                    Pattern = null
+                                });
+                            }
                             actualFile = await request.ExecuteAsync();
                         }
                         catch (Google.GoogleApiException ex) when (ex.HttpStatusCode == HttpStatusCode.NotFound)
                         {
-                            logForm.Log($"⚠️ Shortcut target {targetId} not found or inaccessible (404). Skipping.");
+                            var url = BuildFileUrl(targetId, file.ShortcutDetails?.TargetResourceKey, file.DriveId);
+
+                            if (!string.IsNullOrEmpty(file.ShortcutDetails?.TargetResourceKey))
+                                logForm.Log($"⚠️ Shortcut target {targetId}, ResourceKey: {file.ShortcutDetails?.TargetResourceKey} not found or inaccessible (404). Skipping.");
+                            else
+                                logForm.Log($"⚠️ Shortcut target {targetId} not found or inaccessible (404). Skipping.");
+                            logForm.Log($"🔗 Shortcut {targetId} URL: {url}");
                             continue;
                         }
                         catch (Exception ex)
@@ -251,9 +366,9 @@ namespace pyjump.Services
                     }
 
                     var modifiedTime = (actualFile.ModifiedTimeDateTimeOffset ?? actualFile.CreatedTimeDateTimeOffset)?.UtcDateTime;
-                    if(modifiedTime == null)
+                    if (modifiedTime == null)
                     {
-                        if(!string.IsNullOrEmpty(actualFile.ModifiedTimeRaw) && actualFile.ModifiedTimeRaw != "1970-01-01T00:00:00Z")
+                        if (!string.IsNullOrEmpty(actualFile.ModifiedTimeRaw) && actualFile.ModifiedTimeRaw != "1970-01-01T00:00:00Z")
                             modifiedTime = DateTime.Parse(actualFile.ModifiedTimeRaw).ToUniversalTime();
                         else if (!string.IsNullOrEmpty(actualFile.CreatedTimeRaw) && actualFile.CreatedTimeRaw != "1970-01-01T00:00:00Z")
                             modifiedTime = DateTime.Parse(actualFile.CreatedTimeRaw).ToUniversalTime();
@@ -270,9 +385,7 @@ namespace pyjump.Services
                     {
                         Id = actualFile.Id,
                         ResourceKey = actualFile.ResourceKey ?? string.Empty,
-                        Url = string.IsNullOrEmpty(actualFile.ResourceKey)
-                            ? $"https://drive.google.com/file/d/{actualFile.Id}/view"
-                            : $"https://drive.google.com/file/d/{actualFile.Id}/view?resourcekey={Uri.EscapeDataString(actualFile.ResourceKey)}",
+                        Url = BuildFileUrl(actualFile.Id, actualFile.ResourceKey, actualFile.DriveId),
                         Name = actualFile.Name,
                         LastModified = modifiedTime ?? DateTime.MinValue,
                         Owner = actualFile.Owners?.FirstOrDefault()?.DisplayName ?? "Unknown",
