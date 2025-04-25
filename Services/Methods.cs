@@ -696,5 +696,15 @@ namespace pyjump.Services
                 MessageBox.Show($"Error opening sheet: {e}");
             }
         }
+
+        public static void ClearAllData()
+        {
+            using (var db = new AppDbContext())
+            {
+                db.Whitelist.RemoveRange(db.Whitelist);
+                db.Files.RemoveRange(db.Files);
+                db.SaveChanges();
+            }
+        }
     }
 }

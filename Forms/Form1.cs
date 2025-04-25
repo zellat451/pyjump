@@ -251,5 +251,27 @@ namespace pyjump
                 ClearEverything();
             }
         }
+
+        private void btnClearAll_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                InitializeEverything();
+                _logForm.Log("Clearing all data...");
+
+                Methods.ClearAllData();
+
+                _logForm.Log("All data cleared successfully.");
+                MessageBox.Show("All data cleared successfully.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Something went wrong: {ex}");
+            }
+            finally
+            {
+                ClearEverything();
+            }
+        }
     }
 }

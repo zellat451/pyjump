@@ -37,6 +37,7 @@
             btnGoToSheet = new Button();
             btnFren = new Button();
             btnForceMatch = new Button();
+            btnClearAll = new Button();
             SuspendLayout();
             // 
             // btnScanFile
@@ -129,11 +130,22 @@
             btnForceMatch.UseVisualStyleBackColor = true;
             btnForceMatch.Click += btnForceMatch_Click;
             // 
+            // btnClearAll
+            // 
+            btnClearAll.Location = new Point(94, 405);
+            btnClearAll.Name = "btnClearAll";
+            btnClearAll.Size = new Size(106, 33);
+            btnClearAll.TabIndex = 12;
+            btnClearAll.Text = "Clear all";
+            btnClearAll.UseVisualStyleBackColor = true;
+            btnClearAll.Click += btnClearAll_Click;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
+            Controls.Add(btnClearAll);
             Controls.Add(btnForceMatch);
             Controls.Add(btnFren);
             Controls.Add(btnGoToSheet);
@@ -159,5 +171,6 @@
         private Button btnGoToSheet;
         private Button btnFren;
         private Button btnForceMatch;
+        private Button btnClearAll;
     }
 }
