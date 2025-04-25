@@ -1,6 +1,5 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Drawing.Interop;
 using Google.Apis.Sheets.v4.Data;
 using pyjump.Entities;
 using pyjump.Forms;
@@ -111,7 +110,7 @@ namespace pyjump.Services
                     }
                     catch (Exception e)
                     {
-                        logForm.Log($"Error adding file entries: {e.Message}");
+                        logForm.Log($"Error adding file entries: {e}");
                         throw;
                     }
                     logForm.Log($"Added {toAdd.Count} file entries.");
@@ -153,7 +152,7 @@ namespace pyjump.Services
                     }
                     catch (Exception e)
                     {
-                        logForm.Log($"Error updating file entries: {e.Message}");
+                        logForm.Log($"Error updating file entries: {e}");
                         throw;
                     }
                     logForm.Log($"Updated {toUpdate.Count} file entries.");
@@ -171,7 +170,7 @@ namespace pyjump.Services
                         }
                         catch (Exception e)
                         {
-                            logForm.Log($"Error updating whitelist entry: {e.Message}");
+                            logForm.Log($"Error updating whitelist entry: {e}");
                             throw;
                         }
                     }
@@ -183,7 +182,7 @@ namespace pyjump.Services
                     }
                     catch (Exception e)
                     {
-                        logForm.Log($"Error saving changes to the database: {e.Message}");
+                        logForm.Log($"Error saving changes to the database: {e}");
                         throw;
                     }
                 }
@@ -201,7 +200,7 @@ namespace pyjump.Services
 
             await TreatSetsForFiles(allFiles, logForm, loadingForm);
         }
-    
+
         private static async Task TreatSetsForFiles(List<FileEntry> fileEntries, LogForm logForm, LoadingForm loadingForm)
         {
             try
@@ -251,7 +250,7 @@ namespace pyjump.Services
                             }
                             catch (Exception e)
                             {
-                                logForm.Log($"Error adding similar set: {e.Message}");
+                                logForm.Log($"Error adding similar set: {e}");
                                 throw;
                             }
                             // 3.a.2. save the set to the database (this will generate the Id for the set)
@@ -261,7 +260,7 @@ namespace pyjump.Services
                             }
                             catch (Exception e)
                             {
-                                logForm.Log($"Error saving changes to the database: {e.Message}");
+                                logForm.Log($"Error saving changes to the database: {e}");
                                 throw;
                             }
                         }
@@ -281,7 +280,7 @@ namespace pyjump.Services
                                 }
                                 catch (Exception e)
                                 {
-                                    logForm.Log($"Error adding file to similar set: {e.Message}");
+                                    logForm.Log($"Error adding file to similar set: {e}");
                                     throw;
                                 }
                                 treatedIds.Add(similarFile.Id);
@@ -293,7 +292,7 @@ namespace pyjump.Services
                             }
                             catch (Exception e)
                             {
-                                logForm.Log($"Error saving changes to the database: {e.Message}");
+                                logForm.Log($"Error saving changes to the database: {e}");
                                 throw;
                             }
                         }
@@ -322,7 +321,7 @@ namespace pyjump.Services
                                 }
                                 catch (Exception e)
                                 {
-                                    logForm.Log($"Error adding file to similar set: {e.Message}");
+                                    logForm.Log($"Error adding file to similar set: {e}");
                                     throw;
                                 }
                                 treatedIds.Add(similarFile.Id);
@@ -335,7 +334,7 @@ namespace pyjump.Services
                             }
                             catch (Exception e)
                             {
-                                logForm.Log($"Error saving changes to the database: {e.Message}");
+                                logForm.Log($"Error saving changes to the database: {e}");
                                 throw;
                             }
                         }
@@ -349,34 +348,36 @@ namespace pyjump.Services
                                 set.OwnerFileEntryId = similarFiles.OrderByDescending(x => x.LastModified).FirstOrDefault()?.Id;
                                 try
                                 {
-                                    db.SimilarSets.Update(set);
+                                    if(!db.SimilarSets.Contains(set))
+                                        db.SimilarSets.Update(set);
                                 }
                                 catch (Exception e)
                                 {
-                                    logForm.Log($"Error updating similar set: {e.Message}");
+                                    logForm.Log($"Error updating similar set: {e}");
                                     throw;
                                 }
-                            }
 
-                            // 3.b.5. save the changes to the database
-                            try
-                            {
-                                await db.SaveChangesAsync();
-                            }
-                            catch (Exception e)
-                            {
-                                logForm.Log($"Error saving changes to the database: {e.Message}");
-                                throw;
+                                // 3.b.5. save the changes to the database
+                                try
+                                {
+                                    await db.SaveChangesAsync();
+                                }
+                                catch (Exception e)
+                                {
+                                    logForm.Log($"Error saving changes to the database: {e}");
+                                    throw;
+                                }
                             }
                         }
                     }
 
+                    logForm.Log($"✅ Set created/updated for {similarFiles.Count} files.");
                     loadingForm.IncrementProgress();
                 }
             }
             catch (Exception e)
             {
-                logForm.Log($"Error treating sets for files: {e.Message}");
+                logForm.Log($"Error treating sets for files: {e}");
                 throw;
             }
         }
@@ -483,7 +484,7 @@ namespace pyjump.Services
             }
             catch (Exception e)
             {
-                logForm.Log($"Error building sheets: {e.Message}");
+                logForm.Log($"Error building sheets: {e}");
                 throw;
             }
         }
