@@ -11,8 +11,8 @@ using pyjump.Infrastructure;
 namespace pyjump.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250424171504_initial_migration")]
-    partial class initial_migration
+    [Migration("20250425175118_init_migration")]
+    partial class init_migration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
