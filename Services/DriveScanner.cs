@@ -382,6 +382,12 @@ namespace pyjump.Services
                         }
                     }
 
+                    var owner = actualFile.Owners?.FirstOrDefault()?.DisplayName;
+                    if (owner == null && file.MimeType == GoogleMimeTypes.Shortcut)
+                    {
+                        owner = file.Owners?.FirstOrDefault()?.DisplayName;
+                    }
+
                     var fileEntry = new FileEntry
                     {
                         Id = actualFile.Id,
@@ -389,7 +395,7 @@ namespace pyjump.Services
                         Url = BuildFileUrl(actualFile.Id, actualFile.ResourceKey, actualFile.DriveId),
                         Name = actualFile.Name,
                         LastModified = modifiedTime ?? DateTime.MinValue,
-                        Owner = actualFile.Owners?.FirstOrDefault()?.DisplayName ?? "Unknown",
+                        Owner = owner ?? "Unknown",
                         FolderId = whitelist.Id,
                     };
 
