@@ -1,4 +1,3 @@
-using System.Threading.Tasks;
 using pyjump.Forms;
 using pyjump.Infrastructure;
 using pyjump.Services;
@@ -183,6 +182,8 @@ namespace pyjump
 
         private async void btnFren_Click(object sender, EventArgs e)
         {
+            // Resetting all scoped services after a single mthod just in case.
+            // I think it crashed the database once, I am not finding out if it was a freak accident or not
             LoadingForm loadingForm = null;
             try
             {
@@ -191,14 +192,22 @@ namespace pyjump
 
                 // 1. scan whitelist
                 await Methods.ScanWhitelist(_logForm);
-
-                loadingForm = InitProgressBar();
+                ClearEverything();
+                InitializeEverything();
 
                 // 2. scan files
+                loadingForm = InitProgressBar();
                 await Methods.ScanFiles(_logForm, loadingForm);
+                loadingForm?.Close();
+                ClearEverything();
+                InitializeEverything();
 
                 // 3. build sheets
+                loadingForm = InitProgressBar();
                 await Methods.BuildSheets(_logForm, loadingForm);
+                loadingForm?.Close();
+                ClearEverything();
+                InitializeEverything();
 
                 // 4. go to spreadsheet
                 Methods.GoToSheet();

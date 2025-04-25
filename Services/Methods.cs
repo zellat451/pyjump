@@ -43,8 +43,8 @@ namespace pyjump.Services
 
                 #region update existing whitelist entries
                 // 3. entries existing in both lists > update the entries in the database if the name | url | resource key is different
-                var toUpdate = new ConcurrentBag<WhitelistEntry>();
-                var tasks = existingEntries.Select(entry =>
+                var toUpdate = new List<WhitelistEntry>();
+                foreach (var entry in existingEntries)
                 {
                     var newEntry = allWhitelistEntries.FirstOrDefault(x => x.Id == entry.Id);
                     if (newEntry != null)
@@ -60,9 +60,7 @@ namespace pyjump.Services
                             toUpdate.Add(entry);
                         }
                     }
-                    return Task.CompletedTask;
-                });
-                await Task.WhenAll(tasks);
+                }
                 db.Whitelist.UpdateRange(toUpdate);
                 logForm.Log($"Updated {toUpdate.Count} entries in the database.");
                 Debug.WriteLine($"Updated {toUpdate.Count} entries in the database.");
@@ -90,19 +88,17 @@ namespace pyjump.Services
             var scanner = new DriveScanner();
             foreach (var w in whitelistEntries)
             {
+                // get all files for one entry
+                var scannedFileEntries = await scanner.GetAllFilesInWhitelistAsync(w, logForm);
+
+                // check existing file entries
                 using (var db = new AppDbContext())
                 {
-                    #region get all files for one entry
-                    var scannedFileEntries = await scanner.GetAllFilesInWhitelistAsync(w, logForm);
-                    ConcurrentBag<FileEntry> scannedFileEntriesBag = [.. scannedFileEntries];
-
-                    // check existing file entries
                     var currentFileEntries = db.Files.ToList();
-                    #endregion
 
                     #region add new file entries
                     // 1. entries existing in the new list but not in the database > add the entries to the database
-                    var toAdd = scannedFileEntriesBag.Where(x => !currentFileEntries.Select(y => y.Id).Contains(x.Id)).ToList();
+                    var toAdd = scannedFileEntries.Where(x => !currentFileEntries.Select(y => y.Id).Contains(x.Id)).ToList();
                     try
                     {
                         db.Files.AddRange(toAdd);
@@ -119,8 +115,8 @@ namespace pyjump.Services
                     #region update existing file entries
                     // 2. entries existing in both lists > update the entries in the database if
                     // the name | url | resource key | last modified date | owner | folder id is different
-                    var toUpdate = new ConcurrentBag<FileEntry>();
-                    var tasks = currentFileEntries.Select(entry =>
+                    var toUpdate = new List<FileEntry>();
+                    foreach (var entry in currentFileEntries)
                     {
                         var newEntry = scannedFileEntries.FirstOrDefault(x => x.Id == entry.Id);
                         if (newEntry != null)
@@ -142,9 +138,7 @@ namespace pyjump.Services
                                 toUpdate.Add(entry);
                             }
                         }
-                        return Task.CompletedTask;
-                    });
-                    await Task.WhenAll(tasks);
+                    }
                     try
                     {
                         db.Files.UpdateRange(toUpdate);
@@ -347,7 +341,7 @@ namespace pyjump.Services
                                 set.OwnerFileEntryId = similarFiles.OrderByDescending(x => x.LastModified).FirstOrDefault()?.Id;
                                 try
                                 {
-                                    if(!db.SimilarSets.Contains(set))
+                                    if (!db.SimilarSets.Contains(set))
                                         db.SimilarSets.Update(set);
                                 }
                                 catch (Exception e)
@@ -487,7 +481,7 @@ namespace pyjump.Services
                 throw;
             }
         }
-        
+
         private static string EscapeForFormula(string input) => input?.Replace("\"", "\"\"") ?? string.Empty;
 
         private static async Task UploadToSheetAsync(List<FileEntry> entries, string sheetName, List<WhitelistEntry> whitelist, LogForm logForm, LoadingForm loadingForm)
