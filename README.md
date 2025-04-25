@@ -97,7 +97,6 @@ Do **not** use these keywords in the names of your `mainDrives`.
 4. You can use the button `Edit Whitelist` to see what's registered in the whitelist. 
    	- You can also add folders manually, but be careful with that. They will be deleted the next time you scan the whitelist.
 	- You can also remove folders manually, but be careful with that. They will be added the next time you scan the whitelist.
-		- Also, deleting a Whitelist entry will delete all associated files from the database.
    	- Folders have many information. What interests you is `Type`. It can take many values:
 		- `j`: Jump. This is the default type. It means that the folder is a jump folder. All files found in this folder will be uploaded to the `Jumps` list.
 		- `s`: Story. Thsi is the default type if the folder's `Name` contains the keywords defined in appsettings.json. This means that the folder is a story folder. All files found in this folder will be uploaded to the `Stories` list.
@@ -105,16 +104,16 @@ Do **not** use these keywords in the names of your `mainDrives`.
 		- `-`: Blacklisted. This means that the folder is blacklisted. All files found in this folder will be ignored and not uploaded to any list. In fact, the folder will be ignored during the file crawling.
 5. Click the button `scan Files` to start scanning the produced `Whitelist` for their files. This may take some time.
 6. You can similarly use the button `Edit Files` to see what's registered in the files list. 
-	- You can also add files manually, but be careful with that. They will be deleted the next time you scan the files. And they must manually be linked to a folderId, so it may not be worth it.
+	- You can also add files manually.
 	- You can also remove files manually, but be careful with that.
 		- If the files you removed were in the past, then the scanning will not find them again.
 		- You can use the button `Reset Whitelist Times` to force a complete scan once again.
-	- Files have many information. What interests you is that every file is linked to a whitelist entry and shares its `Type` (which you cannot see on that edition table). It can take many values:
+	- Files have many information. What interests you is that every file is linked to a whitelist entry and shares its `Type` by default. It can take many values:
 		- `j`: Jump. It means that the file is a jump file. It will be uploaded to the `Jumps` list.
 		- `s`: Story. It means that the file is a story file. It will be uploaded to the `Stories` list.
 		- `o`: Other. It means that the file is a file of another type. It will be uploaded to the `Others` list.
 		- `-`: Blacklisted. This means that the file is blacklisted. It will be ignored and not uploaded to any list.
-		- By default, a file will use the same type as the whitelist entry it linked to.
+		- By default, a file will use the same type as the whitelist entry it linked to. You can edit it manually, it will not be reset by future scans.
 7. Click the button `Build Sheets` to start uploading the files to the Google Sheets document. This is actually pretty fast.
 	- The application will reupload the entire content of the database every time.
 	- Blacklisted files will be ignored.

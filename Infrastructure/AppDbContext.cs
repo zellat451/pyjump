@@ -49,13 +49,21 @@ namespace pyjump.Infrastructure
                 .Property(e => e.Owner)
                 .HasDefaultValue(string.Empty);
             modelBuilder.Entity<FileEntry>()
-                .Property(e => e.FolderId)
-                .IsRequired();
+                .Property(e => e.FolderId);
             modelBuilder.Entity<FileEntry>()
                 .HasOne<WhitelistEntry>()
                 .WithMany()
                 .HasForeignKey(e => e.FolderId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<FileEntry>()
+                .Property(e => e.FolderName)
+                .IsRequired();
+            modelBuilder.Entity<FileEntry>()
+                .Property(e => e.FolderUrl)
+                .IsRequired();
+            modelBuilder.Entity<FileEntry>()
+                .Property(e => e.Type)
+                .IsRequired();
 
             modelBuilder.Entity<SimilarSet>()
                 .HasKey(e => e.Id);

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace pyjump.Migrations
 {
     /// <inheritdoc />
-    public partial class init_migration : Migration
+    public partial class File_folderNotRequired : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -37,7 +37,10 @@ namespace pyjump.Migrations
                     Name = table.Column<string>(type: "TEXT", nullable: false),
                     LastModified = table.Column<DateTime>(type: "TEXT", nullable: true),
                     Owner = table.Column<string>(type: "TEXT", nullable: true, defaultValue: ""),
-                    FolderId = table.Column<string>(type: "TEXT", nullable: false)
+                    FolderId = table.Column<string>(type: "TEXT", nullable: true),
+                    FolderName = table.Column<string>(type: "TEXT", nullable: false),
+                    FolderUrl = table.Column<string>(type: "TEXT", nullable: false),
+                    Type = table.Column<string>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -47,7 +50,7 @@ namespace pyjump.Migrations
                         column: x => x.FolderId,
                         principalTable: "Whitelist",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.SetNull);
                 });
 
             migrationBuilder.CreateTable(

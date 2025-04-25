@@ -9,6 +9,9 @@
         public DateTime? LastModified { get; set; }
         public string Owner { get; set; }
         public string FolderId { get; set; }
+        public string FolderName { get; set; }
+        public string FolderUrl { get; set; }
+        public string Type { get; set; }
     }
 
 }

@@ -397,6 +397,9 @@ namespace pyjump.Services
                         LastModified = modifiedTime ?? DateTime.MinValue,
                         Owner = owner ?? "Unknown",
                         FolderId = whitelist.Id,
+                        FolderName = whitelist.Name,
+                        FolderUrl = whitelist.Url,
+                        Type = whitelist.Type
                     };
 
                     files.Add(fileEntry);

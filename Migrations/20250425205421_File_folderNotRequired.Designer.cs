@@ -11,8 +11,8 @@ using pyjump.Infrastructure;
 namespace pyjump.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250425175118_init_migration")]
-    partial class init_migration
+    [Migration("20250425205421_File_folderNotRequired")]
+    partial class File_folderNotRequired
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -26,6 +26,13 @@ namespace pyjump.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("FolderId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FolderName")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FolderUrl")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
@@ -45,6 +52,10 @@ namespace pyjump.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT")
                         .HasDefaultValue("");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Url")
                         .IsRequired()
@@ -126,8 +137,7 @@ namespace pyjump.Migrations
                     b.HasOne("pyjump.Entities.WhitelistEntry", null)
                         .WithMany()
                         .HasForeignKey("FolderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.SetNull);
                 });
 
             modelBuilder.Entity("pyjump.Entities.LNKSimilarSetFile", b =>

@@ -113,8 +113,8 @@ namespace pyjump.Services
                     #endregion
 
                     #region update existing file entries
-                    // 2. entries existing in both lists > update the entries in the database if
-                    // the name | url | resource key | last modified date | owner | folder id is different
+                    // 2. entries existing in both lists > update the entries in the database if info is different
+                    // we don't check the Type because it might have been changed manually
                     var toUpdate = new List<FileEntry>();
                     foreach (var entry in currentFileEntries)
                     {
@@ -126,7 +126,9 @@ namespace pyjump.Services
                                 || entry.ResourceKey != newEntry.ResourceKey
                                 || entry.LastModified != newEntry.LastModified
                                 || entry.Owner != newEntry.Owner
-                                || entry.FolderId != newEntry.FolderId)
+                                || entry.FolderId != newEntry.FolderId
+                                || entry.FolderName != newEntry.FolderName
+                                || entry.FolderUrl != newEntry.FolderUrl)
                             {
                                 entry.Name = newEntry.Name;
                                 entry.Url = newEntry.Url;
@@ -134,6 +136,8 @@ namespace pyjump.Services
                                 entry.LastModified = newEntry.LastModified;
                                 entry.Owner = newEntry.Owner;
                                 entry.FolderId = newEntry.FolderId;
+                                entry.FolderName = newEntry.FolderName;
+                                entry.FolderUrl = newEntry.FolderUrl;
 
                                 toUpdate.Add(entry);
                             }
@@ -381,16 +385,11 @@ namespace pyjump.Services
             {
                 loadingForm.PrepareLoadingBar("Building sheets - Initialization", 2);
 
-                // 0. initialize by getting all files & whitelist entries from the database
+                // 0. initialize by getting all file entries from the database
                 List<FileEntry> allFiles;
                 using (var db = new AppDbContext())
                 {
                     allFiles = db.Files.ToList();
-                }
-                List<WhitelistEntry> allWhitelistEntries;
-                using (var db = new AppDbContext())
-                {
-                    allWhitelistEntries = db.Whitelist.ToList();
                 }
 
                 loadingForm.IncrementProgress();
@@ -430,50 +429,47 @@ namespace pyjump.Services
                 // we want 5 sheets: Jumps, Stories, Others, Jumps (Unfiltered) & Stories (Unfiltered)
                 // order them by descending date modified
 
-                // Create a lookup from folder ID to whitelist entry type
-                var folderTypeLookup = allWhitelistEntries.ToDictionary(w => w.Id, w => w.Type);
-
-                // Filter and group files by folder type
+                // Filter and group files by type
                 var dataSheetJump = ownerFileEntries
-                    .Where(x => folderTypeLookup.TryGetValue(x.FolderId, out var type) && type == Statics.FolderType.Jump)
+                    .Where(x => x.Type == Statics.FolderType.Jump)
                     .OrderByDescending(x => x.LastModified)
                     .ToList();
 
                 var dataSheetStory = ownerFileEntries
-                    .Where(x => folderTypeLookup.TryGetValue(x.FolderId, out var type) && type == Statics.FolderType.Story)
+                    .Where(x => x.Type == Statics.FolderType.Story)
                     .OrderByDescending(x => x.LastModified)
                     .ToList();
 
                 var dataSheetOther = allFiles
-                    .Where(x => folderTypeLookup.TryGetValue(x.FolderId, out var type) && type == Statics.FolderType.Other)
+                    .Where(x => x.Type == Statics.FolderType.Other)
                     .OrderByDescending(x => x.LastModified)
                     .ToList();
 
                 var dataSheetJumpUnfiltered = allFiles
-                    .Where(x => folderTypeLookup.TryGetValue(x.FolderId, out var type) && type == Statics.FolderType.Jump)
+                    .Where(x => x.Type == Statics.FolderType.Jump)
                     .OrderByDescending(x => x.LastModified)
                     .ToList();
 
                 var dataSheetStoryUnfiltered = allFiles
-                    .Where(x => folderTypeLookup.TryGetValue(x.FolderId, out var type) && type == Statics.FolderType.Story)
+                    .Where(x => x.Type == Statics.FolderType.Story)
                     .OrderByDescending(x => x.LastModified)
                     .ToList();
 
                 // 5. upload the data to the sheets
                 loadingForm.PrepareLoadingBar("Building Jumps sheet", dataSheetJump.Count);
-                await UploadToSheetAsync(dataSheetJump, Statics.Sheet.SHEET_J, allWhitelistEntries, logForm, loadingForm);
+                await UploadToSheetAsync(dataSheetJump, Statics.Sheet.SHEET_J, logForm, loadingForm);
 
                 loadingForm.PrepareLoadingBar("Building Stories sheet", dataSheetStory.Count);
-                await UploadToSheetAsync(dataSheetStory, Statics.Sheet.SHEET_S, allWhitelistEntries, logForm, loadingForm);
+                await UploadToSheetAsync(dataSheetStory, Statics.Sheet.SHEET_S, logForm, loadingForm);
 
                 loadingForm.PrepareLoadingBar("Building Others sheet", dataSheetOther.Count);
-                await UploadToSheetAsync(dataSheetOther, Statics.Sheet.SHEET_O, allWhitelistEntries, logForm, loadingForm);
+                await UploadToSheetAsync(dataSheetOther, Statics.Sheet.SHEET_O, logForm, loadingForm);
 
                 loadingForm.PrepareLoadingBar("Building Jumps (Unfiltered) sheet", dataSheetJumpUnfiltered.Count);
-                await UploadToSheetAsync(dataSheetJumpUnfiltered, Statics.Sheet.SHEET_J_1, allWhitelistEntries, logForm, loadingForm);
+                await UploadToSheetAsync(dataSheetJumpUnfiltered, Statics.Sheet.SHEET_J_1, logForm, loadingForm);
 
                 loadingForm.PrepareLoadingBar("Building Stories (Unfiltered) sheet", dataSheetStoryUnfiltered.Count);
-                await UploadToSheetAsync(dataSheetStoryUnfiltered, Statics.Sheet.SHEET_S_1, allWhitelistEntries, logForm, loadingForm);
+                await UploadToSheetAsync(dataSheetStoryUnfiltered, Statics.Sheet.SHEET_S_1, logForm, loadingForm);
             }
             catch (Exception e)
             {
@@ -484,7 +480,7 @@ namespace pyjump.Services
 
         private static string EscapeForFormula(string input) => input?.Replace("\"", "\"\"") ?? string.Empty;
 
-        private static async Task UploadToSheetAsync(List<FileEntry> entries, string sheetName, List<WhitelistEntry> whitelist, LogForm logForm, LoadingForm loadingForm)
+        private static async Task UploadToSheetAsync(List<FileEntry> entries, string sheetName, LogForm logForm, LoadingForm loadingForm)
         {
             if (entries.Count == 0)
             {
@@ -558,9 +554,8 @@ namespace pyjump.Services
             var cellData = new List<RowData>();
             foreach (var entry in entries)
             {
-                var whitelistEntry = whitelist.FirstOrDefault(w => w.Id == entry.FolderId);
-                string locationName = whitelistEntry?.Name ?? "Unknown";
-                string locationUrl = whitelistEntry?.Url ?? "";
+                string locationName = entry?.FolderName ?? "Unknown";
+                string locationUrl = entry?.FolderUrl ?? "";
                 string escapedEntryName = EscapeForFormula(entry.Name);
                 string escapedLocationName = EscapeForFormula(locationName);
 
