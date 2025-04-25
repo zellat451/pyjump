@@ -83,6 +83,8 @@ Do **not** use these keywords in the names of your `mainDrives`.
 }
 ```
 
+---
+
 ## How to use
 1. Run the application
 2. Connect to your Google account (if not already done)
@@ -104,7 +106,7 @@ Do **not** use these keywords in the names of your `mainDrives`.
 	- You can also remove files manually, but be careful with that.
 		- If the files you removed were in the past, then the scanning will not find them again.
 		- You can use the button `Reset Whitelist Times` to force a complete scan once again.
-	- Files have many information. What interests you is `Type`. It can take many values:
+	- Files have many information. What interests you is that every file is linked to a whitelist entry and shares its `Type` (which you cannot see on that edition table). It can take many values:
 		- `j`: Jump. It means that the file is a jump file. It will be uploaded to the `Jumps` list.
 		- `s`: Story. It means that the file is a story file. It will be uploaded to the `Stories` list.
 		- `o`: Other. It means that the file is a file of another type. It will be uploaded to the `Others` list.
@@ -130,6 +132,9 @@ Do **not** use these keywords in the names of your `mainDrives`.
 3. An upload of the data to the spreadsheet
 4. And it opens the spreadsheet for you at the end
 
+---
+
+# End notes
 
 Unfortunately, we can't use multithreading due to api constraints. Google puts a limit on how many requests you can make on a minute, and I haven't found a way to make my tasks wait it out and try again.
 I tried, and it would be sooooo much faster... but then it locks up after a few hundred files. So we're taking it one by one for now. Still faster and easier to use than the google app script, at least for me.
