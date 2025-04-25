@@ -1,7 +1,9 @@
 ﻿# PyJump Jump listing
 
 This tool helps crawling Google Drive files, categorizing them, and uploading them to a Google Sheets.
+
 It's designed to work locally on your machine and uses your personal Google account for access.
+
 (Yes, I know it's in c#, I coded the damned thing. It just started as a python program, and then I forgot to rename it when I switched language. Do me a solid and assume it means 'pretty jump listing' or something.)
 
 ---
@@ -67,7 +69,7 @@ Don't forget: if you can't access the folder with your google account, neither w
 ```
 
 3. This is the way the application will decide on which list the files will be uploaded to. 
-More specifically, this is a list of keywords that the application will look for in the folder names. 
+More specifically, this is a list of (case-insensitive) keywords that the application will look for in the folder names. 
 All files in the folder will be uploaded to the list `Stories` instead of `Jumps`.
 Do **not** use these keywords in the names of your `mainDrives`.
 ```json
