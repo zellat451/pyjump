@@ -22,7 +22,7 @@ It's designed to work locally on your machine and uses your personal Google acco
 
 On first use, you'll be prompted to log into your Google Account via a browser window. The app stores a token locally to skip login next time.
 
-If you want to log on another identity, delete the `token.json` folder/file in the `Resouces` folder of the executable folder. The app will then prompt you to log in again.
+If you want to log on another identity, delete the `token.json` folder/file in the executable folder. The app will then prompt you to log in again.
 
 Do **not** share your token file publicly. It is your google account identity and possesses all your access rights.
 
