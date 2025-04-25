@@ -13,6 +13,8 @@
 
             public const string SHEET_O = "Others";
 
+            public const string SHEET_W = "Whitelist";
+
             public const int SHEET_NAMECOL = 1;
             public const int SHEET_LOCATIONCOL = 2;
             public const int SHEET_CREATORCOL = 3;

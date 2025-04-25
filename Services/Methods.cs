@@ -457,6 +457,12 @@ namespace pyjump.Services
                     allFiles = db.Files.ToList();
                 }
 
+                List<WhitelistEntry> allWhitelistEntries;
+                using (var db = new AppDbContext())
+                {
+                    allWhitelistEntries = db.Whitelist.ToList();
+                }
+
                 loadingForm.IncrementProgress();
 
                 // 1. get all files which are not registered in the LNKSimilarSetFile table
@@ -535,6 +541,9 @@ namespace pyjump.Services
 
                 loadingForm.PrepareLoadingBar("Building Stories (Unfiltered) sheet", dataSheetStoryUnfiltered.Count);
                 await UploadToSheetAsync(dataSheetStoryUnfiltered, Statics.Sheet.SHEET_S_1, logForm, loadingForm);
+
+                loadingForm.PrepareLoadingBar("Building Whitelist sheet", allWhitelistEntries.Count);
+                await UploadToSheetAsync(allWhitelistEntries.OrderBy(x => x.Name).ToList(), Statics.Sheet.SHEET_W, logForm, loadingForm);
             }
             catch (Exception e)
             {
@@ -654,6 +663,117 @@ namespace pyjump.Services
                             UserEnteredValue = new ExtendedValue
                             {
                                 StringValue = $"{entry.LastModified:yyyy-MM-dd HH:mm:ss}"
+                            }
+                        }
+                    ]
+                });
+
+                loadingForm.IncrementProgress();
+            }
+
+            // 3.3: Write data starting from row 1
+            dataRequests.Add(new Request
+            {
+                UpdateCells = new UpdateCellsRequest
+                {
+                    Start = new GridCoordinate { SheetId = sheetId, RowIndex = 1, ColumnIndex = 0 },
+                    Rows = cellData,
+                    Fields = "userEnteredValue"
+                }
+            });
+
+            // Step 4: Execute the data update batch
+            await service.Spreadsheets.BatchUpdate(new BatchUpdateSpreadsheetRequest { Requests = dataRequests }, SingletonServices.SpreadsheetId).ExecuteAsync();
+
+            logForm.Log($"✅ Uploaded {entries.Count} entries to sheet '{sheetName}'.");
+        }
+
+        private static async Task UploadToSheetAsync(List<WhitelistEntry> entries, string sheetName, LogForm logForm, LoadingForm loadingForm)
+        {
+            if (entries.Count == 0)
+            {
+                logForm.Log($"No entries to upload to sheet '{sheetName}'.");
+                return;
+            }
+
+            var service = ScopedServices.SheetsService;
+
+            // Step 1: Get the sheet ID and current grid size
+            var spreadsheet = await service.Spreadsheets.Get(SingletonServices.SpreadsheetId).ExecuteAsync();
+            var sheet = spreadsheet.Sheets.FirstOrDefault(s => s.Properties.Title == sheetName);
+            if (sheet == null)
+            {
+                logForm.Log($"❌ Sheet '{sheetName}' not found in spreadsheet.");
+                throw new Exception($"❌ Sheet '{sheetName}' not found in spreadsheet.");
+            }
+
+            int sheetId = (int)sheet.Properties.SheetId;
+            var currentRowCount = sheet.Properties.GridProperties.RowCount ?? 1;
+            var currentColCount = sheet.Properties.GridProperties.ColumnCount ?? 1;
+
+            int rowsNeeded = entries.Count + 1; // +1 for header row
+            int colsNeeded = 1;
+
+            // Step 2: Resize the sheet
+            var resizeRequest = new BatchUpdateSpreadsheetRequest
+            {
+                Requests = new List<Request>
+            {
+                new Request
+                {
+                    UpdateSheetProperties = new UpdateSheetPropertiesRequest
+                    {
+                        Properties = new SheetProperties
+                        {
+                            SheetId = sheetId,
+                            GridProperties = new GridProperties
+                            {
+                                RowCount = rowsNeeded,
+                                ColumnCount = colsNeeded
+                            }
+                        },
+                        Fields = "gridProperties(rowCount,columnCount)"
+                    }
+                }
+            }
+            };
+
+            await service.Spreadsheets.BatchUpdate(resizeRequest, SingletonServices.SpreadsheetId).ExecuteAsync();
+
+
+            // Step 3: Build data and clearing requests
+            var dataRequests = new List<Request>();
+
+            // 3.1: Clear rows (but keep the header)
+            dataRequests.Add(new Request
+            {
+                UpdateCells = new UpdateCellsRequest
+                {
+                    Range = new GridRange
+                    {
+                        SheetId = sheetId,
+                        StartRowIndex = 1 // keep header (row 0)
+                    },
+                    Fields = "userEnteredValue"
+                }
+            });
+
+            // 3.2: Build row data
+            var cellData = new List<RowData>();
+            foreach (var entry in entries)
+            {
+                string escapedEntryName = EscapeForFormula(entry.Name);
+                string escapedUrl = EscapeForFormula(entry.Url);
+
+                cellData.Add(new RowData
+                {
+                    Values =
+                    [
+                        new CellData
+                        {
+                            UserEnteredValue = new ExtendedValue
+                            {
+                                FormulaValue = $"=HYPERLINK(\"{escapedUrl}\", \"{escapedEntryName}\")"
                             }
                         }
                     ]

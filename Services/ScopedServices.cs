@@ -13,22 +13,12 @@ namespace pyjump.Services
         public static DriveService DriveService { get; private set; }
         public static SheetsService SheetsService { get; private set; }
         public static Spreadsheet ActiveSpreadsheet { get; set; }
-        public static Sheet SheetHolder_J { get; set; }
-        public static Sheet SheetHolder_S { get; set; }
-        public static Sheet SheetHolder_J_1 { get; set; }
-        public static Sheet SheetHolder_S_1 { get; set; }
-        public static Sheet SheetHolder_O { get; set; }
 
         public static void Clear()
         {
             DriveService = null;
             SheetsService = null;
             ActiveSpreadsheet = null;
-            SheetHolder_J = null;
-            SheetHolder_S = null;
-            SheetHolder_J_1 = null;
-            SheetHolder_S_1 = null;
-            SheetHolder_O = null;
         }
 
         public static void Initialize()
@@ -37,12 +27,12 @@ namespace pyjump.Services
 
             var spreadsheet = SheetsService.Spreadsheets.Get(SingletonServices.SpreadsheetId).Execute();
             ActiveSpreadsheet = spreadsheet;
-
-            SheetHolder_J = EnsureSheetCreated(Statics.Sheet.SHEET_J);
-            SheetHolder_S = EnsureSheetCreated(Statics.Sheet.SHEET_S);
-            SheetHolder_J_1 = EnsureSheetCreated(Statics.Sheet.SHEET_J_1);
-            SheetHolder_S_1 = EnsureSheetCreated(Statics.Sheet.SHEET_S_1);
-            SheetHolder_O = EnsureSheetCreated(Statics.Sheet.SHEET_O);
+            EnsureSheetCreated(Statics.Sheet.SHEET_J);
+            EnsureSheetCreated(Statics.Sheet.SHEET_S);
+            EnsureSheetCreated(Statics.Sheet.SHEET_J_1);
+            EnsureSheetCreated(Statics.Sheet.SHEET_S_1);
+            EnsureSheetCreated(Statics.Sheet.SHEET_O);
+            EnsureSheetCreated(Statics.Sheet.SHEET_W);
         }
 
         private static void InitializeServices()
@@ -83,11 +73,6 @@ namespace pyjump.Services
 
         private static Sheet EnsureSheetCreated(string sheetName)
         {
-            if (sheetName == Statics.Sheet.SHEET_J && SheetHolder_J != null) { return SheetHolder_J; }
-            if (sheetName == Statics.Sheet.SHEET_S && SheetHolder_S != null) { return SheetHolder_S; }
-            if (sheetName == Statics.Sheet.SHEET_J_1 && SheetHolder_J_1 != null) { return SheetHolder_J_1; }
-            if (sheetName == Statics.Sheet.SHEET_S_1 && SheetHolder_S_1 != null) { return SheetHolder_S_1; }
-
             var activeSpreadsheet = ActiveSpreadsheet;
             var existingSheet = activeSpreadsheet.Sheets.FirstOrDefault(s => s.Properties.Title == sheetName);
             if (existingSheet == null)
@@ -108,81 +93,159 @@ namespace pyjump.Services
                 var batchResponse = SheetsService.Spreadsheets.BatchUpdate(batchRequest, SingletonServices.SpreadsheetId).Execute();
                 var newSheetId = batchResponse.Replies.First().AddSheet.Properties.SheetId;
 
-                var updateDimension = new UpdateDimensionPropertiesRequest
+                if (sheetName != Statics.Sheet.SHEET_W)
                 {
-                    Range = new DimensionRange
+                    var updateDimension = new UpdateDimensionPropertiesRequest
                     {
-                        SheetId = newSheetId,
-                        Dimension = "COLUMNS",
-                        StartIndex = 0,
-                        EndIndex = 1
-                    },
-                    Properties = new DimensionProperties
-                    {
-                        PixelSize = 500
-                    },
-                    Fields = "pixelSize"
-                };
-
-                var updateDimBatch = new BatchUpdateSpreadsheetRequest
-                {
-                    Requests =
-                    [
-                        new() { UpdateDimensionProperties = updateDimension }
-                    ]
-                };
-
-                SheetsService.Spreadsheets.BatchUpdate(updateDimBatch, SingletonServices.SpreadsheetId).Execute();
-
-                var row = new List<object>(new string[Statics.Sheet.SHEET_COLS]);
-                row[Statics.Sheet.SHEET_NAMECOL - 1] = "Name";
-                row[Statics.Sheet.SHEET_LOCATIONCOL - 1] = "Location";
-                row[Statics.Sheet.SHEET_DATECOL - 1] = "Last Updated";
-                row[Statics.Sheet.SHEET_CREATORCOL - 1] = "Owner";
-
-                var valueRange = new Google.Apis.Sheets.v4.Data.ValueRange
-                {
-                    Range = $"{sheetName}!A1",
-                    Values = [row]
-                };
-
-                var updateRequest = SheetsService.Spreadsheets.Values.Update(
-                    valueRange,
-                    SingletonServices.SpreadsheetId,
-                    $"{sheetName}!A1"
-                );
-
-                updateRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.RAW;
-                updateRequest.Execute();
-
-                // Set font bold for first row
-                var formatRequest = new Request
-                {
-                    RepeatCell = new RepeatCellRequest
-                    {
-                        Range = new GridRange
+                        Range = new DimensionRange
                         {
                             SheetId = newSheetId,
-                            StartRowIndex = 0,
-                            EndRowIndex = 1,
-                            StartColumnIndex = 0,
-                            EndColumnIndex = Statics.Sheet.SHEET_COLS
+                            Dimension = "COLUMNS",
+                            StartIndex = 0,
+                            EndIndex = 1
                         },
-                        Cell = new CellData
+                        Properties = new DimensionProperties
                         {
-                            UserEnteredFormat = new CellFormat
-                            {
-                                TextFormat = new TextFormat { Bold = true }
-                            }
+                            PixelSize = 500
                         },
-                        Fields = "userEnteredFormat.textFormat.bold"
-                    }
-                };
+                        Fields = "pixelSize"
+                    };
 
-                SheetsService.Spreadsheets.BatchUpdate(new BatchUpdateSpreadsheetRequest
+                    var updateDimBatch = new BatchUpdateSpreadsheetRequest
+                    {
+                        Requests =
+                        [
+                            new() { UpdateDimensionProperties = updateDimension }
+                        ]
+                    };
+
+                    SheetsService.Spreadsheets.BatchUpdate(updateDimBatch, SingletonServices.SpreadsheetId).Execute();
+
+                    var row = new List<object>(new string[Statics.Sheet.SHEET_COLS]);
+                    row[Statics.Sheet.SHEET_NAMECOL - 1] = "Name";
+                    row[Statics.Sheet.SHEET_LOCATIONCOL - 1] = "Location";
+                    row[Statics.Sheet.SHEET_DATECOL - 1] = "Last Updated";
+                    row[Statics.Sheet.SHEET_CREATORCOL - 1] = "Owner";
+
+                    var valueRange = new Google.Apis.Sheets.v4.Data.ValueRange
+                    {
+                        Range = $"{sheetName}!A1",
+                        Values = [row]
+                    };
+
+                    var updateRequest = SheetsService.Spreadsheets.Values.Update(
+                        valueRange,
+                        SingletonServices.SpreadsheetId,
+                        $"{sheetName}!A1"
+                    );
+
+                    updateRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.RAW;
+                    updateRequest.Execute();
+
+                    // Set font bold for first row
+                    var formatRequest = new Request
+                    {
+                        RepeatCell = new RepeatCellRequest
+                        {
+                            Range = new GridRange
+                            {
+                                SheetId = newSheetId,
+                                StartRowIndex = 0,
+                                EndRowIndex = 1,
+                                StartColumnIndex = 0,
+                                EndColumnIndex = Statics.Sheet.SHEET_COLS
+                            },
+                            Cell = new CellData
+                            {
+                                UserEnteredFormat = new CellFormat
+                                {
+                                    TextFormat = new TextFormat { Bold = true }
+                                }
+                            },
+                            Fields = "userEnteredFormat.textFormat.bold"
+                        }
+                    };
+
+                    SheetsService.Spreadsheets.BatchUpdate(new BatchUpdateSpreadsheetRequest
+                    {
+                        Requests = [formatRequest]
+                    }, SingletonServices.SpreadsheetId).Execute();
+                }
+                else
                 {
-                    Requests = [formatRequest]
-                }, SingletonServices.SpreadsheetId).Execute();
+                    var updateDimension = new UpdateDimensionPropertiesRequest
+                    {
+                        Range = new DimensionRange
+                        {
+                            SheetId = newSheetId,
+                            Dimension = "COLUMNS",
+                            StartIndex = 0,
+                            EndIndex = 1
+                        },
+                        Properties = new DimensionProperties
+                        {
+                            PixelSize = 500
+                        },
+                        Fields = "pixelSize"
+                    };
+
+                    var updateDimBatch = new BatchUpdateSpreadsheetRequest
+                    {
+                        Requests =
+                        [
+                            new() { UpdateDimensionProperties = updateDimension }
+                        ]
+                    };
+
+                    SheetsService.Spreadsheets.BatchUpdate(updateDimBatch, SingletonServices.SpreadsheetId).Execute();
+
+                    var row = new List<object>(new string[1]);
+                    row[0] = "Whitelist";
+
+                    var valueRange = new Google.Apis.Sheets.v4.Data.ValueRange
+                    {
+                        Range = $"{sheetName}!A1",
+                        Values = [row]
+                    };
+
+                    var updateRequest = SheetsService.Spreadsheets.Values.Update(
+                        valueRange,
+                        SingletonServices.SpreadsheetId,
+                        $"{sheetName}!A1"
+                    );
+
+                    updateRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.UpdateRequest.ValueInputOptionEnum.RAW;
+                    updateRequest.Execute();
+
+                    // Set font bold for first row
+                    var formatRequest = new Request
+                    {
+                        RepeatCell = new RepeatCellRequest
+                        {
+                            Range = new GridRange
+                            {
+                                SheetId = newSheetId,
+                                StartRowIndex = 0,
+                                EndRowIndex = 1,
+                                StartColumnIndex = 0,
+                                EndColumnIndex = 1
+                            },
+                            Cell = new CellData
+                            {
+                                UserEnteredFormat = new CellFormat
+                                {
+                                    TextFormat = new TextFormat { Bold = true }
+                                }
+                            },
+                            Fields = "userEnteredFormat.textFormat.bold"
+                        }
+                    };
+
+                    SheetsService.Spreadsheets.BatchUpdate(new BatchUpdateSpreadsheetRequest
+                    {
+                        Requests = [formatRequest]
+                    }, SingletonServices.SpreadsheetId).Execute();
+                }
 
                 Debug.WriteLine($"Created new sheet: {sheetName}");
 
@@ -190,11 +253,6 @@ namespace pyjump.Services
                 ActiveSpreadsheet = SheetsService.Spreadsheets.Get(SingletonServices.SpreadsheetId).Execute();
                 existingSheet = ActiveSpreadsheet.Sheets.FirstOrDefault(s => s.Properties.Title == sheetName);
             }
-
-            if (sheetName == Statics.Sheet.SHEET_J) { SheetHolder_J = existingSheet; }
-            if (sheetName == Statics.Sheet.SHEET_S) { SheetHolder_S = existingSheet; }
-            if (sheetName == Statics.Sheet.SHEET_J_1) { SheetHolder_J_1 = existingSheet; }
-            if (sheetName == Statics.Sheet.SHEET_S_1) { SheetHolder_S_1 = existingSheet; }
 
             return existingSheet;
         }
