@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 using pyjump.Entities;
 
 namespace pyjump.Services
@@ -25,6 +26,13 @@ namespace pyjump.Services
             return AppsettingsJson[trueKey]?.ToString();
         }
 
+        private static string ExtractSpreadsheetId(string input)
+        {
+            // Check if the input is a full URL, otherwise assume it's just the ID
+            var match = Regex.Match(input, @"docs\.google\.com\/spreadsheets\/d\/([a-zA-Z0-9-_]+)");
+            return match.Success ? match.Groups[1].Value : input;
+        }
+
         public static void Initialize()
         {
             try
@@ -41,7 +49,7 @@ namespace pyjump.Services
             {
                 // open the appsettings.json file as json, and get the value 'spreadsheet_id'
                 var spreadsheetId = GetAppsettingsValue("spreadsheet_id");
-                SpreadsheetId = spreadsheetId;
+                SpreadsheetId = ExtractSpreadsheetId(spreadsheetId);
             }
             catch (Exception e)
             {
