@@ -23,25 +23,26 @@ namespace pyjump
 
         private async void btnScanFiles_Click(object sender, EventArgs e)
         {
+            LoadingForm loadingForm = null;
             try
             {
                 InitializeEverything();
                 _logForm.Log("Starting file scan...");
 
-                var loadingForm = InitProgressBar();
+                loadingForm = InitProgressBar();
  
                 await Methods.ScanFiles(_logForm, loadingForm);
                 _logForm.Log("File scan completed.");
                 MessageBox.Show("File scan completed.");
-
-                loadingForm.Close();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Something went wrong: {ex.Message}");
+                MessageBox.Show($"Something went wrong: {ex}");
             }
             finally
             {
+
+                loadingForm?.Close();
                 ClearEverything();
             }
         }
@@ -58,7 +59,7 @@ namespace pyjump
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Something went wrong: {ex.Message}");
+                MessageBox.Show($"Something went wrong: {ex}");
             }
             finally
             {
@@ -86,7 +87,7 @@ namespace pyjump
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Something went wrong: {ex.Message}");
+                MessageBox.Show($"Something went wrong: {ex}");
             }
             finally
             {
@@ -96,26 +97,26 @@ namespace pyjump
 
         private async void btnBuildSheets_Click(object sender, EventArgs e)
         {
+            LoadingForm loadingForm = null;
             try
             {
                 InitializeEverything();
                 _logForm.Log("Building sheets...");
 
-                var loadingForm = InitProgressBar();
+                loadingForm = InitProgressBar();
 
                 await Methods.BuildSheets(_logForm, loadingForm);
 
                 _logForm.Log("Sheets built successfully.");
                 MessageBox.Show("Sheets built successfully.");
-
-                loadingForm.Close();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Something went wrong: {ex.Message}");
+                MessageBox.Show($"Something went wrong: {ex}");
             }
             finally
             {
+                loadingForm?.Close();
                 ClearEverything();
             }
         }
