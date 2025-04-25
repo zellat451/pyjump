@@ -17,7 +17,10 @@ namespace pyjump
             //    db.Database.Migrate(); // Applies any pending migrations
             //}
 
-            SingletonServices.Initialize();
+            SingletonServices.Initialize(); // Initialize singleton services
+
+            ScopedServices.Initialize(); // Initialize scoped services. Required to get user token at start.
+            ScopedServices.Clear();
 
             // To customize application configuration such as set high DPI settings or default font,
             // see https://aka.ms/applicationconfiguration.
