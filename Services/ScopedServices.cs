@@ -48,7 +48,7 @@ namespace pyjump.Services
         private static void InitializeServices()
         {
             string[] scopes = [
-                DriveService.Scope.Drive,
+                DriveService.Scope.DriveReadonly,
                 SheetsService.Scope.Spreadsheets
             ];
 

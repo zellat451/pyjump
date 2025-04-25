@@ -6,6 +6,11 @@
 # Npp files
 nppBackup/
 
+# credentials
+token.json
+token.json/
+*.TokenResponse-user
+
 # User-specific files
 *.rsuser
 *.suo
