@@ -6,6 +6,9 @@ It's designed to work locally on your machine and uses your personal Google acco
 
 (Yes, I know it's in c#, I coded the damned thing. It just started as a python program, and then I forgot to rename it when I switched language. Do me a solid and assume it means 'pretty jump listing' or something.)
 
+
+[Click here to download the zip](https://github.com/zellat451/pyjump/releases/latest)
+
 ---
 
 ## Requirements
@@ -86,7 +89,7 @@ Do **not** use these keywords in the names of your `mainDrives`.
 ---
 
 ## How to use
-1. Run the application
+1. Run the application (`pyjump.exe`. Create a shortcut for later if you need to.)
 2. Connect to your Google account (if not already done)
 3. Click the button `scan Whitelist` to start scanning the `mainDrives` for their folders recursively. This may take some time.
 	- After scanning a Whitelist entry, its property `LastChecked` will be set to the current date utc, midnight.
