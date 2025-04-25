@@ -30,7 +30,7 @@ namespace pyjump
                 _logForm.Log("Starting file scan...");
 
                 loadingForm = InitProgressBar();
- 
+
                 await Methods.ScanFiles(_logForm, loadingForm);
                 _logForm.Log("File scan completed.");
                 MessageBox.Show("File scan completed.");
@@ -82,7 +82,7 @@ namespace pyjump
                     context.Whitelist.UpdateRange(entries);
                     context.SaveChanges();
                 }
-
+                _logForm.Log("All whitelist entries last checked times have been reset.");
                 MessageBox.Show("All whitelist entries last checked times have been reset.");
             }
             catch (Exception ex)
@@ -136,6 +136,28 @@ namespace pyjump
             {
                 form.FilesEditorForm_Load(sender, e);
                 form.ShowDialog();
+            }
+        }
+
+        private void btnGoToSheet_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                InitializeEverything();
+                _logForm.Log("Opening Google Sheets...");
+
+                Methods.GoToSheet();
+
+                _logForm.Log("Google Sheets opened successfully.");
+                MessageBox.Show("Google Sheets opened successfully.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Something went wrong: {ex}");
+            }
+            finally
+            {
+                ClearEverything();
             }
         }
 

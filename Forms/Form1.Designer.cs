@@ -34,6 +34,7 @@
             btnEditFiles = new Button();
             btnResetWhitelistTimes = new Button();
             btnBuildSheets = new Button();
+            btnGoToSheet = new Button();
             SuspendLayout();
             // 
             // btnScanFile
@@ -96,11 +97,22 @@
             btnBuildSheets.UseVisualStyleBackColor = true;
             btnBuildSheets.Click += btnBuildSheets_Click;
             // 
+            // btnGoToSheet
+            // 
+            btnGoToSheet.Location = new Point(94, 17);
+            btnGoToSheet.Name = "btnGoToSheet";
+            btnGoToSheet.Size = new Size(96, 34);
+            btnGoToSheet.TabIndex = 9;
+            btnGoToSheet.Text = "Go to sheet";
+            btnGoToSheet.UseVisualStyleBackColor = true;
+            btnGoToSheet.Click += btnGoToSheet_Click;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
+            Controls.Add(btnGoToSheet);
             Controls.Add(btnBuildSheets);
             Controls.Add(btnResetWhitelistTimes);
             Controls.Add(btnEditFiles);
@@ -120,5 +132,6 @@
         private Button btnEditFiles;
         private Button btnResetWhitelistTimes;
         private Button btnBuildSheets;
+        private Button btnGoToSheet;
     }
 }

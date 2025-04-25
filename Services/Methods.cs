@@ -488,6 +488,7 @@ namespace pyjump.Services
                 throw;
             }
         }
+        
         private static string EscapeForFormula(string input) => input?.Replace("\"", "\"\"") ?? string.Empty;
 
         private static async Task UploadToSheetAsync(List<FileEntry> entries, string sheetName, List<WhitelistEntry> whitelist, LogForm logForm, LoadingForm loadingForm)
@@ -625,6 +626,22 @@ namespace pyjump.Services
             logForm.Log($"✅ Uploaded {entries.Count} entries to sheet '{sheetName}'.");
         }
 
-
+        public static void GoToSheet()
+        {
+            var url = $"https://docs.google.com/spreadsheets/d/{SingletonServices.SpreadsheetId}/edit#gid={Statics.Sheet.SHEET_J}";
+            var psi = new ProcessStartInfo
+            {
+                FileName = url,
+                UseShellExecute = true
+            };
+            try
+            {
+                Process.Start(psi);
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show($"Error opening sheet: {e}");
+            }
+        }
     }
 }
