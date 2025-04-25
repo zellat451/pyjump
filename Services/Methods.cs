@@ -42,7 +42,7 @@ namespace pyjump.Services
                 #endregion
 
                 #region update existing whitelist entries
-                // 3. entries existing in both lists > update the entries in the database if the name | url | resource key | yype is different
+                // 3. entries existing in both lists > update the entries in the database if the name | url | resource key is different
                 var toUpdate = new ConcurrentBag<WhitelistEntry>();
                 var tasks = existingEntries.Select(entry =>
                 {
@@ -50,13 +50,12 @@ namespace pyjump.Services
                     if (newEntry != null)
                     {
                         if (entry.Name != newEntry.Name || entry.Url != newEntry.Url
-                            || entry.ResourceKey != newEntry.ResourceKey || entry.Type != newEntry.Type)
+                            || entry.ResourceKey != newEntry.ResourceKey)
                         {
                             entry.Name = newEntry.Name;
                             entry.Url = newEntry.Url;
                             entry.ResourceKey = newEntry.ResourceKey;
                             entry.LastChecked = null;
-                            entry.Type = newEntry.Type;
 
                             toUpdate.Add(entry);
                         }
