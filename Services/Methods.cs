@@ -379,6 +379,71 @@ namespace pyjump.Services
             }
         }
 
+        public static async Task ForceMatchType(LogForm logForm, LoadingForm loadingForm)
+        {
+            try
+            {
+                // 1. get all files from the database
+                List<FileEntry> allFiles;
+                using (var db = new AppDbContext())
+                {
+                    allFiles = db.Files.ToList();
+                }
+                List<WhitelistEntry> allWhitelistEntries;
+                using (var db = new AppDbContext())
+                {
+                    allWhitelistEntries = db.Whitelist.ToList();
+                }
+
+                var filesToCheck = allFiles.Where(x => !string.IsNullOrWhiteSpace(x.FolderId)).ToList();
+
+                loadingForm.PrepareLoadingBar("Forcing files to match type with folder", filesToCheck.Count);
+
+                foreach (var file in filesToCheck)
+                {
+                    // get the corresponding whitelist entry
+                    var whitelistEntry = allWhitelistEntries.FirstOrDefault(x => x.Id == file.FolderId);
+                    if (whitelistEntry == null)
+                    {
+                        logForm.Log($"❌ Whitelist entry not found for file {file.Name} ({file.Id})");
+                        loadingForm.IncrementProgress();
+                        continue;
+                    }
+                    else
+                    {
+                        // check if the file type is different from the whitelist entry type
+                        if (file.Type != whitelistEntry.Type)
+                        {
+                            // update the file type to match the whitelist entry type
+                            file.Type = whitelistEntry.Type;
+                            using (var db = new AppDbContext())
+                            {
+                                try
+                                {
+                                    db.Files.Update(file);
+                                }
+                                catch (Exception e)
+                                {
+                                    logForm.Log($"Error updating file type: {e}");
+                                    loadingForm.IncrementProgress();
+                                    continue;
+                                }
+                                await db.SaveChangesAsync();
+                            }
+                            logForm.Log($"✅ File {file.Name} ({file.Id}) updated to match folder type {whitelistEntry.Type}.");
+                        }
+
+                        loadingForm.IncrementProgress();
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                logForm.Log($"Error forcing match type: {e}");
+                throw;
+            }
+        }
+
         public static async Task BuildSheets(LogForm logForm, LoadingForm loadingForm)
         {
             try

@@ -36,6 +36,7 @@
             btnBuildSheets = new Button();
             btnGoToSheet = new Button();
             btnFren = new Button();
+            btnForceMatch = new Button();
             SuspendLayout();
             // 
             // btnScanFile
@@ -118,11 +119,22 @@
             btnFren.UseVisualStyleBackColor = true;
             btnFren.Click += btnFren_Click;
             // 
+            // btnForceMatch
+            // 
+            btnForceMatch.Location = new Point(674, 17);
+            btnForceMatch.Name = "btnForceMatch";
+            btnForceMatch.Size = new Size(89, 38);
+            btnForceMatch.TabIndex = 11;
+            btnForceMatch.Text = "Force match Type";
+            btnForceMatch.UseVisualStyleBackColor = true;
+            btnForceMatch.Click += btnForceMatch_Click;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
+            Controls.Add(btnForceMatch);
             Controls.Add(btnFren);
             Controls.Add(btnGoToSheet);
             Controls.Add(btnBuildSheets);
@@ -146,5 +158,6 @@
         private Button btnBuildSheets;
         private Button btnGoToSheet;
         private Button btnFren;
+        private Button btnForceMatch;
     }
 }

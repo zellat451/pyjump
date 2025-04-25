@@ -225,5 +225,31 @@ namespace pyjump
                 ClearEverything();
             }
         }
+
+        private async void btnForceMatch_Click(object sender, EventArgs e)
+        {
+            LoadingForm loadingForm = null;
+            try
+            {
+                InitializeEverything();
+                _logForm.Log("Starting force match...");
+
+                loadingForm = InitProgressBar();
+
+                await Methods.ForceMatchType(_logForm, loadingForm);
+
+                _logForm.Log("Force match completed.");
+                MessageBox.Show("Force match completed.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Something went wrong: {ex}");
+            }
+            finally
+            {
+                loadingForm?.Close();
+                ClearEverything();
+            }
+        }
     }
 }
