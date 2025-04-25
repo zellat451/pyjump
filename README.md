@@ -123,6 +123,7 @@ Do **not** use these keywords in the names of your `mainDrives`.
 		- `Jumps (Unfiltered)`: All files with type `j`. All files will be shown, even if they have the same `Name` and `Owner`.
 		- `Stories (Unfiltered)`: All files with type `s`. All files will be shown, even if they have the same `Name` and `Owner`.
 		- `Others`: All files with type `o`
+		- `Whitelist`: All whitelist entries stored in the DB.
 		- All sheets are created at the application's launch, and recreated if needed when pretty much any button is pressed.
 		- All files are ordered by `LastModified` date, from the most recent to the oldest.
 8. You can click the button `Go to sheet` to open the Google Sheets document in your browser immediately.
@@ -133,6 +134,20 @@ Do **not** use these keywords in the names of your `mainDrives`.
 2. A scan to get the new files
 3. An upload of the data to the spreadsheet
 4. And it opens the spreadsheet for you at the end
+
+---
+
+# Explanation of each button
+1. `Go to sheet`: Opens the Google Sheets document in your browser.
+1. `Edit whitelist`: Opens the whitelist editor. You can add, remove, and edit whitelist entries in DB.
+1. `Edit files`: Opens the files editor. You can add, remove, and edit files in DB.
+1. `Force match type`: Updates all files in DB to match the type of their linked whitelist entry. This is useful if you edited the whitelist entries and want to update the files to match.
+1. `Scan whitelist`: Scans the `mainDrives` for their folders recursively. This may take some time.
+1. `Scan files`: Scans the whitelist for their files recursively. This may take some time. Only scans new files from the last time the whitelist entry was checked, to go quicker.
+1. `Reset whitelist times`: Resets the `LastChecked` date of all whitelist entries to null. This will force a complete scan of all files in the whitelist.
+1. `Build sheets`: Uploads the files to the Google Sheets document.
+1. `Clear all`: Clears all the data in the DB. Does not affect the data uploaded to the Google Sheets document.
+1. `:)`: The Fren button. It does everything for you. It scans the whitelist, scans the files, and uploads the data to the Google Sheets document. It also opens the document in your browser at the end.
 
 ---
 
