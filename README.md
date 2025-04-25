@@ -2,6 +2,7 @@
 
 This tool helps crawling Google Drive files, categorizing them, and uploading them to a Google Sheets.
 It's designed to work locally on your machine and uses your personal Google account for access.
+(Yes, I know it's in c#, I coded the damned thing. It just started as a python program, and then I forgot to rename it when I switched language. Do me a solid and assume it means 'pretty jump listing' or something.)
 
 ---
 
