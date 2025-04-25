@@ -180,5 +180,41 @@ namespace pyjump
             this.Enabled = true;
             Cursor.Current = Cursors.Default;
         }
+
+        private async void btnFren_Click(object sender, EventArgs e)
+        {
+            LoadingForm loadingForm = null;
+            try
+            {
+                InitializeEverything();
+                _logForm.Log("I Fren. Fren says 'hi' :)");
+
+                // 1. scan whitelist
+                await Methods.ScanWhitelist(_logForm);
+
+                loadingForm = InitProgressBar();
+
+                // 2. scan files
+                await Methods.ScanFiles(_logForm, loadingForm);
+
+                // 3. build sheets
+                await Methods.BuildSheets(_logForm, loadingForm);
+
+                // 4. go to spreadsheet
+                Methods.GoToSheet();
+
+                _logForm.Log("Fren done. Fren does good work. Enjoy Fren's work, Fren's fren. :)");
+                MessageBox.Show("Your friend worked hard. We all thank Fren for their automation efforts. bye-bye Fren!");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Something went wrong: {ex}");
+            }
+            finally
+            {
+                loadingForm?.Close();
+                ClearEverything();
+            }
+        }
     }
 }

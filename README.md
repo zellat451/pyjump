@@ -122,3 +122,14 @@ Do **not** use these keywords in the names of your `mainDrives`.
 		- All sheets are created at the application's launch, and recreated if needed when pretty much any button is pressed.
 		- All files are ordered by `LastModified` date, from the most recent to the oldest.
 8. You can click the button `Go to sheet` to open the Google Sheets document in your browser immediately.
+
+
+...Or, you can just click the big button and let `Fren` take care of everything. Yes, they are a fren and they work good. The big `:)` button does:
+1. A scan to refresh the whitelist
+2. A scan to get the new files
+3. An upload of the data to the spreadsheet
+4. And it opens the spreadsheet for you at the end
+
+
+Unfortunately, we can't use multithreading due to api constraints. Google puts a limit on how many requests you can make on a minute, and I haven't found a way to make my tasks wait it out and try again.
+I tried, and it would be sooooo much faster... but then it locks up after a few hundred files. So we're taking it one by one for now. Still faster and easier to use than the google app script, at least for me.
