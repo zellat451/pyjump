@@ -39,6 +39,7 @@
             btnForceMatch = new Button();
             btnClearAll = new Button();
             btnDeleteBroken = new Button();
+            btnLogging = new Button();
             SuspendLayout();
             // 
             // btnScanFile
@@ -151,11 +152,22 @@
             btnDeleteBroken.UseVisualStyleBackColor = true;
             btnDeleteBroken.Click += btnDeleteBroken_Click;
             // 
+            // btnLogging
+            // 
+            btnLogging.Location = new Point(236, 384);
+            btnLogging.Name = "btnLogging";
+            btnLogging.Size = new Size(131, 34);
+            btnLogging.TabIndex = 14;
+            btnLogging.Text = GetCurrentLoggingButtonText();
+            btnLogging.UseVisualStyleBackColor = true;
+            btnLogging.Click += btnLogging_Click;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
+            Controls.Add(btnLogging);
             Controls.Add(btnDeleteBroken);
             Controls.Add(btnClearAll);
             Controls.Add(btnForceMatch);
@@ -185,5 +197,6 @@
         private Button btnForceMatch;
         private Button btnClearAll;
         private Button btnDeleteBroken;
+        private Button btnLogging;
     }
 }

@@ -150,6 +150,7 @@ Do **not** use these keywords in the names of your `mainDrives`, unless you want
 1. `Build sheets`: Uploads the files to the Google Sheets document.
 1. `Clear all data`: Clears all the data in the DB. Does not affect the data uploaded to the Google Sheets document.
 1. `:)`: The Fren button. It does everything for you. It scans the whitelist, scans the files, and uploads the data to the Google Sheets document. It also opens the document in your browser at the end.
+1. `Enable/Disable Logging`: Enables or disables copying logs in a file. If active, all logs will be copied in a file named after today's date in the `logs` folder. The file will be created if it doesn't exist, and appended to if it does. `false` by default, so we don't spam your disk with logs.
 
 ---
 

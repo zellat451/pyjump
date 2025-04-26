@@ -306,5 +306,30 @@ namespace pyjump
                 ClearEverything();
             }
         }
+
+        private void btnLogging_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                SingletonServices.InvertPermissionFileLogging();
+                this.btnLogging.Text = GetCurrentLoggingButtonText();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Something went wrong: {ex}");
+            }
+        }
+
+        private static string GetCurrentLoggingButtonText()
+        {
+            if (SingletonServices.AllowLogFile)
+            {
+                return "Disable Logging";
+            }
+            else
+            {
+                return "Enable Logging";
+            }
+        }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Windows.Forms;
+using pyjump.Services;
 
 namespace pyjump.Forms
 {
@@ -33,16 +34,23 @@ namespace pyjump.Forms
             var nbMsg = _logQueue.Count;
             while (_logQueue.TryDequeue(out var msg))
             {
+                // safety check
                 if (richTextBoxLog.IsDisposed || richTextBoxLog.Disposing) return;
 
+                // Append the message to the RichTextBox
                 richTextBoxLog.AppendText(msg + Environment.NewLine);
 
-                var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs");
-                if (!Directory.Exists(path))
+                // allow to copy the logs in a file
+                if (SingletonServices.AllowLogFile)
                 {
-                    Directory.CreateDirectory(path);
+                    var path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "logs");
+                    if (!Directory.Exists(path))
+                    {
+                        Directory.CreateDirectory(path);
+                    }
+
+                    File.AppendAllText(Path.Combine(path, $"logform-{DateTime.UtcNow:yyyy-MM-dd}.log"), msg + Environment.NewLine); 
                 }
-                File.AppendAllText(Path.Combine(path, $"logform-{DateTime.UtcNow:yyyy-MM-dd}.log"), msg + Environment.NewLine);
             }
 
             if (nbMsg > 0)
