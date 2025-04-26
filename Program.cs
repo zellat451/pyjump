@@ -15,6 +15,7 @@ namespace pyjump
             using (var db = new AppDbContext())
             {
                 db.Database.Migrate(); // Applies any pending migrations
+                db.Database.ExecuteSqlRaw("PRAGMA journal_mode=WAL;");
             }
 
             SingletonServices.Initialize(); // Initialize singleton services
