@@ -298,6 +298,16 @@ namespace pyjump
 
         private async void btnDeleteBroken_Click(object sender, EventArgs e)
         {
+            var result = MessageBox.Show(
+                "Are you sure you want to delete all broken entries? This will take a while.",
+                "Confirmation",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning);
+            if (result != DialogResult.Yes)
+            {
+                return; // If user says No, exit the function early
+            }
+
             LoadingForm loadingForm = null;
             try
             {
