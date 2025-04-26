@@ -175,7 +175,7 @@ namespace pyjump
         {
             ScopedServices.Clear();
 
-            _logForm.Close();
+            _logForm?.Close();
             this.Enabled = true;
             Cursor.Current = Cursors.Default;
         }
@@ -228,6 +228,17 @@ namespace pyjump
 
         private async void btnForceMatch_Click(object sender, EventArgs e)
         {
+            var result = MessageBox.Show(
+                "Are you sure you want to force the file Types to match the whitelist Types? This will overwrite any existing value you may have modified manually.",
+                "Confirmation",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning);
+
+            if (result != DialogResult.Yes)
+            {
+                return; // If user says No, exit the function early
+            }
+
             LoadingForm loadingForm = null;
             try
             {
@@ -254,6 +265,17 @@ namespace pyjump
 
         private void btnClearAll_Click(object sender, EventArgs e)
         {
+            var result = MessageBox.Show(
+                "Are you sure you want to clear all the data? This will completely remove the saved Whitelist & Files.",
+                "Confirmation",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning);
+
+            if (result != DialogResult.Yes)
+            {
+                return; // If user says No, exit the function early
+            }
+
             try
             {
                 InitializeEverything();
