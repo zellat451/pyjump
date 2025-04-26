@@ -33,6 +33,12 @@ namespace pyjump.Services
 
         private readonly ConcurrentBag<(string folderId, string resourceKey, string driveId, string parentName)> _folderQueue;
 
+        /// <summary>
+        /// Get all folder names recursively from the given folder URLs.
+        /// </summary>
+        /// <param name="folderUrls"></param>
+        /// <param name="logForm"></param>
+        /// <returns></returns>
         public async Task<List<WhitelistEntry>> GetAllFolderNamesRecursiveAsync(List<string> folderUrls, LogForm logForm)
         {
             // find whitelist entries from maind drives
@@ -53,6 +59,15 @@ namespace pyjump.Services
             return _foundFolderNames.DistinctBy(x => x.Id).ToList();
         }
 
+        /// <summary>
+        /// Recursively traverse a folder and its subfolders to find all folder names.
+        /// </summary>
+        /// <param name="folderId"></param>
+        /// <param name="resourceKey"></param>
+        /// <param name="driveId"></param>
+        /// <param name="parentName"></param>
+        /// <param name="logForm"></param>
+        /// <returns></returns>
         private async Task TraverseFolderAsync(string folderId, string resourceKey, string driveId, string parentName, LogForm logForm)
         {
             if (_visitedFolderIds.ContainsKey(folderId))
@@ -115,6 +130,7 @@ namespace pyjump.Services
             {
                 Id = folderMetadata.Id,
                 ResourceKey = folderMetadata.ResourceKey ?? string.Empty,
+                DriveId = folderMetadata.DriveId ?? string.Empty,
                 Name = parentName == string.Empty
                     ? folderMetadata.Name
                     : Path.Combine(parentName, folderMetadata.Name),
@@ -170,6 +186,11 @@ namespace pyjump.Services
 
         }
 
+        /// <summary>
+        /// Extracts folderId, resourceKey, and driveId from a given URL.
+        /// </summary>
+        /// <param name="url"></param>
+        /// <returns></returns>
         private (string folderId, string resourceKey, string driveId) ExtractFolderInfosFromUrl(string url)
         {
             // Initialize default values
@@ -202,6 +223,13 @@ namespace pyjump.Services
             return (folderId, resourceKey, driveId);
         }
 
+        /// <summary>
+        /// Builds a Google Drive folder URL using the provided folderId, resourceKey, and tid (Shared Drive ID).
+        /// </summary>
+        /// <param name="folderId"></param>
+        /// <param name="resourceKey"></param>
+        /// <param name="tid"></param>
+        /// <returns></returns>
         private string BuildFolderUrl(string folderId, string resourceKey, string tid)
         {
             // Construct the base URL for the folder
@@ -231,6 +259,13 @@ namespace pyjump.Services
             return url;
         }
 
+        /// <summary>
+        /// Builds a Google Drive file URL using the provided fileId, resourceKey, and tid (Shared Drive ID).
+        /// </summary>
+        /// <param name="fileId"></param>
+        /// <param name="resourceKey"></param>
+        /// <param name="tid"></param>
+        /// <returns></returns>
         private string BuildFileUrl(string fileId, string resourceKey, string tid)
         {
             // Construct the base URL for the file
@@ -260,6 +295,12 @@ namespace pyjump.Services
             return url;
         }
 
+        /// <summary>
+        /// Get all files in a given whitelist entry.
+        /// </summary>
+        /// <param name="whitelist"></param>
+        /// <param name="logForm"></param>
+        /// <returns></returns>
         public async Task<List<FileEntry>> GetAllFilesInWhitelistAsync(WhitelistEntry whitelist, LogForm logForm)
         {
             var files = new List<FileEntry>();
@@ -392,6 +433,7 @@ namespace pyjump.Services
                     {
                         Id = actualFile.Id,
                         ResourceKey = actualFile.ResourceKey ?? string.Empty,
+                        DriveId = actualFile.DriveId ?? string.Empty,
                         Url = BuildFileUrl(actualFile.Id, actualFile.ResourceKey, actualFile.DriveId),
                         Name = actualFile.Name,
                         LastModified = modifiedTime ?? DateTime.MinValue,

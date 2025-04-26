@@ -21,6 +21,9 @@ namespace pyjump.Infrastructure
                 .Property(e => e.ResourceKey)
                 .HasDefaultValue(string.Empty);
             modelBuilder.Entity<WhitelistEntry>()
+                .Property(e => e.DriveId)
+                .HasDefaultValue(string.Empty);
+            modelBuilder.Entity<WhitelistEntry>()
                 .Property(e => e.Name)
                 .IsRequired();
             modelBuilder.Entity<WhitelistEntry>()
@@ -36,6 +39,9 @@ namespace pyjump.Infrastructure
                 .HasKey(e => e.Id);
             modelBuilder.Entity<FileEntry>()
                 .Property(e => e.ResourceKey)
+                .HasDefaultValue(string.Empty);
+            modelBuilder.Entity<FileEntry>()
+                .Property(e => e.DriveId)
                 .HasDefaultValue(string.Empty);
             modelBuilder.Entity<FileEntry>()
                 .Property(e => e.Url)

@@ -8,6 +8,7 @@ namespace pyjump.Entities
     {
         public string Id { get; set; }
         public string ResourceKey { get; set; }
+        public string DriveId { get; set; }
         public string Name { get; set; }
         public string Url { get; set; }
         public DateTime? LastChecked { get; set; }

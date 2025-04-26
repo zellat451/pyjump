@@ -54,12 +54,15 @@ namespace pyjump.Services
                     var newEntry = allWhitelistEntries.FirstOrDefault(x => x.Id == entry.Id);
                     if (newEntry != null)
                     {
-                        if (entry.Name != newEntry.Name || entry.Url != newEntry.Url
-                            || entry.ResourceKey != newEntry.ResourceKey)
+                        if (entry.Name != newEntry.Name 
+                            || entry.Url != newEntry.Url
+                            || entry.ResourceKey != newEntry.ResourceKey
+                            || entry.DriveId != newEntry.DriveId)
                         {
                             entry.Name = newEntry.Name;
                             entry.Url = newEntry.Url;
                             entry.ResourceKey = newEntry.ResourceKey;
+                            entry.DriveId = newEntry.DriveId;
                             entry.LastChecked = null;
 
                             toUpdate.Add(entry);
@@ -135,6 +138,7 @@ namespace pyjump.Services
                             if (entry.Name != newEntry.Name
                                 || entry.Url != newEntry.Url
                                 || entry.ResourceKey != newEntry.ResourceKey
+                                || entry.DriveId != newEntry.DriveId
                                 || entry.LastModified != newEntry.LastModified
                                 || entry.Owner != newEntry.Owner
                                 || entry.FolderId != newEntry.FolderId
@@ -144,6 +148,7 @@ namespace pyjump.Services
                                 entry.Name = newEntry.Name;
                                 entry.Url = newEntry.Url;
                                 entry.ResourceKey = newEntry.ResourceKey;
+                                entry.DriveId = newEntry.DriveId;
                                 entry.LastModified = newEntry.LastModified;
                                 entry.Owner = newEntry.Owner;
                                 entry.FolderId = newEntry.FolderId;
