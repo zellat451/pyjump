@@ -1,4 +1,5 @@
-﻿using pyjump.Interfaces;
+﻿using Google.Apis.Sheets.v4.Data;
+using pyjump.Interfaces;
 using pyjump.Services;
 
 namespace pyjump.Entities
@@ -34,7 +35,7 @@ namespace pyjump.Entities
             return Statics.Sheet.File.SHEET_COLS;
         }
 
-        public List<string> GetRowData()
+        public List<CellData> GetRowData()
         {
             string locationName = this?.FolderName ?? "Unknown";
             string locationUrl = this?.FolderUrl ?? "";
@@ -43,11 +44,39 @@ namespace pyjump.Entities
 
             var colNumber = GetSheetColumnsNumber();
 
-            var data = new List<string>(new string[colNumber]);
-            data[Statics.Sheet.File.SHEET_NAMECOL] = $"=HYPERLINK(\"{this.Url}\", \"{escapedEntryName}\")";
-            data[Statics.Sheet.File.SHEET_LOCATIONCOL] = $"=HYPERLINK(\"{locationUrl}\", \"{escapedLocationName}\")";
-            data[Statics.Sheet.File.SHEET_CREATORCOL] = this.Owner;
-            data[Statics.Sheet.File.SHEET_DATECOL] = $"{this.LastModified:yyyy-MM-dd HH:mm:ss}";
+            var data = new List<CellData>()
+            {
+                new() {
+                        UserEnteredValue = new ExtendedValue
+                        {
+                            FormulaValue = $"=HYPERLINK(\"{this.Url}\", \"{escapedEntryName}\")"
+                        }
+                    },
+                new() {
+                        UserEnteredValue = new ExtendedValue
+                        {
+                            FormulaValue = $"=HYPERLINK(\"{locationUrl}\", \"{escapedLocationName}\")"
+                        }
+                    },
+                new() {
+                        UserEnteredValue = new ExtendedValue
+                        {
+                            StringValue = this.Owner
+                        }
+                    },
+                new() {
+                        UserEnteredValue = new ExtendedValue
+                        {
+                            StringValue = this.LastModified?.ToString("yyyy-MM-dd HH:mm:ss")
+                        }
+                    }
+            };
+
+            if (colNumber != data.Count)
+            {
+                throw new Exception($"Column count mismatch: expected {colNumber}, got {data.Count} data");
+            }
+
             return data;
         }
     }

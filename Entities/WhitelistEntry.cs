@@ -1,4 +1,5 @@
-﻿using pyjump.Interfaces;
+﻿using Google.Apis.Sheets.v4.Data;
+using pyjump.Interfaces;
 using pyjump.Services;
 
 namespace pyjump.Entities
@@ -27,15 +28,27 @@ namespace pyjump.Entities
             return Statics.Sheet.Whitelist.SHEET_COLS;
         }
 
-        public List<string> GetRowData()
+        public List<CellData> GetRowData()
         {
             string escapedEntryName = Methods.EscapeForFormula(this.Name);
             string escapedUrl = Methods.EscapeForFormula(this.Url);
 
             var colNumber = GetSheetColumnsNumber();
 
-            var data = new List<string>(new string[colNumber]);
-            data[Statics.Sheet.Whitelist.SHEET_NAMECOL] = $"=HYPERLINK(\"{escapedUrl}\", \"{escapedEntryName}\")";
+            var data = new List<CellData>()
+            {
+                new() {
+                        UserEnteredValue = new ExtendedValue
+                        {
+                            FormulaValue = $"=HYPERLINK(\"{escapedUrl}\", \"{escapedEntryName}\")"
+                        }
+                    }
+            };
+
+            if (colNumber != data.Count)
+            {
+                throw new Exception($"Column count mismatch: expected {colNumber}, got {data.Count} data");
+            }
 
             return data;
         }

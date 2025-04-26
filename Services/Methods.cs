@@ -559,16 +559,9 @@ namespace pyjump.Services
             foreach (var entry in entries)
             {
                 var data = entry.GetRowData();
-                var cDataValues = data.Select(x => new CellData
-                {
-                    UserEnteredValue = new ExtendedValue
-                    {
-                        FormulaValue = x
-                    }
-                }).ToList();
                 cellData.Add(new RowData
                 {
-                    Values = cDataValues
+                    Values = data
                 });
 
                 loadingForm.IncrementProgress();
