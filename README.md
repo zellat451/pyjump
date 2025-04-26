@@ -132,9 +132,10 @@ Do **not** use these keywords in the names of your `mainDrives`, unless you want
 ...Or, you can just click the big button and let `Fren` take care of everything. Yes, they are a fren and they work good. The big `:)` button:
 1. Scans to refresh the whitelist
 1. Scans to get the new files
-1. Removes the broken files and folders from the DB
 1. Uploads the data to the spreadsheet
 1. And it opens the spreadsheet for you at the end
+
+No, Fren does not delete broken entries. It is not their job. They work hard enough already, and it takes too long. You can do that manually if you want, or use the button `Delete broken entries` to remove all broken entries from the DB.
 
 ---
 
@@ -146,7 +147,7 @@ Do **not** use these keywords in the names of your `mainDrives`, unless you want
 1. `Scan Whitelist`: Scans the `mainDrives` for their folders recursively. This may take some time.
 1. `Scan Files`: Scans the whitelist for their files recursively. This may take some time. Only scans new files from the last time the whitelist entry was checked, to go quicker.
 1. `Reset Whitelist Times`: Resets the `LastChecked` date of all whitelist entries to null. This will force a complete scan of all files in the whitelist.
-1. `Delete broken entries`: Removes all broken entries from the DB, such as trashed files or folders, or those you don't have the permissions for anymore.
+1. `Delete broken entries`: Removes all broken entries from the DB, such as trashed files or folders, or those you don't have the permissions for anymore. This may take some time.
 1. `Build sheets`: Uploads the files to the Google Sheets document.
 1. `Clear all data`: Clears all the data in the DB. Does not affect the data uploaded to the Google Sheets document.
 1. `:)`: The Fren button. It does everything for you. It scans the whitelist, scans the files, and uploads the data to the Google Sheets document. It also opens the document in your browser at the end.

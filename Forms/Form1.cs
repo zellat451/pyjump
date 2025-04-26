@@ -202,21 +202,14 @@ namespace pyjump
                 ClearEverything();
                 InitializeEverything();
 
-                // 3. delete broken entries
-                loadingForm = InitProgressBar();
-                await Methods.DeleteBrokenEntries(_logForm, loadingForm);
-                loadingForm?.Close();
-                ClearEverything();
-                InitializeEverything();
-
-                // 4. build sheets
+                // 3. build sheets
                 loadingForm = InitProgressBar();
                 await Methods.BuildSheets(_logForm, loadingForm);
                 loadingForm?.Close();
                 ClearEverything();
                 InitializeEverything();
 
-                // 5. go to spreadsheet
+                // 4. go to spreadsheet
                 Methods.GoToSheet();
 
                 _logForm.Log("Fren done. Fren does good work. Enjoy Fren's work, Fren's fren. :)");
