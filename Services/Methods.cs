@@ -4,12 +4,17 @@ using Google.Apis.Sheets.v4.Data;
 using pyjump.Entities;
 using pyjump.Forms;
 using pyjump.Infrastructure;
+using pyjump.Interfaces;
 
 namespace pyjump.Services
 {
     public static class Methods
     {
-
+        /// <summary>
+        /// Scans all drives and folders in the registered main drives and updates the database with the new whitelist entries.
+        /// </summary>
+        /// <param name="logForm"></param>
+        /// <returns></returns>
         public static async Task ScanWhitelist(LogForm logForm)
         {
             #region get all folder entries for whitelist
@@ -71,6 +76,12 @@ namespace pyjump.Services
             }
         }
 
+        /// <summary>
+        /// Scans all files in the whitelist entries and updates the database with the new file entries.
+        /// </summary>
+        /// <param name="logForm"></param>
+        /// <param name="loadingForm"></param>
+        /// <returns></returns>
         public static async Task ScanFiles(LogForm logForm, LoadingForm loadingForm)
         {
             #region get whitelist all entries
@@ -198,6 +209,14 @@ namespace pyjump.Services
             await TreatSetsForFiles(allFiles, logForm, loadingForm);
         }
 
+        /// <summary>
+        /// Create sets for all files with the same name and owner, irrespective of the folder they are in.
+        /// Chooses the file with the most recent 'LastModified' date as the owner of the set.
+        /// </summary>
+        /// <param name="fileEntries"></param>
+        /// <param name="logForm"></param>
+        /// <param name="loadingForm"></param>
+        /// <returns></returns>
         private static async Task TreatSetsForFiles(List<FileEntry> fileEntries, LogForm logForm, LoadingForm loadingForm)
         {
             try
@@ -379,6 +398,12 @@ namespace pyjump.Services
             }
         }
 
+        /// <summary>
+        /// Forces the file type to match the folder type for all files in the database.
+        /// </summary>
+        /// <param name="logForm"></param>
+        /// <param name="loadingForm"></param>
+        /// <returns></returns>
         public static async Task ForceMatchType(LogForm logForm, LoadingForm loadingForm)
         {
             try
@@ -444,6 +469,136 @@ namespace pyjump.Services
             }
         }
 
+        /// <summary>
+        /// Uploads the entries to the specified sheet in the Google Sheets.
+        /// </summary>
+        /// <param name="entries"></param>
+        /// <param name="sheetName"></param>
+        /// <param name="logForm"></param>
+        /// <param name="loadingForm"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        private static async Task UploadToSheetAsync<T>(List<T> entries, string sheetName, LogForm logForm, LoadingForm loadingForm)
+            where T : ISheetDataEntity
+        {
+            if (entries.Count == 0)
+            {
+                logForm.Log($"No entries to upload to sheet '{sheetName}'.");
+                return;
+            }
+
+            var service = ScopedServices.SheetsService;
+
+            // Step 1: Get the sheet ID and current grid size
+            var spreadsheet = await service.Spreadsheets.Get(SingletonServices.SpreadsheetId).ExecuteAsync();
+            var sheet = spreadsheet.Sheets.FirstOrDefault(s => s.Properties.Title == sheetName);
+            if (sheet == null)
+            {
+                logForm.Log($"❌ Sheet '{sheetName}' not found in spreadsheet.");
+                throw new Exception($"❌ Sheet '{sheetName}' not found in spreadsheet.");
+            }
+
+            int sheetId = (int)sheet.Properties.SheetId;
+            #region resize the sheet
+            var currentRowCount = sheet.Properties.GridProperties.RowCount ?? 1;
+            var currentColCount = sheet.Properties.GridProperties.ColumnCount ?? 1;
+
+            int rowsNeeded = entries.Count + 1; // +1 for header row
+            int colsNeeded = T.GetSheetColumnsNumber();
+
+            // Step 2: Resize the sheet
+            var resizeRequest = new BatchUpdateSpreadsheetRequest
+            {
+                Requests = new List<Request>
+            {
+                new Request
+                {
+                    UpdateSheetProperties = new UpdateSheetPropertiesRequest
+                    {
+                        Properties = new SheetProperties
+                        {
+                            SheetId = sheetId,
+                            GridProperties = new GridProperties
+                            {
+                                RowCount = rowsNeeded,
+                                ColumnCount = colsNeeded
+                            }
+                        },
+                        Fields = "gridProperties(rowCount,columnCount)"
+                    }
+                }
+            }
+            };
+
+            await service.Spreadsheets.BatchUpdate(resizeRequest, SingletonServices.SpreadsheetId).ExecuteAsync();
+            #endregion
+
+
+            // Step 3: Build data and clearing requests
+            var dataRequests = new List<Request>();
+
+            #region clear sheet data
+            // 3.1: Clear rows (but keep the header)
+            dataRequests.Add(new Request
+            {
+                UpdateCells = new UpdateCellsRequest
+                {
+                    Range = new GridRange
+                    {
+                        SheetId = sheetId,
+                        StartRowIndex = 1 // keep header (row 0)
+                    },
+                    Fields = "userEnteredValue"
+                }
+            });
+            #endregion
+
+            #region upload the new data
+            // 3.2: Build row data
+            var cellData = new List<RowData>();
+            foreach (var entry in entries)
+            {
+                var data = entry.GetRowData();
+                var cDataValues = data.Select(x => new CellData
+                {
+                    UserEnteredValue = new ExtendedValue
+                    {
+                        FormulaValue = x
+                    }
+                }).ToList();
+                cellData.Add(new RowData
+                {
+                    Values = cDataValues
+                });
+
+                loadingForm.IncrementProgress();
+            }
+
+            // 3.3: Write data starting from row 1 (avoiding header)
+            dataRequests.Add(new Request
+            {
+                UpdateCells = new UpdateCellsRequest
+                {
+                    Start = new GridCoordinate { SheetId = sheetId, RowIndex = 1, ColumnIndex = 0 },
+                    Rows = cellData,
+                    Fields = "userEnteredValue"
+                }
+            });
+            #endregion
+
+            // Step 4: Execute the data update batch
+            await service.Spreadsheets.BatchUpdate(new BatchUpdateSpreadsheetRequest { Requests = dataRequests }, SingletonServices.SpreadsheetId).ExecuteAsync();
+
+            logForm.Log($"✅ Uploaded {entries.Count} entries to sheet '{sheetName}'.");
+        }
+
+        #region Common methods
+        /// <summary>
+        /// Builds the sheets for all the data in the database.
+        /// </summary>
+        /// <param name="logForm"></param>
+        /// <param name="loadingForm"></param>
+        /// <returns></returns>
         public static async Task BuildSheets(LogForm logForm, LoadingForm loadingForm)
         {
             try
@@ -528,22 +683,22 @@ namespace pyjump.Services
 
                 // 5. upload the data to the sheets
                 loadingForm.PrepareLoadingBar("Building Jumps sheet", dataSheetJump.Count);
-                await UploadToSheetAsync(dataSheetJump, Statics.Sheet.SHEET_J, logForm, loadingForm);
+                await UploadToSheetAsync(dataSheetJump, Statics.Sheet.File.SHEET_J, logForm, loadingForm);
 
                 loadingForm.PrepareLoadingBar("Building Stories sheet", dataSheetStory.Count);
-                await UploadToSheetAsync(dataSheetStory, Statics.Sheet.SHEET_S, logForm, loadingForm);
+                await UploadToSheetAsync(dataSheetStory, Statics.Sheet.File.SHEET_S, logForm, loadingForm);
 
                 loadingForm.PrepareLoadingBar("Building Others sheet", dataSheetOther.Count);
-                await UploadToSheetAsync(dataSheetOther, Statics.Sheet.SHEET_O, logForm, loadingForm);
+                await UploadToSheetAsync(dataSheetOther, Statics.Sheet.File.SHEET_O, logForm, loadingForm);
 
                 loadingForm.PrepareLoadingBar("Building Jumps (Unfiltered) sheet", dataSheetJumpUnfiltered.Count);
-                await UploadToSheetAsync(dataSheetJumpUnfiltered, Statics.Sheet.SHEET_J_1, logForm, loadingForm);
+                await UploadToSheetAsync(dataSheetJumpUnfiltered, Statics.Sheet.File.SHEET_J_1, logForm, loadingForm);
 
                 loadingForm.PrepareLoadingBar("Building Stories (Unfiltered) sheet", dataSheetStoryUnfiltered.Count);
-                await UploadToSheetAsync(dataSheetStoryUnfiltered, Statics.Sheet.SHEET_S_1, logForm, loadingForm);
+                await UploadToSheetAsync(dataSheetStoryUnfiltered, Statics.Sheet.File.SHEET_S_1, logForm, loadingForm);
 
                 loadingForm.PrepareLoadingBar("Building Whitelist sheet", allWhitelistEntries.Count);
-                await UploadToSheetAsync(allWhitelistEntries.OrderBy(x => x.Name).ToList(), Statics.Sheet.SHEET_W, logForm, loadingForm);
+                await UploadToSheetAsync(allWhitelistEntries.OrderBy(x => x.Name).ToList(), Statics.Sheet.Whitelist.SHEET_W, logForm, loadingForm);
             }
             catch (Exception e)
             {
@@ -552,256 +707,14 @@ namespace pyjump.Services
             }
         }
 
-        private static string EscapeForFormula(string input) => input?.Replace("\"", "\"\"") ?? string.Empty;
+        public static string EscapeForFormula(string input) => input?.Replace("\"", "\"\"") ?? string.Empty;
 
-        private static async Task UploadToSheetAsync(List<FileEntry> entries, string sheetName, LogForm logForm, LoadingForm loadingForm)
-        {
-            if (entries.Count == 0)
-            {
-                logForm.Log($"No entries to upload to sheet '{sheetName}'.");
-                return;
-            }
-
-            var service = ScopedServices.SheetsService;
-
-            // Step 1: Get the sheet ID and current grid size
-            var spreadsheet = await service.Spreadsheets.Get(SingletonServices.SpreadsheetId).ExecuteAsync();
-            var sheet = spreadsheet.Sheets.FirstOrDefault(s => s.Properties.Title == sheetName);
-            if (sheet == null)
-            {
-                logForm.Log($"❌ Sheet '{sheetName}' not found in spreadsheet.");
-                throw new Exception($"❌ Sheet '{sheetName}' not found in spreadsheet.");
-            }
-
-            int sheetId = (int)sheet.Properties.SheetId;
-            var currentRowCount = sheet.Properties.GridProperties.RowCount ?? 1;
-            var currentColCount = sheet.Properties.GridProperties.ColumnCount ?? 1;
-
-            int rowsNeeded = entries.Count + 1; // +1 for header row
-            int colsNeeded = Statics.Sheet.SHEET_COLS;
-
-            // Step 2: Resize the sheet
-            var resizeRequest = new BatchUpdateSpreadsheetRequest
-            {
-                Requests = new List<Request>
-            {
-                new Request
-                {
-                    UpdateSheetProperties = new UpdateSheetPropertiesRequest
-                    {
-                        Properties = new SheetProperties
-                        {
-                            SheetId = sheetId,
-                            GridProperties = new GridProperties
-                            {
-                                RowCount = rowsNeeded,
-                                ColumnCount = colsNeeded
-                            }
-                        },
-                        Fields = "gridProperties(rowCount,columnCount)"
-                    }
-                }
-            }
-            };
-
-            await service.Spreadsheets.BatchUpdate(resizeRequest, SingletonServices.SpreadsheetId).ExecuteAsync();
-
-
-            // Step 3: Build data and clearing requests
-            var dataRequests = new List<Request>();
-
-            // 3.1: Clear rows (but keep the header)
-            dataRequests.Add(new Request
-            {
-                UpdateCells = new UpdateCellsRequest
-                {
-                    Range = new GridRange
-                    {
-                        SheetId = sheetId,
-                        StartRowIndex = 1 // keep header (row 0)
-                    },
-                    Fields = "userEnteredValue"
-                }
-            });
-
-            // 3.2: Build row data
-            var cellData = new List<RowData>();
-            foreach (var entry in entries)
-            {
-                string locationName = entry?.FolderName ?? "Unknown";
-                string locationUrl = entry?.FolderUrl ?? "";
-                string escapedEntryName = EscapeForFormula(entry.Name);
-                string escapedLocationName = EscapeForFormula(locationName);
-
-                cellData.Add(new RowData
-                {
-                    Values =
-                    [
-                        new CellData
-                        {
-                            UserEnteredValue = new ExtendedValue
-                            {
-                                FormulaValue = $"=HYPERLINK(\"{entry.Url}\", \"{escapedEntryName}\")"
-                            }
-                        },
-                        new CellData
-                        {
-                            UserEnteredValue = new ExtendedValue
-                            {
-                                FormulaValue = $"=HYPERLINK(\"{locationUrl}\", \"{escapedLocationName}\")"
-                            }
-                        },
-                        new CellData
-                        {
-                            UserEnteredValue = new ExtendedValue
-                            {
-                                StringValue = entry.Owner
-                            }
-                        },
-                        new CellData
-                        {
-                            UserEnteredValue = new ExtendedValue
-                            {
-                                StringValue = $"{entry.LastModified:yyyy-MM-dd HH:mm:ss}"
-                            }
-                        }
-                    ]
-                });
-
-                loadingForm.IncrementProgress();
-            }
-
-            // 3.3: Write data starting from row 1
-            dataRequests.Add(new Request
-            {
-                UpdateCells = new UpdateCellsRequest
-                {
-                    Start = new GridCoordinate { SheetId = sheetId, RowIndex = 1, ColumnIndex = 0 },
-                    Rows = cellData,
-                    Fields = "userEnteredValue"
-                }
-            });
-
-            // Step 4: Execute the data update batch
-            await service.Spreadsheets.BatchUpdate(new BatchUpdateSpreadsheetRequest { Requests = dataRequests }, SingletonServices.SpreadsheetId).ExecuteAsync();
-
-            logForm.Log($"✅ Uploaded {entries.Count} entries to sheet '{sheetName}'.");
-        }
-
-        private static async Task UploadToSheetAsync(List<WhitelistEntry> entries, string sheetName, LogForm logForm, LoadingForm loadingForm)
-        {
-            if (entries.Count == 0)
-            {
-                logForm.Log($"No entries to upload to sheet '{sheetName}'.");
-                return;
-            }
-
-            var service = ScopedServices.SheetsService;
-
-            // Step 1: Get the sheet ID and current grid size
-            var spreadsheet = await service.Spreadsheets.Get(SingletonServices.SpreadsheetId).ExecuteAsync();
-            var sheet = spreadsheet.Sheets.FirstOrDefault(s => s.Properties.Title == sheetName);
-            if (sheet == null)
-            {
-                logForm.Log($"❌ Sheet '{sheetName}' not found in spreadsheet.");
-                throw new Exception($"❌ Sheet '{sheetName}' not found in spreadsheet.");
-            }
-
-            int sheetId = (int)sheet.Properties.SheetId;
-            var currentRowCount = sheet.Properties.GridProperties.RowCount ?? 1;
-            var currentColCount = sheet.Properties.GridProperties.ColumnCount ?? 1;
-
-            int rowsNeeded = entries.Count + 1; // +1 for header row
-            int colsNeeded = 1;
-
-            // Step 2: Resize the sheet
-            var resizeRequest = new BatchUpdateSpreadsheetRequest
-            {
-                Requests = new List<Request>
-            {
-                new Request
-                {
-                    UpdateSheetProperties = new UpdateSheetPropertiesRequest
-                    {
-                        Properties = new SheetProperties
-                        {
-                            SheetId = sheetId,
-                            GridProperties = new GridProperties
-                            {
-                                RowCount = rowsNeeded,
-                                ColumnCount = colsNeeded
-                            }
-                        },
-                        Fields = "gridProperties(rowCount,columnCount)"
-                    }
-                }
-            }
-            };
-
-            await service.Spreadsheets.BatchUpdate(resizeRequest, SingletonServices.SpreadsheetId).ExecuteAsync();
-
-
-            // Step 3: Build data and clearing requests
-            var dataRequests = new List<Request>();
-
-            // 3.1: Clear rows (but keep the header)
-            dataRequests.Add(new Request
-            {
-                UpdateCells = new UpdateCellsRequest
-                {
-                    Range = new GridRange
-                    {
-                        SheetId = sheetId,
-                        StartRowIndex = 1 // keep header (row 0)
-                    },
-                    Fields = "userEnteredValue"
-                }
-            });
-
-            // 3.2: Build row data
-            var cellData = new List<RowData>();
-            foreach (var entry in entries)
-            {
-                string escapedEntryName = EscapeForFormula(entry.Name);
-                string escapedUrl = EscapeForFormula(entry.Url);
-
-                cellData.Add(new RowData
-                {
-                    Values =
-                    [
-                        new CellData
-                        {
-                            UserEnteredValue = new ExtendedValue
-                            {
-                                FormulaValue = $"=HYPERLINK(\"{escapedUrl}\", \"{escapedEntryName}\")"
-                            }
-                        }
-                    ]
-                });
-
-                loadingForm.IncrementProgress();
-            }
-
-            // 3.3: Write data starting from row 1
-            dataRequests.Add(new Request
-            {
-                UpdateCells = new UpdateCellsRequest
-                {
-                    Start = new GridCoordinate { SheetId = sheetId, RowIndex = 1, ColumnIndex = 0 },
-                    Rows = cellData,
-                    Fields = "userEnteredValue"
-                }
-            });
-
-            // Step 4: Execute the data update batch
-            await service.Spreadsheets.BatchUpdate(new BatchUpdateSpreadsheetRequest { Requests = dataRequests }, SingletonServices.SpreadsheetId).ExecuteAsync();
-
-            logForm.Log($"✅ Uploaded {entries.Count} entries to sheet '{sheetName}'.");
-        }
-
+        /// <summary>
+        /// Opens the registered Google Spreadsheet in the default browser.
+        /// </summary>
         public static void GoToSheet()
         {
-            var url = $"https://docs.google.com/spreadsheets/d/{SingletonServices.SpreadsheetId}/edit#gid={Statics.Sheet.SHEET_J}";
+            var url = $"https://docs.google.com/spreadsheets/d/{SingletonServices.SpreadsheetId}/edit#gid={Statics.Sheet.File.SHEET_J}";
             var psi = new ProcessStartInfo
             {
                 FileName = url,
@@ -817,6 +730,9 @@ namespace pyjump.Services
             }
         }
 
+        /// <summary>
+        /// Clears all data from the database.
+        /// </summary>
         public static void ClearAllData()
         {
             using (var db = new AppDbContext())
@@ -826,5 +742,6 @@ namespace pyjump.Services
                 db.SaveChanges();
             }
         }
+        #endregion
     }
 }

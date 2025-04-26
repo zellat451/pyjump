@@ -12,10 +12,10 @@ namespace pyjump
         [STAThread]
         static void Main()
         {
-            //using (var db = new AppDbContext())
-            //{
-            //    db.Database.Migrate(); // Applies any pending migrations
-            //}
+            using (var db = new AppDbContext())
+            {
+                db.Database.Migrate(); // Applies any pending migrations
+            }
 
             SingletonServices.Initialize(); // Initialize singleton services
 

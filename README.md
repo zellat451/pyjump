@@ -42,11 +42,12 @@ If you want to use your own Google Cloud Console project:
 
 ---
 
-## Configuration
+## First Time Configuration
 
 Open the `Resource\appsettings.json` file:
 
-1. This is the way the application will find the Google Sheets document to upload data to. You can find the ID in the URL of your Google Sheets document.
+1. This is the way the application will find the Google Sheets document to upload data to. **Replace it with yours**. 
+You can find the ID in the URL of your Google Sheets document.
 Or, you can just give it the full URL of the document, it can read that too.
 ```json
 {
@@ -74,7 +75,7 @@ Don't forget: if you can't access the folder with your google account, neither w
 3. This is the way the application will decide on which list the files will be uploaded to. 
 More specifically, this is a list of (case-insensitive) keywords that the application will look for in the folder names. 
 All files in the folder will be uploaded to the list `Stories` instead of `Jumps`.
-Do **not** use these keywords in the names of your `mainDrives`.
+Do **not** use these keywords in the names of your `mainDrives`, unless you want all sub-folders to be `Stories` by default.
 ```json
 {
 	"stories_keywords": [
@@ -89,7 +90,7 @@ Do **not** use these keywords in the names of your `mainDrives`.
 ---
 
 ## How to use
-1. Run the application (`pyjump.exe`. Create a shortcut for later if you need to.)
+1. Run the application (`pyjump.exe`. Create a shortcut for later if you need to). The first time launch may take a moment as it initializes the spreadsheet.
 2. Connect to your Google account (if not already done)
 3. Click the button `scan Whitelist` to start scanning the `mainDrives` for their folders recursively. This may take some time.
 	- After scanning a Whitelist entry, its property `LastChecked` will be set to the current date utc, midnight.

@@ -4,22 +4,36 @@
     {
         public static class Sheet
         {
+            public static class File
+            {
+                public const string SHEET_J = "Jumps";
+                public const string SHEET_S = "Stories";
+                public const string SHEET_J_1 = "Jumps (Unfiltered)";
+                public const string SHEET_S_1 = "Stories (Unfiltered)";
+                public const string SHEET_O = "Others";
 
-            public const string SHEET_J = "Jumps";
-            public const string SHEET_S = "Stories";
+                public const int SHEET_COLS = 4;
 
-            public const string SHEET_J_1 = "Jumps (Unfiltered)";
-            public const string SHEET_S_1 = "Stories (Unfiltered)";
+                public const int SHEET_NAMECOL = 0;
+                public const string COL_NAME = "Name";
+                public const int SHEET_LOCATIONCOL = 1;
+                public const string COL_LOCATION = "Location";
+                public const int SHEET_CREATORCOL = 2;
+                public const string COL_CREATOR = "Owner";
+                public const int SHEET_DATECOL = 3;
+                public const string COL_LASTUPDATED = "Last Updated";
+            }
 
-            public const string SHEET_O = "Others";
+            public static class Whitelist
+            {
+                public const string SHEET_W = "Whitelist";
 
-            public const string SHEET_W = "Whitelist";
+                public const int SHEET_COLS = 1;
 
-            public const int SHEET_NAMECOL = 1;
-            public const int SHEET_LOCATIONCOL = 2;
-            public const int SHEET_CREATORCOL = 3;
-            public const int SHEET_DATECOL = 4;
-            public const int SHEET_COLS = 4;
+                public const int SHEET_NAMECOL = 0;
+                public const string COL_NAME = "Whitelist";
+
+            }
         }
 
         public static class FolderType
