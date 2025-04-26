@@ -93,8 +93,6 @@ Do **not** use these keywords in the names of your `mainDrives`, unless you want
 1. Run the application (`pyjump.exe`. Create a shortcut for later if you need to). The first time launch may take a moment as it initializes the spreadsheet.
 2. Connect to your Google account (if not already done)
 3. Click the button `scan Whitelist` to start scanning the `mainDrives` for their folders recursively. This may take some time.
-	- After scanning a Whitelist entry, its property `LastChecked` will be set to the current date utc, midnight.
-	- Future scans will only scan folders that have been modified since the last check.
 4. You can use the button `Edit Whitelist` to see what's registered in the whitelist. 
    	- You can also add folders manually, but be careful with that. They will be deleted the next time you scan the whitelist.
 	- You can also remove folders manually, but be careful with that. They will be added the next time you scan the whitelist.
@@ -104,6 +102,8 @@ Do **not** use these keywords in the names of your `mainDrives`, unless you want
 		- `o`: Other. This type is never used in the application. It is just a placeholder for future use if you need it.
 		- `-`: Blacklisted. This means that the folder is blacklisted. All files found in this folder will be ignored and not uploaded to any list. In fact, the folder will be ignored during the file crawling.
 5. Click the button `scan Files` to start scanning the produced `Whitelist` for their files. This may take some time.
+	- After scanning a Whitelist entry, its property `LastChecked` will be set to the current date utc, midnight.
+	- Future scans will only get files that have been modified since the last check, to go faster.
 6. You can similarly use the button `Edit Files` to see what's registered in the files list. 
 	- You can also add files manually.
 	- You can also remove files manually, but be careful with that.
