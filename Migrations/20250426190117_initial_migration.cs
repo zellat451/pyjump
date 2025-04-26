@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace pyjump.Migrations
 {
     /// <inheritdoc />
-    public partial class File_folderNotRequired : Migration
+    public partial class initial_migration : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -17,6 +17,7 @@ namespace pyjump.Migrations
                 {
                     Id = table.Column<string>(type: "TEXT", nullable: false),
                     ResourceKey = table.Column<string>(type: "TEXT", nullable: true, defaultValue: ""),
+                    DriveId = table.Column<string>(type: "TEXT", nullable: true, defaultValue: ""),
                     Name = table.Column<string>(type: "TEXT", nullable: false),
                     Url = table.Column<string>(type: "TEXT", nullable: false),
                     LastChecked = table.Column<DateTime>(type: "TEXT", nullable: true),
@@ -33,6 +34,7 @@ namespace pyjump.Migrations
                 {
                     Id = table.Column<string>(type: "TEXT", nullable: false),
                     ResourceKey = table.Column<string>(type: "TEXT", nullable: true, defaultValue: ""),
+                    DriveId = table.Column<string>(type: "TEXT", nullable: true, defaultValue: ""),
                     Url = table.Column<string>(type: "TEXT", nullable: false),
                     Name = table.Column<string>(type: "TEXT", nullable: false),
                     LastModified = table.Column<DateTime>(type: "TEXT", nullable: true),
@@ -109,8 +111,7 @@ namespace pyjump.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_SimilarSets_OwnerFileEntryId",
                 table: "SimilarSets",
-                column: "OwnerFileEntryId",
-                unique: true);
+                column: "OwnerFileEntryId");
         }
 
         /// <inheritdoc />

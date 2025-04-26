@@ -11,8 +11,8 @@ using pyjump.Infrastructure;
 namespace pyjump.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250426173400_file_and_folder_driveId")]
-    partial class file_and_folder_driveId
+    [Migration("20250426190117_initial_migration")]
+    partial class initial_migration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -100,8 +100,7 @@ namespace pyjump.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("OwnerFileEntryId")
-                        .IsUnique();
+                    b.HasIndex("OwnerFileEntryId");
 
                     b.ToTable("SimilarSets");
                 });
@@ -168,8 +167,8 @@ namespace pyjump.Migrations
             modelBuilder.Entity("pyjump.Entities.SimilarSet", b =>
                 {
                     b.HasOne("pyjump.Entities.FileEntry", null)
-                        .WithOne()
-                        .HasForeignKey("pyjump.Entities.SimilarSet", "OwnerFileEntryId")
+                        .WithMany()
+                        .HasForeignKey("OwnerFileEntryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

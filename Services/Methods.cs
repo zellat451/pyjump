@@ -10,6 +10,7 @@ namespace pyjump.Services
 {
     public static class Methods
     {
+        #region whitelist methods
         /// <summary>
         /// Scans all drives and folders in the registered main drives and updates the database with the new whitelist entries.
         /// </summary>
@@ -54,7 +55,7 @@ namespace pyjump.Services
                     var newEntry = allWhitelistEntries.FirstOrDefault(x => x.Id == entry.Id);
                     if (newEntry != null)
                     {
-                        if (entry.Name != newEntry.Name 
+                        if (entry.Name != newEntry.Name
                             || entry.Url != newEntry.Url
                             || entry.ResourceKey != newEntry.ResourceKey
                             || entry.DriveId != newEntry.DriveId)
@@ -77,8 +78,10 @@ namespace pyjump.Services
                 // commit the changes to the database
                 db.SaveChanges();
             }
-        }
+        } 
+        #endregion
 
+        #region file methods
         /// <summary>
         /// Scans all files in the whitelist entries and updates the database with the new file entries.
         /// </summary>
@@ -472,8 +475,10 @@ namespace pyjump.Services
                 logForm.Log($"Error forcing match type: {e}");
                 throw;
             }
-        }
+        } 
+        #endregion
 
+        #region Common methods
         /// <summary>
         /// Uploads the entries to the specified sheet in the Google Sheets.
         /// </summary>
@@ -590,7 +595,6 @@ namespace pyjump.Services
             logForm.Log($"✅ Uploaded {entries.Count} entries to sheet '{sheetName}'.");
         }
 
-        #region Common methods
         /// <summary>
         /// Builds the sheets for all the data in the database.
         /// </summary>
@@ -729,16 +733,62 @@ namespace pyjump.Services
         }
 
         /// <summary>
-        /// Clears all data from the database.
+        /// Clears a range of files and folders from the database.
+        /// If 'null' is passed, all files or folders will be deleted.
+        /// Empty lists will delete nothing.
+        /// Base behavior is to delete all files and folders.
         /// </summary>
-        public static void ClearAllData()
+        /// <param name="filesToDelete"></param>
+        /// <param name="foldersToDelete"></param>
+        public static void ClearAllData(List<FileEntry> filesToDelete = null, List<WhitelistEntry> foldersToDelete = null)
         {
             using (var db = new AppDbContext())
             {
-                db.Whitelist.RemoveRange(db.Whitelist);
-                db.Files.RemoveRange(db.Files);
+                if (filesToDelete != null && filesToDelete.Count > 0)
+                {
+                    db.Files.RemoveRange(filesToDelete);
+                }
+                else if (filesToDelete == null)
+                {
+                    db.Files.RemoveRange(db.Files);
+                }
+
+                if (foldersToDelete != null && foldersToDelete.Count > 0)
+                {
+                    db.Whitelist.RemoveRange(foldersToDelete);
+                }
+                else if (foldersToDelete == null)
+                {
+                    db.Whitelist.RemoveRange(db.Whitelist);
+                }
+
                 db.SaveChanges();
             }
+        }
+
+        public static async Task DeleteBrokenEntries(LogForm logForm, LoadingForm loadingForm)
+        {
+            #region get all data
+            List<FileEntry> allFileEntries;
+            using (var db = new AppDbContext())
+            {
+                allFileEntries = db.Files.ToList();
+            }
+
+            List<WhitelistEntry> allWhitelistEntries;
+            using (var db = new AppDbContext())
+            {
+                allWhitelistEntries = db.Whitelist.ToList();
+            } 
+            #endregion
+
+            var scanner = new DriveScanner();
+
+            var brokenFiles = await scanner.GetInaccessibleEntries(allFileEntries, logForm, loadingForm);
+            var brokenFolders = await scanner.GetInaccessibleEntries(allWhitelistEntries, logForm, loadingForm);
+
+            // delete the broken data from the database
+            ClearAllData(brokenFiles, brokenFolders);
         }
         #endregion
     }

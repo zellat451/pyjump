@@ -97,8 +97,7 @@ namespace pyjump.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("OwnerFileEntryId")
-                        .IsUnique();
+                    b.HasIndex("OwnerFileEntryId");
 
                     b.ToTable("SimilarSets");
                 });
@@ -165,8 +164,8 @@ namespace pyjump.Migrations
             modelBuilder.Entity("pyjump.Entities.SimilarSet", b =>
                 {
                     b.HasOne("pyjump.Entities.FileEntry", null)
-                        .WithOne()
-                        .HasForeignKey("pyjump.Entities.SimilarSet", "OwnerFileEntryId")
+                        .WithMany()
+                        .HasForeignKey("OwnerFileEntryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

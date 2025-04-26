@@ -38,13 +38,14 @@
             btnFren = new Button();
             btnForceMatch = new Button();
             btnClearAll = new Button();
+            btnDeleteBroken = new Button();
             SuspendLayout();
             // 
             // btnScanFile
             // 
-            btnScanFile.Location = new Point(30, 251);
+            btnScanFile.Location = new Point(271, 83);
             btnScanFile.Name = "btnScanFile";
-            btnScanFile.Size = new Size(233, 91);
+            btnScanFile.Size = new Size(233, 87);
             btnScanFile.TabIndex = 0;
             btnScanFile.Text = "Scan Files";
             btnScanFile.UseVisualStyleBackColor = true;
@@ -52,7 +53,7 @@
             // 
             // btnEditWhitelist
             // 
-            btnEditWhitelist.Location = new Point(348, 12);
+            btnEditWhitelist.Location = new Point(271, 12);
             btnEditWhitelist.Name = "btnEditWhitelist";
             btnEditWhitelist.Size = new Size(107, 45);
             btnEditWhitelist.TabIndex = 4;
@@ -62,7 +63,7 @@
             // 
             // btnScanWhitelist
             // 
-            btnScanWhitelist.Location = new Point(30, 92);
+            btnScanWhitelist.Location = new Point(12, 83);
             btnScanWhitelist.Name = "btnScanWhitelist";
             btnScanWhitelist.Size = new Size(233, 87);
             btnScanWhitelist.TabIndex = 5;
@@ -72,7 +73,7 @@
             // 
             // btnEditFiles
             // 
-            btnEditFiles.Location = new Point(518, 12);
+            btnEditFiles.Location = new Point(397, 12);
             btnEditFiles.Name = "btnEditFiles";
             btnEditFiles.Size = new Size(107, 45);
             btnEditFiles.TabIndex = 6;
@@ -82,7 +83,7 @@
             // 
             // btnResetWhitelistTimes
             // 
-            btnResetWhitelistTimes.Location = new Point(71, 185);
+            btnResetWhitelistTimes.Location = new Point(61, 176);
             btnResetWhitelistTimes.Name = "btnResetWhitelistTimes";
             btnResetWhitelistTimes.Size = new Size(139, 30);
             btnResetWhitelistTimes.TabIndex = 7;
@@ -92,7 +93,7 @@
             // 
             // btnBuildSheets
             // 
-            btnBuildSheets.Location = new Point(461, 92);
+            btnBuildSheets.Location = new Point(542, 83);
             btnBuildSheets.Name = "btnBuildSheets";
             btnBuildSheets.Size = new Size(222, 87);
             btnBuildSheets.TabIndex = 8;
@@ -102,7 +103,7 @@
             // 
             // btnGoToSheet
             // 
-            btnGoToSheet.Location = new Point(94, 17);
+            btnGoToSheet.Location = new Point(12, 12);
             btnGoToSheet.Name = "btnGoToSheet";
             btnGoToSheet.Size = new Size(96, 34);
             btnGoToSheet.TabIndex = 9;
@@ -112,7 +113,7 @@
             // 
             // btnFren
             // 
-            btnFren.Location = new Point(419, 205);
+            btnFren.Location = new Point(456, 236);
             btnFren.Name = "btnFren";
             btnFren.Size = new Size(308, 182);
             btnFren.TabIndex = 10;
@@ -122,9 +123,9 @@
             // 
             // btnForceMatch
             // 
-            btnForceMatch.Location = new Point(674, 17);
+            btnForceMatch.Location = new Point(330, 176);
             btnForceMatch.Name = "btnForceMatch";
-            btnForceMatch.Size = new Size(89, 38);
+            btnForceMatch.Size = new Size(122, 30);
             btnForceMatch.TabIndex = 11;
             btnForceMatch.Text = "Force match Type";
             btnForceMatch.UseVisualStyleBackColor = true;
@@ -132,19 +133,30 @@
             // 
             // btnClearAll
             // 
-            btnClearAll.Location = new Point(94, 405);
+            btnClearAll.Location = new Point(26, 385);
             btnClearAll.Name = "btnClearAll";
             btnClearAll.Size = new Size(106, 33);
             btnClearAll.TabIndex = 12;
-            btnClearAll.Text = "Clear all";
+            btnClearAll.Text = "Clear all data";
             btnClearAll.UseVisualStyleBackColor = true;
             btnClearAll.Click += btnClearAll_Click;
+            // 
+            // btnDeleteBroken
+            // 
+            btnDeleteBroken.Location = new Point(180, 224);
+            btnDeleteBroken.Name = "btnDeleteBroken";
+            btnDeleteBroken.Size = new Size(154, 86);
+            btnDeleteBroken.TabIndex = 13;
+            btnDeleteBroken.Text = "Delete broken entries";
+            btnDeleteBroken.UseVisualStyleBackColor = true;
+            btnDeleteBroken.Click += btnDeleteBroken_Click;
             // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
+            Controls.Add(btnDeleteBroken);
             Controls.Add(btnClearAll);
             Controls.Add(btnForceMatch);
             Controls.Add(btnFren);
@@ -172,5 +184,6 @@
         private Button btnFren;
         private Button btnForceMatch;
         private Button btnClearAll;
+        private Button btnDeleteBroken;
     }
 }

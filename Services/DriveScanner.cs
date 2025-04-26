@@ -3,8 +3,10 @@ using System.Net;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Google.Apis.Drive.v3.Data;
+using Google.Apis.Sheets.v4.Data;
 using pyjump.Entities;
 using pyjump.Forms;
+using pyjump.Interfaces;
 using static pyjump.Services.Statics;
 
 namespace pyjump.Services
@@ -81,25 +83,10 @@ namespace pyjump.Services
                 var request = ScopedServices.DriveService.Files.Get(folderId);
                 request.SupportsAllDrives = true;
                 if (!string.IsNullOrEmpty(resourceKey))
-                    request.RequestParameters.Add("resourceKey", new Google.Apis.Discovery.Parameter
-                    {
-                        Name = "resourceKey",
-                        IsRequired = false,
-                        ParameterType = "query",
-                        DefaultValue = resourceKey,
-                        Pattern = null
-                    });
+                    AddRequestParameter(request, "resourceKey", resourceKey);
                 if (!string.IsNullOrEmpty(driveId))
-                {
-                    request.RequestParameters.Add("driveId", new Google.Apis.Discovery.Parameter
-                    {
-                        Name = "driveId",
-                        IsRequired = false,
-                        ParameterType = "query",
-                        DefaultValue = driveId,
-                        Pattern = null
-                    });
-                }
+                    AddRequestParameter(request, "driveId", driveId);
+                
                 folderMetadata = await request.ExecuteAsync();
             }
             catch (Google.GoogleApiException ex) when (ex.HttpStatusCode == HttpStatusCode.NotFound)
@@ -364,25 +351,10 @@ namespace pyjump.Services
                             var request = ScopedServices.DriveService.Files.Get(targetId);
                             request.SupportsAllDrives = true;
                             if (!string.IsNullOrEmpty(file.ShortcutDetails?.TargetResourceKey))
-                                request.RequestParameters.Add("resourceKey", new Google.Apis.Discovery.Parameter
-                                {
-                                    Name = "resourceKey",
-                                    IsRequired = false,
-                                    ParameterType = "query",
-                                    DefaultValue = file.ShortcutDetails?.TargetResourceKey,
-                                    Pattern = null
-                                });
+                                AddRequestParameter(request, "resourceKey", file.ShortcutDetails?.TargetResourceKey);
                             if (!string.IsNullOrEmpty(file.DriveId))
-                            {
-                                request.RequestParameters.Add("driveId", new Google.Apis.Discovery.Parameter
-                                {
-                                    Name = "driveId",
-                                    IsRequired = false,
-                                    ParameterType = "query",
-                                    DefaultValue = file.DriveId,
-                                    Pattern = null
-                                });
-                            }
+                                AddRequestParameter(request, "driveId", file.DriveId);
+                            
                             actualFile = await request.ExecuteAsync();
                         }
                         catch (Google.GoogleApiException ex) when (ex.HttpStatusCode == HttpStatusCode.NotFound)
@@ -455,6 +427,88 @@ namespace pyjump.Services
 
             return files.DistinctBy(x => x.Id).ToList();
         }
+
+        public async Task<List<T>> GetInaccessibleEntries<T>(
+             List<T> entries,
+             LogForm logForm,
+             LoadingForm loadingForm) where T : ISheetDataEntity
+        {
+            var brokenEntries = new List<T>();
+
+            var isFolderCheck = typeof(T) == typeof(WhitelistEntry);
+
+            loadingForm.PrepareLoadingBar($"Checking {(isFolderCheck ? "folders" : "files")}", entries.Count);
+
+            foreach (var entry in entries)
+            {
+                try
+                {
+                    var request = ScopedServices.DriveService.Files.Get(entry.Id);
+                    request.SupportsAllDrives = true;
+                    if (!string.IsNullOrEmpty(entry.ResourceKey))
+                        AddRequestParameter(request, "resourceKey", entry.ResourceKey);
+                    if (!string.IsNullOrEmpty(entry.DriveId))
+                        AddRequestParameter(request, "driveId", entry.DriveId);
+
+                    var file = await request.ExecuteAsync();
+
+                    if (file.Trashed.HasValue && file.Trashed.Value)
+                    {
+                        logForm.Log($"⚠️ Entry {entry.Name} ({entry.Url}) is in trash. Adding to deletion list.");
+                        brokenEntries.Add(entry);
+                    }
+                    else if (isFolderCheck && file.MimeType != GoogleMimeTypes.Folder)
+                    {
+                        logForm.Log($"⚠️ Entry {entry.Name} ({entry.Url}) is not a folder anymore. Adding to deletion list.");
+                        brokenEntries.Add(entry);
+                    }
+                    else if (!isFolderCheck && file.MimeType == GoogleMimeTypes.Folder)
+                    {
+                        logForm.Log($"⚠️ Entry {entry.Name} ({entry.Url}) is now a folder, for some reason. Adding to deletion list.");
+                        brokenEntries.Add(entry);
+                    }
+                    else
+                    {
+                        logForm.Log($"✅ Entry {entry.Name} (id: {entry.Id}, url: {entry.Url}) is accessible.");
+                    }
+                }
+                catch (Google.GoogleApiException ex) when (ex.HttpStatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    logForm.Log($"⚠️ Entry {entry.Name} ({entry.Url}) not found (404). May be unauthorized to check status. Skipping it.");
+                }
+                catch (Google.GoogleApiException ex) when (ex.HttpStatusCode == System.Net.HttpStatusCode.Forbidden)
+                {
+                    logForm.Log($"⚠️ Entry {entry.Name} ({entry.Url}) inaccessible (403). Adding to deletion list.");
+                    brokenEntries.Add(entry);
+                }
+                catch (Exception ex)
+                {
+                    logForm.Log($"❌ Unexpected error checking Entry {entry.Name} (id: {entry.Id}, url: {entry.Url}). Skipping it: {ex.Message}");
+                }
+                finally
+                {
+                    loadingForm.IncrementProgress();
+                }
+            }
+
+            return brokenEntries;
+        }
+
+        private void AddRequestParameter(Google.Apis.Drive.v3.FilesResource.GetRequest request, string name, string value)
+        {
+            if (!string.IsNullOrEmpty(value))
+            {
+                request.RequestParameters.Add(name, new Google.Apis.Discovery.Parameter
+                {
+                    Name = name,
+                    IsRequired = false,
+                    ParameterType = "query",
+                    DefaultValue = value,
+                    Pattern = null
+                });
+            }
+        }
+
     }
 
 }

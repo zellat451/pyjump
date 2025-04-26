@@ -15,88 +15,81 @@ namespace pyjump.Infrastructure
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<WhitelistEntry>()
-                .HasKey(e => e.Id);
-            modelBuilder.Entity<WhitelistEntry>()
-                .Property(e => e.ResourceKey)
-                .HasDefaultValue(string.Empty);
-            modelBuilder.Entity<WhitelistEntry>()
-                .Property(e => e.DriveId)
-                .HasDefaultValue(string.Empty);
-            modelBuilder.Entity<WhitelistEntry>()
-                .Property(e => e.Name)
-                .IsRequired();
-            modelBuilder.Entity<WhitelistEntry>()
-                .Property(e => e.Url)
-                .IsRequired();
-            modelBuilder.Entity<WhitelistEntry>()
-                .Property(e => e.LastChecked);
-            modelBuilder.Entity<WhitelistEntry>()
-                .Property(e => e.Type)
-                .HasDefaultValue(string.Empty);
+            modelBuilder.Entity<WhitelistEntry>(x =>
+            {
+                x.HasKey(e => e.Id);
+                x.Property(e => e.ResourceKey)
+                    .HasDefaultValue(string.Empty);
+                x.Property(e => e.DriveId)
+                    .HasDefaultValue(string.Empty);
+                x.Property(e => e.Name)
+                    .IsRequired();
+                x.Property(e => e.Url)
+                    .IsRequired();
+                x.Property(e => e.LastChecked);
+                x.Property(e => e.Type)
+                    .HasDefaultValue(string.Empty);
+            });
 
-            modelBuilder.Entity<FileEntry>()
-                .HasKey(e => e.Id);
-            modelBuilder.Entity<FileEntry>()
-                .Property(e => e.ResourceKey)
-                .HasDefaultValue(string.Empty);
-            modelBuilder.Entity<FileEntry>()
-                .Property(e => e.DriveId)
-                .HasDefaultValue(string.Empty);
-            modelBuilder.Entity<FileEntry>()
-                .Property(e => e.Url)
-                .IsRequired();
-            modelBuilder.Entity<FileEntry>()
-                .Property(e => e.Name)
-                .IsRequired();
-            modelBuilder.Entity<FileEntry>()
-                .Property(e => e.LastModified);
-            modelBuilder.Entity<FileEntry>()
-                .Property(e => e.Owner)
-                .HasDefaultValue(string.Empty);
-            modelBuilder.Entity<FileEntry>()
-                .Property(e => e.FolderId);
-            modelBuilder.Entity<FileEntry>()
-                .HasOne<WhitelistEntry>()
-                .WithMany()
-                .HasForeignKey(e => e.FolderId)
-                .OnDelete(DeleteBehavior.SetNull);
-            modelBuilder.Entity<FileEntry>()
-                .Property(e => e.FolderName)
-                .IsRequired();
-            modelBuilder.Entity<FileEntry>()
-                .Property(e => e.FolderUrl)
-                .IsRequired();
-            modelBuilder.Entity<FileEntry>()
-                .Property(e => e.Type)
-                .IsRequired();
+            modelBuilder.Entity<FileEntry>(x =>
+            {
+                x.HasKey(e => e.Id);
+                x.Property(e => e.ResourceKey)
+                    .HasDefaultValue(string.Empty);
+                x.Property(e => e.DriveId)
+                    .HasDefaultValue(string.Empty);
+                x.Property(e => e.Url)
+                    .IsRequired();
+                x.Property(e => e.Name)
+                    .IsRequired();
+                x.Property(e => e.LastModified);
+                x.Property(e => e.Owner)
+                    .HasDefaultValue(string.Empty);
+                x.Property(e => e.FolderId);
+                x.Property(e => e.FolderName)
+                    .IsRequired();
+                x.Property(e => e.FolderUrl)
+                    .IsRequired();
+                x.Property(e => e.Type)
+                    .IsRequired();
 
-            modelBuilder.Entity<SimilarSet>()
-                .HasKey(e => e.Id);
-            modelBuilder.Entity<SimilarSet>()
-                .Property(e => e.Id)
-                .ValueGeneratedOnAdd();
-            modelBuilder.Entity<SimilarSet>()
-                .Property(e => e.OwnerFileEntryId)
-                .IsRequired();
-            modelBuilder.Entity<SimilarSet>()
-                .HasOne<FileEntry>()
-                .WithOne()
-                .HasForeignKey<SimilarSet>(e => e.OwnerFileEntryId)
-                .OnDelete(DeleteBehavior.Cascade);
+                x.HasOne<WhitelistEntry>()
+                    .WithMany()
+                    .HasForeignKey(e => e.FolderId)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
 
-            modelBuilder.Entity<LNKSimilarSetFile>()
-                .HasKey(e => new { e.SimilarSetId, e.FileEntryId });
-            modelBuilder.Entity<LNKSimilarSetFile>()
-                .HasOne<SimilarSet>()
-                .WithMany()
-                .HasForeignKey(e => e.SimilarSetId)
-                .OnDelete(DeleteBehavior.Cascade);
-            modelBuilder.Entity<LNKSimilarSetFile>()
-                .HasOne<FileEntry>()
-                .WithMany()
-                .HasForeignKey(e => e.FileEntryId)
-                .OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<SimilarSet>(x =>
+            {
+                x.HasKey(e => e.Id);
+                x.Property(e => e.Id)
+                    .ValueGeneratedOnAdd();
+                x.Property(e => e.OwnerFileEntryId)
+                    .IsRequired();
+                x.HasOne<FileEntry>()
+                    .WithMany()
+                    .HasForeignKey(e => e.OwnerFileEntryId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<LNKSimilarSetFile>(x =>
+            {
+                x.HasKey(e => new { e.SimilarSetId, e.FileEntryId });
+                x.Property(e => e.SimilarSetId)
+                    .IsRequired();
+                x.Property(e => e.FileEntryId)
+                    .IsRequired();
+
+                x.HasOne<SimilarSet>()
+                    .WithMany()
+                    .HasForeignKey(e => e.SimilarSetId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                x.HasOne<FileEntry>()
+                    .WithMany()
+                    .HasForeignKey(e => e.FileEntryId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
         }
     }
 }

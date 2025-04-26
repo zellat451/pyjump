@@ -182,7 +182,7 @@ namespace pyjump
 
         private async void btnFren_Click(object sender, EventArgs e)
         {
-            // Resetting all scoped services after a single mthod just in case.
+            // Resetting all scoped services after a single method just in case.
             // I think it crashed the database once, I am not finding out if it was a freak accident or not
             LoadingForm loadingForm = null;
             try
@@ -202,14 +202,21 @@ namespace pyjump
                 ClearEverything();
                 InitializeEverything();
 
-                // 3. build sheets
+                // 3. delete broken entries
+                loadingForm = InitProgressBar();
+                await Methods.DeleteBrokenEntries(_logForm, loadingForm);
+                loadingForm?.Close();
+                ClearEverything();
+                InitializeEverything();
+
+                // 4. build sheets
                 loadingForm = InitProgressBar();
                 await Methods.BuildSheets(_logForm, loadingForm);
                 loadingForm?.Close();
                 ClearEverything();
                 InitializeEverything();
 
-                // 4. go to spreadsheet
+                // 5. go to spreadsheet
                 Methods.GoToSheet();
 
                 _logForm.Log("Fren done. Fren does good work. Enjoy Fren's work, Fren's fren. :)");
@@ -270,6 +277,32 @@ namespace pyjump
             }
             finally
             {
+                ClearEverything();
+            }
+        }
+
+        private async void btnDeleteBroken_Click(object sender, EventArgs e)
+        {
+            LoadingForm loadingForm = null;
+            try
+            {
+                InitializeEverything();
+                _logForm.Log("Deleting broken entries...");
+
+                loadingForm = InitProgressBar();
+
+                await Methods.DeleteBrokenEntries(_logForm, loadingForm);
+
+                _logForm.Log("Broken entries deleted successfully.");
+                MessageBox.Show("Broken entries deleted successfully.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Something went wrong: {ex}");
+            }
+            finally
+            {
+                loadingForm?.Close();
                 ClearEverything();
             }
         }

@@ -129,25 +129,26 @@ Do **not** use these keywords in the names of your `mainDrives`, unless you want
 		- All files are ordered by `LastModified` date, from the most recent to the oldest.
 8. You can click the button `Go to sheet` to open the Google Sheets document in your browser immediately.
 
-
-...Or, you can just click the big button and let `Fren` take care of everything. Yes, they are a fren and they work good. The big `:)` button does:
-1. A scan to refresh the whitelist
-2. A scan to get the new files
-3. An upload of the data to the spreadsheet
-4. And it opens the spreadsheet for you at the end
+...Or, you can just click the big button and let `Fren` take care of everything. Yes, they are a fren and they work good. The big `:)` button:
+1. Scans to refresh the whitelist
+1. Scans to get the new files
+1. Removes the broken files and folders from the DB
+1. Uploads the data to the spreadsheet
+1. And it opens the spreadsheet for you at the end
 
 ---
 
 # Explanation of each button
 1. `Go to sheet`: Opens the Google Sheets document in your browser.
-1. `Edit whitelist`: Opens the whitelist editor. You can add, remove, and edit whitelist entries in DB.
-1. `Edit files`: Opens the files editor. You can add, remove, and edit files in DB.
-1. `Force match type`: Updates all files in DB to match the type of their linked whitelist entry. This is useful if you edited the whitelist entries and want to update the files to match.
-1. `Scan whitelist`: Scans the `mainDrives` for their folders recursively. This may take some time.
-1. `Scan files`: Scans the whitelist for their files recursively. This may take some time. Only scans new files from the last time the whitelist entry was checked, to go quicker.
-1. `Reset whitelist times`: Resets the `LastChecked` date of all whitelist entries to null. This will force a complete scan of all files in the whitelist.
+1. `Edit Whitelist`: Opens the whitelist editor. You can add, remove, and edit whitelist entries in DB.
+1. `Edit Files`: Opens the files editor. You can add, remove, and edit files in DB.
+1. `Force match Type`: Updates all files in DB to match the type of their linked whitelist entry. This is useful if you edited the whitelist entries and want to update the files to match.
+1. `Scan Whitelist`: Scans the `mainDrives` for their folders recursively. This may take some time.
+1. `Scan Files`: Scans the whitelist for their files recursively. This may take some time. Only scans new files from the last time the whitelist entry was checked, to go quicker.
+1. `Reset Whitelist Times`: Resets the `LastChecked` date of all whitelist entries to null. This will force a complete scan of all files in the whitelist.
+1. `Delete broken entries`: Removes all broken entries from the DB, such as trashed files or folders, or those you don't have the permissions for anymore.
 1. `Build sheets`: Uploads the files to the Google Sheets document.
-1. `Clear all`: Clears all the data in the DB. Does not affect the data uploaded to the Google Sheets document.
+1. `Clear all data`: Clears all the data in the DB. Does not affect the data uploaded to the Google Sheets document.
 1. `:)`: The Fren button. It does everything for you. It scans the whitelist, scans the files, and uploads the data to the Google Sheets document. It also opens the document in your browser at the end.
 
 ---
@@ -155,4 +156,4 @@ Do **not** use these keywords in the names of your `mainDrives`, unless you want
 # End notes
 
 Unfortunately, we can't use multithreading due to api constraints. Google puts a limit on how many requests you can make on a minute, and I haven't found a way to make my tasks wait it out and try again.
-I tried, and it would be sooooo much faster... but then it locks up after a few hundred files. So we're taking it one by one for now. Still faster and easier to use than the google app script, at least for me.
+I tried, and it's sooooo much faster... but then it locks up after a few hundred files and never starts again. So we're taking it one by one for now. Still faster and easier to use than the google app script, at least for me.
