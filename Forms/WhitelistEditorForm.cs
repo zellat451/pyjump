@@ -9,6 +9,7 @@ namespace pyjump.Forms
     {
         private AppDbContext _context;
         private BindingList<WhitelistEntry> _whitelistBinding;
+        private bool _entriesUpdated = false;
 
         public WhitelistEditorForm()
         {
@@ -44,22 +45,18 @@ namespace pyjump.Forms
             countBox.Text = $"Total entries: {_whitelistBinding.Count}";
         }
 
-        private void WhitelistBinding_ListChanged(object sender, ListChangedEventArgs e)
-        {
-            if (e.ListChangedType == ListChangedType.ItemAdded)
-            {
-                var newEntry = _whitelistBinding[e.NewIndex];
-                _context.Whitelist.Add(newEntry);
-            }
-            else if (e.ListChangedType == ListChangedType.ItemDeleted)
-            {
-                // We can’t get the item directly, so we handle this during SaveChanges
-                // if needed, or use a custom delete button instead
-            }
-        }
+        private void WhitelistBinding_ListChanged(object sender, ListChangedEventArgs e) => _entriesUpdated = true;
 
         private void btnSaveChanges_Click(object sender, EventArgs e)
         {
+            if (_entriesUpdated)
+            {
+                var addedEntries = _whitelistBinding.Where(x => !_context.Whitelist.Contains(x)).ToList();
+                if (addedEntries.Count > 0)
+                {
+                    _context.AddRange(addedEntries);
+                }
+            }
             _context.SaveChanges();
             MessageBox.Show("Changes saved.");
             Close();
@@ -67,6 +64,12 @@ namespace pyjump.Forms
 
         private void btnCancel_Click(object sender, EventArgs e)
         {
+            if (_entriesUpdated)
+            {
+                var result = MessageBox.Show("You have unsaved changes. Do you want to discard them?", "Confirm Discard", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+                if (result != DialogResult.Yes)
+                    return;
+            }
             _context.Dispose(); // discard context changes
             Close();
         }
@@ -96,6 +99,8 @@ namespace pyjump.Forms
             }
 
             _whitelistBinding.Remove(entry); // Update UI
+
+            _entriesUpdated = true;
         }
 
         private void textBox1_TextChanged(object sender, EventArgs e)

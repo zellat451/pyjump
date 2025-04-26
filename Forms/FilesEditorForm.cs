@@ -10,6 +10,7 @@ namespace pyjump.Forms
     {
         private AppDbContext _context;
         private BindingList<FileEntry> _filesBinding;
+        private bool _entriesUpdated = false;
 
         public FilesEditorForm()
         {
@@ -45,22 +46,18 @@ namespace pyjump.Forms
             countBox.Text = $"Total files: {_filesBinding.Count}";
         }
 
-        private void FilesBinding_ListChanged(object sender, ListChangedEventArgs e)
-        {
-            if (e.ListChangedType == ListChangedType.ItemAdded)
-            {
-                var newEntry = _filesBinding[e.NewIndex];
-                _context.Files.Add(newEntry);
-            }
-            else if (e.ListChangedType == ListChangedType.ItemDeleted)
-            {
-                // We can’t get the item directly, so we handle this during SaveChanges
-                // if needed, or use a custom delete button instead
-            }
-        }
+        private void FilesBinding_ListChanged(object sender, ListChangedEventArgs e) => _entriesUpdated = true;
 
         private void btnSaveChanges_Click(object sender, EventArgs e)
         {
+            if (_entriesUpdated)
+            {
+                var addedEntries = _filesBinding.Where(x => !_context.Files.Contains(x)).ToList();
+                if (addedEntries.Count > 0)
+                {
+                    _context.AddRange(addedEntries);
+                }
+            }
             _context.SaveChanges();
             MessageBox.Show("Changes saved.");
             Close();
@@ -68,6 +65,13 @@ namespace pyjump.Forms
 
         private void btnCancel_Click(object sender, EventArgs e)
         {
+            if (_entriesUpdated)
+            {
+                var result = MessageBox.Show("You have unsaved changes. Do you want to discard them?", "Confirm Discard", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+                if (result != DialogResult.Yes)
+                    return;
+            }
+
             _context.Dispose(); // discard context changes
             Close();
         }
@@ -97,6 +101,7 @@ namespace pyjump.Forms
             }
 
             _filesBinding.Remove(entry); // Update UI
+            _entriesUpdated = true;
         }
     }
 }
