@@ -44,7 +44,7 @@ If you want to use your own Google Cloud Console project:
 
 ## First Time Configuration
 
-Open the `Resource\appsettings.json` file:
+Open the `Resources\appsettings.json` file:
 
 1. This is the way the application will find the Google Sheets document to upload data to. **Replace it with yours**. 
 You can find the ID in the URL of your Google Sheets document.
