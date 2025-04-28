@@ -49,7 +49,7 @@
             ClientSize = new Size(800, 450);
             Controls.Add(richTextBoxLog);
             Name = "LogForm";
-            Text = "LogForm";
+            Text = "logs";
             ResumeLayout(false);
         }
 

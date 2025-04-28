@@ -87,7 +87,7 @@
             Controls.Add(btnCancel);
             Controls.Add(btnSaveChanges);
             Name = "WhitelistEditorForm";
-            Text = "WhitelistEditorForm";
+            Text = "editor";
             ((System.ComponentModel.ISupportInitialize)dataGridViewWhitelist).EndInit();
             ResumeLayout(false);
             PerformLayout();

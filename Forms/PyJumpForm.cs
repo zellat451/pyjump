@@ -4,16 +4,14 @@ using pyjump.Services;
 
 namespace pyjump
 {
-    public partial class Form1 : Form
+    public partial class PyJumpForm : Form
     {
-        private LogForm _logForm;
-
-        public Form1()
+        public PyJumpForm()
         {
             InitializeComponent();
         }
 
-        private LoadingForm InitProgressBar()
+        private static LoadingForm InitProgressBar()
         {
             var loadingForm = new LoadingForm();
             loadingForm.Show();
@@ -26,12 +24,12 @@ namespace pyjump
             try
             {
                 InitializeEverything();
-                _logForm.Log("Starting file scan...");
+                SingletonServices.LogForm.Log("Starting file scan...");
 
                 loadingForm = InitProgressBar();
 
-                await Methods.ScanFiles(_logForm, loadingForm);
-                _logForm.Log("File scan completed.");
+                await Methods.ScanFiles(loadingForm);
+                SingletonServices.LogForm.Log("File scan completed.");
                 MessageBox.Show("File scan completed.");
             }
             catch (Exception ex)
@@ -51,9 +49,9 @@ namespace pyjump
             try
             {
                 InitializeEverything();
-                _logForm.Log("Starting whitelist scan...");
-                await Methods.ScanWhitelist(_logForm);
-                _logForm.Log("Whitelist scan completed.");
+                SingletonServices.LogForm.Log("Starting whitelist scan...");
+                await Methods.ScanWhitelist();
+                SingletonServices.LogForm.Log("Whitelist scan completed.");
                 MessageBox.Show("Whitelist scan completed.");
             }
             catch (Exception ex)
@@ -70,7 +68,7 @@ namespace pyjump
             try
             {
                 InitializeEverything();
-                _logForm.Log("Resetting all whitelist entries last checked times...");
+                SingletonServices.LogForm.Log("Resetting all whitelist entries last checked times...");
                 using (var context = new AppDbContext())
                 {
                     var entries = context.Whitelist.ToList();
@@ -81,7 +79,7 @@ namespace pyjump
                     context.Whitelist.UpdateRange(entries);
                     context.SaveChanges();
                 }
-                _logForm.Log("All whitelist entries last checked times have been reset.");
+                SingletonServices.LogForm.Log("All whitelist entries last checked times have been reset.");
                 MessageBox.Show("All whitelist entries last checked times have been reset.");
             }
             catch (Exception ex)
@@ -100,13 +98,13 @@ namespace pyjump
             try
             {
                 InitializeEverything();
-                _logForm.Log("Building sheets...");
+                SingletonServices.LogForm.Log("Building sheets...");
 
                 loadingForm = InitProgressBar();
 
-                await Methods.BuildSheets(_logForm, loadingForm);
+                await Methods.BuildSheets(loadingForm);
 
-                _logForm.Log("Sheets built successfully.");
+                SingletonServices.LogForm.Log("Sheets built successfully.");
                 MessageBox.Show("Sheets built successfully.");
             }
             catch (Exception ex)
@@ -143,11 +141,11 @@ namespace pyjump
             try
             {
                 InitializeEverything();
-                _logForm.Log("Opening Google Sheets...");
+                SingletonServices.LogForm.Log("Opening Google Sheets...");
 
                 Methods.GoToSheet();
 
-                _logForm.Log("Google Sheets opened successfully.");
+                SingletonServices.LogForm.Log("Google Sheets opened successfully.");
                 MessageBox.Show("Google Sheets opened successfully.");
             }
             catch (Exception ex)
@@ -164,55 +162,40 @@ namespace pyjump
         {
             this.Enabled = false;
             Cursor.Current = Cursors.WaitCursor;
-
-            _logForm = new LogForm();
-            _logForm.Show();
-
+            SingletonServices.LogForm.Show();
             ScopedServices.Initialize();
         }
 
         private void ClearEverything()
         {
             ScopedServices.Clear();
-
-            _logForm?.Close();
+            SingletonServices.LogForm.Hide();
             this.Enabled = true;
             Cursor.Current = Cursors.Default;
         }
 
         private async void btnFren_Click(object sender, EventArgs e)
         {
-            // Resetting all scoped services after a single method just in case.
-            // I think it crashed the database once, I am not finding out if it was a freak accident or not
             LoadingForm loadingForm = null;
             try
             {
                 InitializeEverything();
-                _logForm.Log("I Fren. Fren says 'hi' :)");
+                SingletonServices.LogForm.Log("I Fren. Fren says 'hi' :)");
 
                 // 1. scan whitelist
-                await Methods.ScanWhitelist(_logForm);
-                ClearEverything();
-                InitializeEverything();
+                await Methods.ScanWhitelist();
 
                 // 2. scan files
                 loadingForm = InitProgressBar();
-                await Methods.ScanFiles(_logForm, loadingForm);
-                loadingForm?.Close();
-                ClearEverything();
-                InitializeEverything();
+                await Methods.ScanFiles(loadingForm);
 
                 // 3. build sheets
-                loadingForm = InitProgressBar();
-                await Methods.BuildSheets(_logForm, loadingForm);
-                loadingForm?.Close();
-                ClearEverything();
-                InitializeEverything();
+                await Methods.BuildSheets(loadingForm);
 
                 // 4. go to spreadsheet
                 Methods.GoToSheet();
 
-                _logForm.Log("Fren done. Fren does good work. Enjoy Fren's work, Fren's fren. :)");
+                SingletonServices.LogForm.Log("Fren done. Fren does good work. Enjoy Fren's work, Fren's fren. :)");
                 MessageBox.Show("Your friend worked hard. We all thank Fren for their automation efforts. bye-bye Fren!");
             }
             catch (Exception ex)
@@ -243,13 +226,13 @@ namespace pyjump
             try
             {
                 InitializeEverything();
-                _logForm.Log("Starting force match...");
+                SingletonServices.LogForm.Log("Starting force match...");
 
                 loadingForm = InitProgressBar();
 
-                await Methods.ForceMatchType(_logForm, loadingForm);
+                await Methods.ForceMatchType(loadingForm);
 
-                _logForm.Log("Force match completed.");
+                SingletonServices.LogForm.Log("Force match completed.");
                 MessageBox.Show("Force match completed.");
             }
             catch (Exception ex)
@@ -279,11 +262,11 @@ namespace pyjump
             try
             {
                 InitializeEverything();
-                _logForm.Log("Clearing all data...");
+                SingletonServices.LogForm.Log("Clearing all data...");
 
                 Methods.ClearAllData();
 
-                _logForm.Log("All data cleared successfully.");
+                SingletonServices.LogForm.Log("All data cleared successfully.");
                 MessageBox.Show("All data cleared successfully.");
             }
             catch (Exception ex)
@@ -312,13 +295,13 @@ namespace pyjump
             try
             {
                 InitializeEverything();
-                _logForm.Log("Deleting broken entries...");
+                SingletonServices.LogForm.Log("Deleting broken entries...");
 
                 loadingForm = InitProgressBar();
 
-                await Methods.DeleteBrokenEntries(_logForm, loadingForm);
+                await Methods.DeleteBrokenEntries(loadingForm);
 
-                _logForm.Log("Broken entries deleted successfully.");
+                SingletonServices.LogForm.Log("Broken entries deleted successfully.");
                 MessageBox.Show("Broken entries deleted successfully.");
             }
             catch (Exception ex)

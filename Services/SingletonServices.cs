@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using pyjump.Entities;
+using pyjump.Forms;
 
 namespace pyjump.Services
 {
@@ -12,7 +13,7 @@ namespace pyjump.Services
         public static MainDrives MainDrives { get; private set; }
         public static string SpreadsheetId { get; private set; }
         public static bool AllowLogFile { get; private set; }
-        public static Form1 Form1 { get; private set; }
+        public static LogForm LogForm { get; private set; }
 
         public static void Initialize()
         {
@@ -63,7 +64,11 @@ namespace pyjump.Services
             }
         }
 
-        public static void RegisterForm(Form1 form) => Form1 = form;
+        public static void RegisterForm(LogForm form)
+        {
+            LogForm = form;
+            LogForm.Hide();
+        }
 
         public static void InvertPermissionFileLogging() => AllowLogFile = !AllowLogFile;
 

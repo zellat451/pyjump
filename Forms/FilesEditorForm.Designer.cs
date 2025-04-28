@@ -87,7 +87,7 @@
             Controls.Add(btnCancel);
             Controls.Add(btnSaveChanges);
             Name = "FilesEditorForm";
-            Text = "FilesEditorForm";
+            Text = "editor";
             ((System.ComponentModel.ISupportInitialize)dataGridViewFiles).EndInit();
             ResumeLayout(false);
             PerformLayout();

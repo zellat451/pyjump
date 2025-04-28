@@ -60,7 +60,7 @@
             Controls.Add(labelProgress);
             Controls.Add(progressBar);
             Name = "LoadingForm";
-            Text = "LoadingForm";
+            Text = "loading";
             ResumeLayout(false);
             PerformLayout();
         }

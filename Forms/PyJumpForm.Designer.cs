@@ -1,6 +1,8 @@
-﻿namespace pyjump
+﻿using pyjump.Services;
+
+namespace pyjump
 {
-    partial class Form1
+    partial class PyJumpForm
     {
         /// <summary>
         ///  Required designer variable.
@@ -162,7 +164,7 @@
             btnLogging.UseVisualStyleBackColor = true;
             btnLogging.Click += btnLogging_Click;
             // 
-            // Form1
+            // PyJumpForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
@@ -179,9 +181,11 @@
             Controls.Add(btnScanWhitelist);
             Controls.Add(btnEditWhitelist);
             Controls.Add(btnScanFile);
-            Name = "Form1";
+            Name = "PyJumpForm";
             Text = "pyjump";
             ResumeLayout(false);
+
+            SingletonServices.RegisterForm(new Forms.LogForm());
         }
 
         #endregion

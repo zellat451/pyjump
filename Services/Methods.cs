@@ -14,15 +14,14 @@ namespace pyjump.Services
         /// <summary>
         /// Scans all drives and folders in the registered main drives and updates the database with the new whitelist entries.
         /// </summary>
-        /// <param name="logForm"></param>
         /// <returns></returns>
-        public static async Task ScanWhitelist(LogForm logForm)
+        public static async Task ScanWhitelist()
         {
             #region get all folder entries for whitelist
             var drives = SingletonServices.MainDrives;
 
             var scanner = new DriveScanner();
-            var allWhitelistEntries = await scanner.GetAllFolderNamesRecursiveAsync(drives.Data.Select(x => x.Url).ToList(), logForm);
+            var allWhitelistEntries = await scanner.GetAllFolderNamesRecursiveAsync(drives.Data.Select(x => x.Url));
             ConcurrentBag<WhitelistEntry> allWhitelistEntriesBag = [.. allWhitelistEntries];
             #endregion
 
@@ -35,7 +34,7 @@ namespace pyjump.Services
                 // 1. entries existing in the database but not in the new list > remove the entries from the database
                 var toRemove = existingEntries.Where(x => !allWhitelistEntriesBag.Select(y => y.Id).Contains(x.Id)).ToList();
                 db.Whitelist.RemoveRange(toRemove);
-                logForm.Log($"Removed {toRemove.Count} entries from the database.");
+                SingletonServices.LogForm.Log($"Removed {toRemove.Count} entries from the database.");
                 Debug.WriteLine($"Removed {toRemove.Count} entries from the database.");
                 #endregion
 
@@ -43,7 +42,7 @@ namespace pyjump.Services
                 // 2. entries existing in the new list but not in the database > add the entries to the database
                 var toAdd = allWhitelistEntries.Where(x => !existingEntries.Select(y => y.Id).Contains(x.Id)).ToList();
                 db.Whitelist.AddRange(toAdd);
-                logForm.Log($"Added {toAdd.Count} entries to the database.");
+                SingletonServices.LogForm.Log($"Added {toAdd.Count} entries to the database.");
                 Debug.WriteLine($"Added {toAdd.Count} entries to the database.");
                 #endregion
 
@@ -71,31 +70,30 @@ namespace pyjump.Services
                     }
                 }
                 db.Whitelist.UpdateRange(toUpdate);
-                logForm.Log($"Updated {toUpdate.Count} entries in the database.");
+                SingletonServices.LogForm.Log($"Updated {toUpdate.Count} entries in the database.");
                 Debug.WriteLine($"Updated {toUpdate.Count} entries in the database.");
                 #endregion
 
                 // commit the changes to the database
                 db.SaveChanges();
             }
-        } 
+        }
         #endregion
 
         #region file methods
         /// <summary>
         /// Scans all files in the whitelist entries and updates the database with the new file entries.
         /// </summary>
-        /// <param name="logForm"></param>
         /// <param name="loadingForm"></param>
         /// <returns></returns>
-        public static async Task ScanFiles(LogForm logForm, LoadingForm loadingForm)
+        public static async Task ScanFiles(LoadingForm loadingForm)
         {
             #region get whitelist all entries
             // get all whitelist entries from the database
             List<WhitelistEntry> whitelistEntries;
             using (var db = new AppDbContext())
             {
-                whitelistEntries = db.Whitelist.ToList();
+                whitelistEntries = [.. db.Whitelist];
             }
             #endregion
 
@@ -106,7 +104,7 @@ namespace pyjump.Services
             foreach (var w in whitelistEntries)
             {
                 // get all files for one entry
-                var scannedFileEntries = await scanner.GetAllFilesInWhitelistAsync(w, logForm);
+                var scannedFileEntries = await DriveScanner.GetAllFilesInWhitelistAsync(w);
 
                 // check existing file entries
                 using (var db = new AppDbContext())
@@ -122,10 +120,10 @@ namespace pyjump.Services
                     }
                     catch (Exception e)
                     {
-                        logForm.Log($"Error adding file entries: {e}");
+                        SingletonServices.LogForm.Log($"Error adding file entries: {e}");
                         throw;
                     }
-                    logForm.Log($"Added {toAdd.Count} file entries.");
+                    SingletonServices.LogForm.Log($"Added {toAdd.Count} file entries.");
                     Debug.WriteLine($"Added {toAdd.Count} file entries.");
                     #endregion
 
@@ -168,10 +166,10 @@ namespace pyjump.Services
                     }
                     catch (Exception e)
                     {
-                        logForm.Log($"Error updating file entries: {e}");
+                        SingletonServices.LogForm.Log($"Error updating file entries: {e}");
                         throw;
                     }
-                    logForm.Log($"Updated {toUpdate.Count} file entries.");
+                    SingletonServices.LogForm.Log($"Updated {toUpdate.Count} file entries.");
                     Debug.WriteLine($"Updated {toUpdate.Count} file entries.");
                     #endregion
 
@@ -186,7 +184,7 @@ namespace pyjump.Services
                         }
                         catch (Exception e)
                         {
-                            logForm.Log($"Error updating whitelist entry: {e}");
+                            SingletonServices.LogForm.Log($"Error updating whitelist entry: {e}");
                             throw;
                         }
                     }
@@ -198,7 +196,7 @@ namespace pyjump.Services
                     }
                     catch (Exception e)
                     {
-                        logForm.Log($"Error saving changes to the database: {e}");
+                        SingletonServices.LogForm.Log($"Error saving changes to the database: {e}");
                         throw;
                     }
                 }
@@ -209,12 +207,12 @@ namespace pyjump.Services
             List<FileEntry> allFiles;
             using (var db = new AppDbContext())
             {
-                allFiles = db.Files.ToList();
+                allFiles = [.. db.Files];
             }
 
             loadingForm.PrepareLoadingBar("Treating sets for files", allFiles.Count);
 
-            await TreatSetsForFiles(allFiles, logForm, loadingForm);
+            await TreatSetsForFiles(allFiles, loadingForm);
         }
 
         /// <summary>
@@ -222,10 +220,9 @@ namespace pyjump.Services
         /// Chooses the file with the most recent 'LastModified' date as the owner of the set.
         /// </summary>
         /// <param name="fileEntries"></param>
-        /// <param name="logForm"></param>
         /// <param name="loadingForm"></param>
         /// <returns></returns>
-        private static async Task TreatSetsForFiles(List<FileEntry> fileEntries, LogForm logForm, LoadingForm loadingForm)
+        private static async Task TreatSetsForFiles(List<FileEntry> fileEntries, LoadingForm loadingForm)
         {
             try
             {
@@ -233,7 +230,7 @@ namespace pyjump.Services
                 List<FileEntry> allFiles;
                 using (var db = new AppDbContext())
                 {
-                    allFiles = db.Files.ToList();
+                    allFiles = [.. db.Files];
                 }
 
                 List<string> treatedIds = [];
@@ -249,7 +246,7 @@ namespace pyjump.Services
                     // 2. find all files with the same name and owner (contains the current file)
                     var similarFiles = allFiles.Where(x => x.Name == file.Name && x.Owner == file.Owner).ToList();
                     similarFiles.AddRange(fileEntries.Where(x => x.Name == file.Name && x.Owner == file.Owner));
-                    similarFiles = similarFiles.DistinctBy(x => x.Id).ToList();
+                    similarFiles = [.. similarFiles.DistinctBy(x => x.Id)];
 
                     // 3. check if a set already exists for the files
                     LNKSimilarSetFile existingSet;
@@ -274,7 +271,7 @@ namespace pyjump.Services
                             }
                             catch (Exception e)
                             {
-                                logForm.Log($"Error adding similar set: {e}");
+                                SingletonServices.LogForm.Log($"Error adding similar set: {e}");
                                 throw;
                             }
                             // 3.a.2. save the set to the database (this will generate the Id for the set)
@@ -284,7 +281,7 @@ namespace pyjump.Services
                             }
                             catch (Exception e)
                             {
-                                logForm.Log($"Error saving changes to the database: {e}");
+                                SingletonServices.LogForm.Log($"Error saving changes to the database: {e}");
                                 throw;
                             }
                         }
@@ -304,7 +301,7 @@ namespace pyjump.Services
                                 }
                                 catch (Exception e)
                                 {
-                                    logForm.Log($"Error adding file to similar set: {e}");
+                                    SingletonServices.LogForm.Log($"Error adding file to similar set: {e}");
                                     throw;
                                 }
                                 treatedIds.Add(similarFile.Id);
@@ -316,7 +313,7 @@ namespace pyjump.Services
                             }
                             catch (Exception e)
                             {
-                                logForm.Log($"Error saving changes to the database: {e}");
+                                SingletonServices.LogForm.Log($"Error saving changes to the database: {e}");
                                 throw;
                             }
                         }
@@ -345,7 +342,7 @@ namespace pyjump.Services
                                 }
                                 catch (Exception e)
                                 {
-                                    logForm.Log($"Error adding file to similar set: {e}");
+                                    SingletonServices.LogForm.Log($"Error adding file to similar set: {e}");
                                     throw;
                                 }
                                 treatedIds.Add(similarFile.Id);
@@ -358,7 +355,7 @@ namespace pyjump.Services
                             }
                             catch (Exception e)
                             {
-                                logForm.Log($"Error saving changes to the database: {e}");
+                                SingletonServices.LogForm.Log($"Error saving changes to the database: {e}");
                                 throw;
                             }
                         }
@@ -377,7 +374,7 @@ namespace pyjump.Services
                                 }
                                 catch (Exception e)
                                 {
-                                    logForm.Log($"Error updating similar set: {e}");
+                                    SingletonServices.LogForm.Log($"Error updating similar set: {e}");
                                     throw;
                                 }
 
@@ -388,20 +385,20 @@ namespace pyjump.Services
                                 }
                                 catch (Exception e)
                                 {
-                                    logForm.Log($"Error saving changes to the database: {e}");
+                                    SingletonServices.LogForm.Log($"Error saving changes to the database: {e}");
                                     throw;
                                 }
                             }
                         }
                     }
 
-                    logForm.Log($"✅ Set created/updated for {similarFiles.Count} files.");
+                    SingletonServices.LogForm.Log($"✅ Set created/updated for {similarFiles.Count} files.");
                     loadingForm.IncrementProgress();
                 }
             }
             catch (Exception e)
             {
-                logForm.Log($"Error treating sets for files: {e}");
+                SingletonServices.LogForm.Log($"Error treating sets for files: {e}");
                 throw;
             }
         }
@@ -409,23 +406,19 @@ namespace pyjump.Services
         /// <summary>
         /// Forces the file type to match the folder type for all files in the database.
         /// </summary>
-        /// <param name="logForm"></param>
         /// <param name="loadingForm"></param>
         /// <returns></returns>
-        public static async Task ForceMatchType(LogForm logForm, LoadingForm loadingForm)
+        public static async Task ForceMatchType(LoadingForm loadingForm)
         {
             try
             {
                 // 1. get all files from the database
                 List<FileEntry> allFiles;
-                using (var db = new AppDbContext())
-                {
-                    allFiles = db.Files.ToList();
-                }
                 List<WhitelistEntry> allWhitelistEntries;
                 using (var db = new AppDbContext())
                 {
-                    allWhitelistEntries = db.Whitelist.ToList();
+                    allFiles = [.. db.Files];
+                    allWhitelistEntries = [.. db.Whitelist];
                 }
 
                 var filesToCheck = allFiles.Where(x => !string.IsNullOrWhiteSpace(x.FolderId)).ToList();
@@ -438,7 +431,7 @@ namespace pyjump.Services
                     var whitelistEntry = allWhitelistEntries.FirstOrDefault(x => x.Id == file.FolderId);
                     if (whitelistEntry == null)
                     {
-                        logForm.Log($"❌ Whitelist entry not found for file {file.Name} ({file.Id})");
+                        SingletonServices.LogForm.Log($"❌ Whitelist entry not found for file {file.Name} ({file.Id})");
                         loadingForm.IncrementProgress();
                         continue;
                     }
@@ -457,13 +450,13 @@ namespace pyjump.Services
                                 }
                                 catch (Exception e)
                                 {
-                                    logForm.Log($"Error updating file type: {e}");
+                                    SingletonServices.LogForm.Log($"Error updating file type: {e}");
                                     loadingForm.IncrementProgress();
                                     continue;
                                 }
                                 await db.SaveChangesAsync();
                             }
-                            logForm.Log($"✅ File {file.Name} ({file.Id}) updated to match folder type {whitelistEntry.Type}.");
+                            SingletonServices.LogForm.Log($"✅ File {file.Name} ({file.Id}) updated to match folder type {whitelistEntry.Type}.");
                         }
 
                         loadingForm.IncrementProgress();
@@ -472,10 +465,10 @@ namespace pyjump.Services
             }
             catch (Exception e)
             {
-                logForm.Log($"Error forcing match type: {e}");
+                SingletonServices.LogForm.Log($"Error forcing match type: {e}");
                 throw;
             }
-        } 
+        }
         #endregion
 
         #region Common methods
@@ -484,16 +477,15 @@ namespace pyjump.Services
         /// </summary>
         /// <param name="entries"></param>
         /// <param name="sheetName"></param>
-        /// <param name="logForm"></param>
         /// <param name="loadingForm"></param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        private static async Task UploadToSheetAsync<T>(List<T> entries, string sheetName, LogForm logForm, LoadingForm loadingForm)
+        private static async Task UploadToSheetAsync<T>(List<T> entries, string sheetName, LoadingForm loadingForm)
             where T : ISheetDataEntity
         {
             if (entries.Count == 0)
             {
-                logForm.Log($"No entries to upload to sheet '{sheetName}'.");
+                SingletonServices.LogForm.Log($"No entries to upload to sheet '{sheetName}'.");
                 return;
             }
 
@@ -504,7 +496,7 @@ namespace pyjump.Services
             var sheet = spreadsheet.Sheets.FirstOrDefault(s => s.Properties.Title == sheetName);
             if (sheet == null)
             {
-                logForm.Log($"❌ Sheet '{sheetName}' not found in spreadsheet.");
+                SingletonServices.LogForm.Log($"❌ Sheet '{sheetName}' not found in spreadsheet.");
                 throw new Exception($"❌ Sheet '{sheetName}' not found in spreadsheet.");
             }
 
@@ -519,25 +511,24 @@ namespace pyjump.Services
             // Step 2: Resize the sheet
             var resizeRequest = new BatchUpdateSpreadsheetRequest
             {
-                Requests = new List<Request>
-            {
-                new Request
-                {
-                    UpdateSheetProperties = new UpdateSheetPropertiesRequest
-                    {
-                        Properties = new SheetProperties
+                Requests =
+                [
+                    new() {
+                        UpdateSheetProperties = new UpdateSheetPropertiesRequest
                         {
-                            SheetId = sheetId,
-                            GridProperties = new GridProperties
+                            Properties = new SheetProperties
                             {
-                                RowCount = rowsNeeded,
-                                ColumnCount = colsNeeded
-                            }
-                        },
-                        Fields = "gridProperties(rowCount,columnCount)"
+                                SheetId = sheetId,
+                                GridProperties = new GridProperties
+                                {
+                                    RowCount = rowsNeeded,
+                                    ColumnCount = colsNeeded
+                                }
+                            },
+                            Fields = "gridProperties(rowCount,columnCount)"
+                        }
                     }
-                }
-            }
+                ]
             };
 
             await service.Spreadsheets.BatchUpdate(resizeRequest, SingletonServices.SpreadsheetId).ExecuteAsync();
@@ -592,16 +583,15 @@ namespace pyjump.Services
             // Step 4: Execute the data update batch
             await service.Spreadsheets.BatchUpdate(new BatchUpdateSpreadsheetRequest { Requests = dataRequests }, SingletonServices.SpreadsheetId).ExecuteAsync();
 
-            logForm.Log($"✅ Uploaded {entries.Count} entries to sheet '{sheetName}'.");
+            SingletonServices.LogForm.Log($"✅ Uploaded {entries.Count} entries to sheet '{sheetName}'.");
         }
 
         /// <summary>
         /// Builds the sheets for all the data in the database.
         /// </summary>
-        /// <param name="logForm"></param>
         /// <param name="loadingForm"></param>
         /// <returns></returns>
-        public static async Task BuildSheets(LogForm logForm, LoadingForm loadingForm)
+        public static async Task BuildSheets(LoadingForm loadingForm)
         {
             try
             {
@@ -611,13 +601,13 @@ namespace pyjump.Services
                 List<FileEntry> allFiles;
                 using (var db = new AppDbContext())
                 {
-                    allFiles = db.Files.ToList();
+                    allFiles = [.. db.Files];
                 }
 
                 List<WhitelistEntry> allWhitelistEntries;
                 using (var db = new AppDbContext())
                 {
-                    allWhitelistEntries = db.Whitelist.ToList();
+                    allWhitelistEntries = [.. db.Whitelist];
                 }
 
                 loadingForm.IncrementProgress();
@@ -626,7 +616,7 @@ namespace pyjump.Services
                 List<LNKSimilarSetFile> lnkSimilarSetFiles;
                 using (var db = new AppDbContext())
                 {
-                    lnkSimilarSetFiles = db.LNKSimilarSetFiles.ToList();
+                    lnkSimilarSetFiles = [.. db.LNKSimilarSetFiles];
                 }
 
                 var filesNotInSet = allFiles.Where(x => !lnkSimilarSetFiles.Select(y => y.FileEntryId).Contains(x.Id)).ToList();
@@ -636,16 +626,16 @@ namespace pyjump.Services
                 // 2. generate sets for the files not in a set
                 if (filesNotInSet.Count > 0)
                 {
-                    logForm.Log($"Found {filesNotInSet.Count} files not in a set.");
+                    SingletonServices.LogForm.Log($"Found {filesNotInSet.Count} files not in a set.");
                     loadingForm.PrepareLoadingBar("Treating sets for files", filesNotInSet.Count);
-                    await TreatSetsForFiles(filesNotInSet, logForm, loadingForm);
+                    await TreatSetsForFiles(filesNotInSet, loadingForm);
                 }
 
                 // 3. get all sets from the database
                 List<SimilarSet> allSets;
                 using (var db = new AppDbContext())
                 {
-                    allSets = db.SimilarSets.ToList();
+                    allSets = [.. db.SimilarSets];
                 }
 
                 // 4. generate sheets data
@@ -685,26 +675,26 @@ namespace pyjump.Services
 
                 // 5. upload the data to the sheets
                 loadingForm.PrepareLoadingBar("Building Jumps sheet", dataSheetJump.Count);
-                await UploadToSheetAsync(dataSheetJump, Statics.Sheet.File.SHEET_J, logForm, loadingForm);
+                await UploadToSheetAsync(dataSheetJump, Statics.Sheet.File.SHEET_J, loadingForm);
 
                 loadingForm.PrepareLoadingBar("Building Stories sheet", dataSheetStory.Count);
-                await UploadToSheetAsync(dataSheetStory, Statics.Sheet.File.SHEET_S, logForm, loadingForm);
+                await UploadToSheetAsync(dataSheetStory, Statics.Sheet.File.SHEET_S, loadingForm);
 
                 loadingForm.PrepareLoadingBar("Building Others sheet", dataSheetOther.Count);
-                await UploadToSheetAsync(dataSheetOther, Statics.Sheet.File.SHEET_O, logForm, loadingForm);
+                await UploadToSheetAsync(dataSheetOther, Statics.Sheet.File.SHEET_O, loadingForm);
 
                 loadingForm.PrepareLoadingBar("Building Jumps (Unfiltered) sheet", dataSheetJumpUnfiltered.Count);
-                await UploadToSheetAsync(dataSheetJumpUnfiltered, Statics.Sheet.File.SHEET_J_1, logForm, loadingForm);
+                await UploadToSheetAsync(dataSheetJumpUnfiltered, Statics.Sheet.File.SHEET_J_1, loadingForm);
 
                 loadingForm.PrepareLoadingBar("Building Stories (Unfiltered) sheet", dataSheetStoryUnfiltered.Count);
-                await UploadToSheetAsync(dataSheetStoryUnfiltered, Statics.Sheet.File.SHEET_S_1, logForm, loadingForm);
+                await UploadToSheetAsync(dataSheetStoryUnfiltered, Statics.Sheet.File.SHEET_S_1, loadingForm);
 
                 loadingForm.PrepareLoadingBar("Building Whitelist sheet", allWhitelistEntries.Count);
-                await UploadToSheetAsync(allWhitelistEntries.OrderBy(x => x.Name).ToList(), Statics.Sheet.Whitelist.SHEET_W, logForm, loadingForm);
+                await UploadToSheetAsync(allWhitelistEntries.OrderBy(x => x.Name).ToList(), Statics.Sheet.Whitelist.SHEET_W, loadingForm);
             }
             catch (Exception e)
             {
-                logForm.Log($"Error building sheets: {e}");
+                SingletonServices.LogForm.Log($"Error building sheets: {e}");
                 throw;
             }
         }
@@ -766,26 +756,20 @@ namespace pyjump.Services
             }
         }
 
-        public static async Task DeleteBrokenEntries(LogForm logForm, LoadingForm loadingForm)
+        public static async Task DeleteBrokenEntries(LoadingForm loadingForm)
         {
             #region get all data
             List<FileEntry> allFileEntries;
-            using (var db = new AppDbContext())
-            {
-                allFileEntries = db.Files.ToList();
-            }
-
             List<WhitelistEntry> allWhitelistEntries;
             using (var db = new AppDbContext())
             {
-                allWhitelistEntries = db.Whitelist.ToList();
-            } 
+                allFileEntries = [.. db.Files];
+                allWhitelistEntries = [.. db.Whitelist];
+            }
             #endregion
 
-            var scanner = new DriveScanner();
-
-            var brokenFiles = await scanner.GetInaccessibleEntries(allFileEntries, logForm, loadingForm);
-            var brokenFolders = await scanner.GetInaccessibleEntries(allWhitelistEntries, logForm, loadingForm);
+            var brokenFiles = await DriveScanner.GetInaccessibleEntries(allFileEntries, loadingForm);
+            var brokenFolders = await DriveScanner.GetInaccessibleEntries(allWhitelistEntries, loadingForm);
 
             // delete the broken data from the database
             ClearAllData(brokenFiles, brokenFolders);

@@ -15,6 +15,27 @@ namespace pyjump.Forms
             _logTimer.Start();
         }
 
+        public void ShowLogForm()
+        {
+            if (IsDisposed || Disposing) return;
+            if (Visible)
+            {
+                BringToFront();
+                WindowState = FormWindowState.Normal;
+            }
+            else
+            {
+                Show();
+                WindowState = FormWindowState.Normal;
+            }
+
+            if (!firstLog)
+            {
+                _logQueue.Enqueue(Environment.NewLine + Environment.NewLine);
+            }
+        }
+
+        private bool firstLog = true;
         private readonly ConcurrentQueue<string> _logQueue = new();
         private readonly System.Windows.Forms.Timer _logTimer;
         public void Log(string message)

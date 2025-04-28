@@ -3,7 +3,6 @@ using System.Net;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Google.Apis.Drive.v3.Data;
-using Google.Apis.Sheets.v4.Data;
 using pyjump.Entities;
 using pyjump.Forms;
 using pyjump.Interfaces;
@@ -39,15 +38,14 @@ namespace pyjump.Services
         /// Get all folder names recursively from the given folder URLs.
         /// </summary>
         /// <param name="folderUrls"></param>
-        /// <param name="logForm"></param>
         /// <returns></returns>
-        public async Task<List<WhitelistEntry>> GetAllFolderNamesRecursiveAsync(List<string> folderUrls, LogForm logForm)
+        public async Task<List<WhitelistEntry>> GetAllFolderNamesRecursiveAsync(IEnumerable<string> folderUrls)
         {
             // find whitelist entries from maind drives
             var rootFolderIds = folderUrls.Select(ExtractFolderInfosFromUrl).Where(inf => !string.IsNullOrEmpty(inf.folderId)).Distinct();
 
-            foreach (var inf in rootFolderIds)
-                _folderQueue.Add((inf.folderId, inf.resourceKey, inf.driveId, string.Empty));
+            foreach (var (folderId, resourceKey, driveId) in rootFolderIds)
+                _folderQueue.Add((folderId, resourceKey, driveId, string.Empty));
 
 
             while (!_folderQueue.IsEmpty)
@@ -55,10 +53,10 @@ namespace pyjump.Services
                 var success = _folderQueue.TryTake(out var folder);
                 if (!success)
                     continue;
-                await TraverseFolderAsync(folder.folderId, folder.resourceKey, folder.driveId, folder.parentName, logForm);
+                await TraverseFolderAsync(folder.folderId, folder.resourceKey, folder.driveId, folder.parentName);
             }
 
-            return _foundFolderNames.DistinctBy(x => x.Id).ToList();
+            return [.. _foundFolderNames.DistinctBy(x => x.Id)];
         }
 
         /// <summary>
@@ -68,9 +66,8 @@ namespace pyjump.Services
         /// <param name="resourceKey"></param>
         /// <param name="driveId"></param>
         /// <param name="parentName"></param>
-        /// <param name="logForm"></param>
         /// <returns></returns>
-        private async Task TraverseFolderAsync(string folderId, string resourceKey, string driveId, string parentName, LogForm logForm)
+        private async Task TraverseFolderAsync(string folderId, string resourceKey, string driveId, string parentName)
         {
             if (_visitedFolderIds.ContainsKey(folderId))
                 return;
@@ -86,7 +83,7 @@ namespace pyjump.Services
                     AddRequestParameter(request, "resourceKey", resourceKey);
                 if (!string.IsNullOrEmpty(driveId))
                     AddRequestParameter(request, "driveId", driveId);
-                
+
                 folderMetadata = await request.ExecuteAsync();
             }
             catch (Google.GoogleApiException ex) when (ex.HttpStatusCode == HttpStatusCode.NotFound)
@@ -94,19 +91,19 @@ namespace pyjump.Services
                 var url = BuildFolderUrl(folderId, resourceKey, driveId);
 
                 if (!string.IsNullOrEmpty(resourceKey))
-                    logForm.Log($"⚠️ Folder: {folderId}, ResourceKey: {resourceKey} not found or inaccessible (404). Skipping.");
+                    SingletonServices.LogForm.Log($"⚠️ Folder: {folderId}, ResourceKey: {resourceKey} not found or inaccessible (404). Skipping.");
                 else
-                    logForm.Log($"⚠️ Folder {folderId} not found or inaccessible (404). Skipping.");
-                logForm.Log($"🔗 Folder {folderId} URL: {url}");
+                    SingletonServices.LogForm.Log($"⚠️ Folder {folderId} not found or inaccessible (404). Skipping.");
+                SingletonServices.LogForm.Log($"🔗 Folder {folderId} URL: {url}");
             }
             catch (Google.GoogleApiException ex)
             {
-                logForm.Log($"❌ API error getting metadata for {folderId}: {ex.Message}");
+                SingletonServices.LogForm.Log($"❌ API error getting metadata for {folderId}: {ex.Message}");
                 return;
             }
             catch (Exception ex)
             {
-                logForm.Log($"❌ Unexpected error getting metadata for {folderId}: {ex.Message}");
+                SingletonServices.LogForm.Log($"❌ Unexpected error getting metadata for {folderId}: {ex.Message}");
                 return;
             }
 
@@ -127,9 +124,9 @@ namespace pyjump.Services
                 ? FolderType.Story
                 : FolderType.Jump;
             _foundFolderNames.Add(whitelistEntry);
-            logForm.Log($"✅ Found folder: {whitelistEntry.Name} ({folderMetadata.Id})");
+            SingletonServices.LogForm.Log($"✅ Found folder: {whitelistEntry.Name} ({folderMetadata.Id})");
             if (_foundFolderNames.Count % 50 == 0)
-                logForm.Log($">>> Folder count: {_foundFolderNames.Count}");
+                SingletonServices.LogForm.Log($">>> Folder count: {_foundFolderNames.Count}");
 
             string query = $"'{folderId}' in parents and trashed = false";
             string pageToken = null;
@@ -149,7 +146,7 @@ namespace pyjump.Services
                 }
                 catch (Exception ex)
                 {
-                    logForm.Log($"❌ Failed to list contents of folder {folderId}: {ex.Message}");
+                    SingletonServices.LogForm.Log($"❌ Failed to list contents of folder {folderId}: {ex.Message}");
                     return;
                 }
 
@@ -217,7 +214,7 @@ namespace pyjump.Services
         /// <param name="resourceKey"></param>
         /// <param name="tid"></param>
         /// <returns></returns>
-        private string BuildFolderUrl(string folderId, string resourceKey, string tid)
+        private static string BuildFolderUrl(string folderId, string resourceKey, string tid)
         {
             // Construct the base URL for the folder
             var url = $"https://drive.google.com/drive/folders/{folderId}";
@@ -232,7 +229,7 @@ namespace pyjump.Services
             if (!string.IsNullOrEmpty(tid))
             {
                 // If there's already a query parameter (resourcekey), append the tid as another parameter
-                if (url.Contains("?"))
+                if (url.Contains('?'))
                 {
                     url += $"&tid={Uri.EscapeDataString(tid)}";
                 }
@@ -253,7 +250,7 @@ namespace pyjump.Services
         /// <param name="resourceKey"></param>
         /// <param name="tid"></param>
         /// <returns></returns>
-        private string BuildFileUrl(string fileId, string resourceKey, string tid)
+        private static string BuildFileUrl(string fileId, string resourceKey, string tid)
         {
             // Construct the base URL for the file
             var url = $"https://drive.google.com/file/d/{fileId}/view";
@@ -268,7 +265,7 @@ namespace pyjump.Services
             if (!string.IsNullOrEmpty(tid))
             {
                 // If there's already a query parameter (resourcekey), append the tid as another parameter
-                if (url.Contains("?"))
+                if (url.Contains('?'))
                 {
                     url += $"&tid={Uri.EscapeDataString(tid)}";
                 }
@@ -286,9 +283,8 @@ namespace pyjump.Services
         /// Get all files in a given whitelist entry.
         /// </summary>
         /// <param name="whitelist"></param>
-        /// <param name="logForm"></param>
         /// <returns></returns>
-        public async Task<List<FileEntry>> GetAllFilesInWhitelistAsync(WhitelistEntry whitelist, LogForm logForm)
+        public static async Task<List<FileEntry>> GetAllFilesInWhitelistAsync(WhitelistEntry whitelist)
         {
             var files = new List<FileEntry>();
 
@@ -319,18 +315,18 @@ namespace pyjump.Services
                 }
                 catch (Google.GoogleApiException ex) when (ex.HttpStatusCode == HttpStatusCode.NotFound)
                 {
-                    logForm.Log($"⚠️ Folder {folderId} not found or inaccessible (404). Skipping.");
+                    SingletonServices.LogForm.Log($"⚠️ Folder {folderId} not found or inaccessible (404). Skipping.");
                     break;
                 }
                 catch (Exception ex)
                 {
-                    logForm.Log($"❌ Failed to list contents of folder {folderId}: {ex.Message}");
+                    SingletonServices.LogForm.Log($"❌ Failed to list contents of folder {folderId}: {ex.Message}");
                     break;
                 }
 
                 if (result.Files == null || result.Files.Count == 0)
                 {
-                    logForm.Log($"✅ No files found in folder {whitelist.Name}");
+                    SingletonServices.LogForm.Log($"✅ No files found in folder {whitelist.Name}");
                     break;
                 }
 
@@ -354,7 +350,7 @@ namespace pyjump.Services
                                 AddRequestParameter(request, "resourceKey", file.ShortcutDetails?.TargetResourceKey);
                             if (!string.IsNullOrEmpty(file.DriveId))
                                 AddRequestParameter(request, "driveId", file.DriveId);
-                            
+
                             actualFile = await request.ExecuteAsync();
                         }
                         catch (Google.GoogleApiException ex) when (ex.HttpStatusCode == HttpStatusCode.NotFound)
@@ -362,15 +358,15 @@ namespace pyjump.Services
                             var url = BuildFileUrl(targetId, file.ShortcutDetails?.TargetResourceKey, file.DriveId);
 
                             if (!string.IsNullOrEmpty(file.ShortcutDetails?.TargetResourceKey))
-                                logForm.Log($"⚠️ Shortcut target {targetId}, ResourceKey: {file.ShortcutDetails?.TargetResourceKey} not found or inaccessible (404). Skipping.");
+                                SingletonServices.LogForm.Log($"⚠️ Shortcut target {targetId}, ResourceKey: {file.ShortcutDetails?.TargetResourceKey} not found or inaccessible (404). Skipping.");
                             else
-                                logForm.Log($"⚠️ Shortcut target {targetId} not found or inaccessible (404). Skipping.");
-                            logForm.Log($"🔗 Shortcut {targetId} URL: {url}");
+                                SingletonServices.LogForm.Log($"⚠️ Shortcut target {targetId} not found or inaccessible (404). Skipping.");
+                            SingletonServices.LogForm.Log($"🔗 Shortcut {targetId} URL: {url}");
                             continue;
                         }
                         catch (Exception ex)
                         {
-                            logForm.Log($"❌ Failed to resolve shortcut {file.Id}: {ex.Message}");
+                            SingletonServices.LogForm.Log($"❌ Failed to resolve shortcut {file.Id}: {ex.Message}");
                             continue;
                         }
 
@@ -417,7 +413,7 @@ namespace pyjump.Services
                     };
 
                     files.Add(fileEntry);
-                    logForm.Log($"📄 Found file: {fileEntry.Name} in {whitelist.Name}");
+                    SingletonServices.LogForm.Log($"📄 Found file: {fileEntry.Name} in {whitelist.Name}");
                 }
 
                 pageToken = result.NextPageToken;
@@ -425,13 +421,11 @@ namespace pyjump.Services
             } while (pageToken != null);
 
 
-            return files.DistinctBy(x => x.Id).ToList();
+            return [.. files.DistinctBy(x => x.Id)];
         }
 
-        public async Task<List<T>> GetInaccessibleEntries<T>(
-             List<T> entries,
-             LogForm logForm,
-             LoadingForm loadingForm) where T : ISheetDataEntity
+        public static async Task<List<T>> GetInaccessibleEntries<T>(List<T> entries, LoadingForm loadingForm)
+            where T : ISheetDataEntity
         {
             var brokenEntries = new List<T>();
 
@@ -454,36 +448,36 @@ namespace pyjump.Services
 
                     if (file.Trashed.HasValue && file.Trashed.Value)
                     {
-                        logForm.Log($"⚠️ Entry {entry.Name} ({entry.Url}) is in trash. Adding to deletion list.");
+                        SingletonServices.LogForm.Log($"⚠️ Entry {entry.Name} ({entry.Url}) is in trash. Adding to deletion list.");
                         brokenEntries.Add(entry);
                     }
                     else if (isFolderCheck && file.MimeType != GoogleMimeTypes.Folder)
                     {
-                        logForm.Log($"⚠️ Entry {entry.Name} ({entry.Url}) is not a folder anymore. Adding to deletion list.");
+                        SingletonServices.LogForm.Log($"⚠️ Entry {entry.Name} ({entry.Url}) is not a folder anymore. Adding to deletion list.");
                         brokenEntries.Add(entry);
                     }
                     else if (!isFolderCheck && file.MimeType == GoogleMimeTypes.Folder)
                     {
-                        logForm.Log($"⚠️ Entry {entry.Name} ({entry.Url}) is now a folder, for some reason. Adding to deletion list.");
+                        SingletonServices.LogForm.Log($"⚠️ Entry {entry.Name} ({entry.Url}) is now a folder, for some reason. Adding to deletion list.");
                         brokenEntries.Add(entry);
                     }
                     else
                     {
-                        logForm.Log($"✅ Entry {entry.Name} (id: {entry.Id}, url: {entry.Url}) is accessible.");
+                        SingletonServices.LogForm.Log($"✅ Entry {entry.Name} (id: {entry.Id}, url: {entry.Url}) is accessible.");
                     }
                 }
                 catch (Google.GoogleApiException ex) when (ex.HttpStatusCode == System.Net.HttpStatusCode.NotFound)
                 {
-                    logForm.Log($"⚠️ Entry {entry.Name} ({entry.Url}) not found (404). May be unauthorized to check status. Skipping it.");
+                    SingletonServices.LogForm.Log($"⚠️ Entry {entry.Name} ({entry.Url}) not found (404). May be unauthorized to check status. Skipping it.");
                 }
                 catch (Google.GoogleApiException ex) when (ex.HttpStatusCode == System.Net.HttpStatusCode.Forbidden)
                 {
-                    logForm.Log($"⚠️ Entry {entry.Name} ({entry.Url}) inaccessible (403). Adding to deletion list.");
+                    SingletonServices.LogForm.Log($"⚠️ Entry {entry.Name} ({entry.Url}) inaccessible (403). Adding to deletion list.");
                     brokenEntries.Add(entry);
                 }
                 catch (Exception ex)
                 {
-                    logForm.Log($"❌ Unexpected error checking Entry {entry.Name} (id: {entry.Id}, url: {entry.Url}). Skipping it: {ex.Message}");
+                    SingletonServices.LogForm.Log($"❌ Unexpected error checking Entry {entry.Name} (id: {entry.Id}, url: {entry.Url}). Skipping it: {ex.Message}");
                 }
                 finally
                 {
@@ -494,7 +488,7 @@ namespace pyjump.Services
             return brokenEntries;
         }
 
-        private void AddRequestParameter(Google.Apis.Drive.v3.FilesResource.GetRequest request, string name, string value)
+        private static void AddRequestParameter(Google.Apis.Drive.v3.FilesResource.GetRequest request, string name, string value)
         {
             if (!string.IsNullOrEmpty(value))
             {
