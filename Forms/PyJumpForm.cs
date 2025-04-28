@@ -11,13 +11,7 @@ namespace pyjump
             InitializeComponent();
         }
 
-        private static LoadingForm InitProgressBar()
-        {
-            var loadingForm = new LoadingForm();
-            loadingForm.Show();
-            return loadingForm;
-        }
-
+        #region button methods
         private async void btnScanFiles_Click(object sender, EventArgs e)
         {
             LoadingForm loadingForm = null;
@@ -158,24 +152,10 @@ namespace pyjump
             }
         }
 
-        private void InitializeEverything()
-        {
-            this.Enabled = false;
-            Cursor.Current = Cursors.WaitCursor;
-            SingletonServices.LogForm.Show();
-            ScopedServices.Initialize();
-        }
-
-        private void ClearEverything()
-        {
-            ScopedServices.Clear();
-            SingletonServices.LogForm.Hide();
-            this.Enabled = true;
-            Cursor.Current = Cursors.Default;
-        }
-
         private async void btnFren_Click(object sender, EventArgs e)
         {
+            // Fren resets all scoped services after every method call just in case, because Fren is a good fren.
+            // And also, the two times I tried to use the same scoped service, it broke the database.
             LoadingForm loadingForm = null;
             try
             {
@@ -183,16 +163,24 @@ namespace pyjump
                 SingletonServices.LogForm.Log("I Fren. Fren says 'hi' :)");
 
                 // 1. scan whitelist
+                ClearEverything(true);
+                InitializeEverything();
                 await Methods.ScanWhitelist();
 
                 // 2. scan files
+                ClearEverything(true);
+                InitializeEverything();
                 loadingForm = InitProgressBar();
                 await Methods.ScanFiles(loadingForm);
 
                 // 3. build sheets
+                ClearEverything(true);
+                InitializeEverything();
                 await Methods.BuildSheets(loadingForm);
 
                 // 4. go to spreadsheet
+                ClearEverything(true);
+                InitializeEverything();
                 Methods.GoToSheet();
 
                 SingletonServices.LogForm.Log("Fren done. Fren does good work. Enjoy Fren's work, Fren's fren. :)");
@@ -327,7 +315,9 @@ namespace pyjump
                 MessageBox.Show($"Something went wrong: {ex}");
             }
         }
+        #endregion
 
+        #region private methods
         private static string GetCurrentLoggingButtonText()
         {
             if (SingletonServices.AllowLogFile)
@@ -339,5 +329,29 @@ namespace pyjump
                 return "Enable Logging";
             }
         }
+
+        private void InitializeEverything()
+        {
+            this.Enabled = false;
+            Cursor.Current = Cursors.WaitCursor;
+            SingletonServices.LogForm.Show();
+            ScopedServices.Initialize();
+        }
+
+        private void ClearEverything(bool keepLog = false)
+        {
+            ScopedServices.Clear();
+            if (!keepLog) SingletonServices.LogForm.Hide();
+            this.Enabled = true;
+            Cursor.Current = Cursors.Default;
+        }
+
+        private static LoadingForm InitProgressBar()
+        {
+            var loadingForm = new LoadingForm();
+            loadingForm.Show();
+            return loadingForm;
+        }
+        #endregion
     }
 }
