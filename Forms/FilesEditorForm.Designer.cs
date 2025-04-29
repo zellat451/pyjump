@@ -30,23 +30,23 @@
         {
             btnSaveChanges = new Button();
             btnCancel = new Button();
-            dataGridViewFiles = new DataGridView();
+            dataGridViewEntries = new DataGridView();
             countBox = new TextBox();
             txtSearch = new TextBox();
             lblSearchResults = new Label();
             btnPrev = new Button();
             searchPanel = new Panel();
             btnNext = new Button();
-            ((System.ComponentModel.ISupportInitialize)dataGridViewFiles).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)dataGridViewEntries).BeginInit();
             searchPanel.SuspendLayout();
             SuspendLayout();
             // 
             // btnSaveChanges
             // 
             btnSaveChanges.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            btnSaveChanges.Location = new Point(312, 361);
+            btnSaveChanges.Location = new Point(312, 363);
             btnSaveChanges.Name = "btnSaveChanges";
-            btnSaveChanges.Size = new Size(152, 74);
+            btnSaveChanges.Size = new Size(185, 74);
             btnSaveChanges.TabIndex = 0;
             btnSaveChanges.Text = "Save changes";
             btnSaveChanges.UseVisualStyleBackColor = true;
@@ -55,7 +55,7 @@
             // btnCancel
             // 
             btnCancel.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            btnCancel.Location = new Point(655, 12);
+            btnCancel.Location = new Point(688, 12);
             btnCancel.Name = "btnCancel";
             btnCancel.Size = new Size(99, 36);
             btnCancel.TabIndex = 1;
@@ -63,21 +63,21 @@
             btnCancel.UseVisualStyleBackColor = true;
             btnCancel.Click += btnCancel_Click;
             // 
-            // dataGridViewFiles
+            // dataGridViewEntries
             // 
-            dataGridViewFiles.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            dataGridViewFiles.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
-            dataGridViewFiles.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dataGridViewFiles.Location = new Point(31, 54);
-            dataGridViewFiles.Name = "dataGridViewFiles";
-            dataGridViewFiles.Size = new Size(702, 301);
-            dataGridViewFiles.TabIndex = 2;
-            dataGridViewFiles.CellContentClick += dataGridViewFiles_CellContentClick;
+            dataGridViewEntries.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            dataGridViewEntries.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            dataGridViewEntries.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dataGridViewEntries.Location = new Point(31, 54);
+            dataGridViewEntries.Name = "dataGridViewEntries";
+            dataGridViewEntries.Size = new Size(735, 303);
+            dataGridViewEntries.TabIndex = 2;
+            dataGridViewEntries.CellContentClick += dataGridViewEntries_CellContentClick;
             // 
             // countBox
             // 
             countBox.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            countBox.Location = new Point(31, 364);
+            countBox.Location = new Point(31, 366);
             countBox.Name = "countBox";
             countBox.ReadOnly = true;
             countBox.Size = new Size(100, 23);
@@ -118,7 +118,7 @@
             searchPanel.Controls.Add(lblSearchResults);
             searchPanel.Controls.Add(btnPrev);
             searchPanel.Controls.Add(txtSearch);
-            searchPanel.Location = new Point(541, 361);
+            searchPanel.Location = new Point(584, 363);
             searchPanel.Name = "searchPanel";
             searchPanel.Size = new Size(182, 78);
             searchPanel.TabIndex = 8;
@@ -138,15 +138,15 @@
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             AutoSizeMode = AutoSizeMode.GrowAndShrink;
-            ClientSize = new Size(766, 447);
+            ClientSize = new Size(799, 449);
             Controls.Add(searchPanel);
             Controls.Add(countBox);
-            Controls.Add(dataGridViewFiles);
+            Controls.Add(dataGridViewEntries);
             Controls.Add(btnCancel);
             Controls.Add(btnSaveChanges);
             Name = "FilesEditorForm";
             Text = "editor";
-            ((System.ComponentModel.ISupportInitialize)dataGridViewFiles).EndInit();
+            ((System.ComponentModel.ISupportInitialize)dataGridViewEntries).EndInit();
             searchPanel.ResumeLayout(false);
             searchPanel.PerformLayout();
             ResumeLayout(false);
@@ -157,7 +157,7 @@
 
         private Button btnSaveChanges;
         private Button btnCancel;
-        private DataGridView dataGridViewFiles;
+        private DataGridView dataGridViewEntries;
         private TextBox countBox;
         private TextBox txtSearch;
         private Label lblSearchResults;

@@ -2,33 +2,39 @@
 using Microsoft.EntityFrameworkCore;
 using pyjump.Entities;
 using pyjump.Infrastructure;
+using pyjump.Services;
 
 namespace pyjump.Forms
 {
     public partial class WhitelistEditorForm : Form
     {
-        private AppDbContext _context;
-        private BindingList<WhitelistEntry> _whitelistBinding;
+        private readonly AppDbContext _context;
+        private BindingList<WhitelistEntry> _entryBinding;
         private bool _entriesUpdated = false;
+        private readonly SearchService<WhitelistEntry> _searchService;
 
         public WhitelistEditorForm()
         {
             InitializeComponent();
             _context = new AppDbContext();
+            this.KeyPreview = true;
+            this.KeyDown += new KeyEventHandler(FilesEditorForm_KeyDown);
+            _searchService = new SearchService<WhitelistEntry>(dataGridViewEntries, lblSearchResults);
         }
 
-        public void WhitelistEditorForm_Load(object sender, EventArgs e)
+        #region data listing / editing
+        public void EntityEditorForm_Load(object sender, EventArgs e)
         {
             var entries = _context.Whitelist.AsTracking().OrderBy(x => x.Name).ToList();
-            _whitelistBinding = new BindingList<WhitelistEntry>(entries);
-            _whitelistBinding.AllowNew = true;
-            _whitelistBinding.AllowRemove = true;
+            _entryBinding = new BindingList<WhitelistEntry>(entries);
+            _entryBinding.AllowNew = true;
+            _entryBinding.AllowRemove = true;
 
-            _whitelistBinding.ListChanged += WhitelistBinding_ListChanged;
+            _entryBinding.ListChanged += EntryBinding_ListChanged;
 
-            dataGridViewWhitelist.DataSource = _whitelistBinding;
+            dataGridViewEntries.DataSource = _entryBinding;
 
-            if (!dataGridViewWhitelist.Columns.Contains("Delete"))
+            if (!dataGridViewEntries.Columns.Contains("Delete"))
             {
                 var deleteButtonColumn = new DataGridViewButtonColumn
                 {
@@ -39,19 +45,19 @@ namespace pyjump.Forms
                     AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells
                 };
 
-                dataGridViewWhitelist.Columns.Add(deleteButtonColumn);
+                dataGridViewEntries.Columns.Add(deleteButtonColumn);
             }
 
-            countBox.Text = $"Total entries: {_whitelistBinding.Count}";
+            countBox.Text = $"Total entries: {_entryBinding.Count}";
         }
 
-        private void WhitelistBinding_ListChanged(object sender, ListChangedEventArgs e) => _entriesUpdated = true;
+        private void EntryBinding_ListChanged(object sender, ListChangedEventArgs e) => _entriesUpdated = true;
 
         private void btnSaveChanges_Click(object sender, EventArgs e)
         {
             if (_entriesUpdated)
             {
-                var addedEntries = _whitelistBinding.Where(x => !_context.Whitelist.Contains(x)).ToList();
+                var addedEntries = _entryBinding.Where(x => !_context.Whitelist.Contains(x)).ToList();
                 if (addedEntries.Count > 0)
                 {
                     _context.AddRange(addedEntries);
@@ -74,16 +80,16 @@ namespace pyjump.Forms
             Close();
         }
 
-        private void dataGridViewWhitelist_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        private void dataGridViewEntries_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {
-            if (dataGridViewWhitelist.Columns[e.ColumnIndex].Name != "Delete" || e.RowIndex < 0)
+            if (dataGridViewEntries.Columns[e.ColumnIndex].Name != "Delete" || e.RowIndex < 0)
                 return;
 
             var result = MessageBox.Show("Are you sure you want to delete this entry?", "Confirm Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
             if (result != DialogResult.Yes)
                 return;
 
-            var entry = (WhitelistEntry)dataGridViewWhitelist.Rows[e.RowIndex].DataBoundItem;
+            var entry = (WhitelistEntry)dataGridViewEntries.Rows[e.RowIndex].DataBoundItem;
 
             var entryState = _context.Entry(entry).State;
 
@@ -98,14 +104,52 @@ namespace pyjump.Forms
                 _context.Whitelist.Remove(entry);
             }
 
-            _whitelistBinding.Remove(entry); // Update UI
+            _entryBinding.Remove(entry); // Update UI
 
             _entriesUpdated = true;
         }
+        #endregion
 
-        private void textBox1_TextChanged(object sender, EventArgs e)
+        #region data searching
+        private void btnNext_Click(object sender, EventArgs e)
         {
+            _searchService.NextClick();
+        }
+
+        private void btnPrev_Click(object sender, EventArgs e)
+        {
+            _searchService.PrevClick();
+        }
+
+        private void txtSearch_TextChanged(object sender, EventArgs e)
+        {
+            _searchService.PerformSearch(txtSearch.Text, _entryBinding);
+        }
+
+        private void txtSearch_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+
+                if (e.Shift)
+                    btnPrev_Click(sender, EventArgs.Empty);
+                else
+                    btnNext_Click(sender, EventArgs.Empty);
+            }
 
         }
+        private void FilesEditorForm_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Control && e.KeyCode == Keys.F)
+            {
+                e.Handled = true;
+                txtSearch.Focus();
+                txtSearch.SelectAll(); // highlight all text for quick replacement
+            }
+        }
+
+        #endregion
     }
 }

@@ -10,7 +10,7 @@ namespace pyjump.Forms
     public partial class FilesEditorForm : Form
     {
         private readonly AppDbContext _context;
-        private BindingList<FileEntry> _filesBinding;
+        private BindingList<FileEntry> _entryBinding;
         private bool _entriesUpdated = false;
         private readonly SearchService<FileEntry> _searchService;
         public FilesEditorForm()
@@ -19,22 +19,22 @@ namespace pyjump.Forms
             _context = new AppDbContext();
             this.KeyPreview = true;
             this.KeyDown += new KeyEventHandler(FilesEditorForm_KeyDown);
-            _searchService = new SearchService<FileEntry>(dataGridViewFiles, lblSearchResults);
+            _searchService = new SearchService<FileEntry>(dataGridViewEntries, lblSearchResults);
         }
 
         #region data listing / editing
-        public void FilesEditorForm_Load(object sender, EventArgs e)
+        public void EntityEditorForm_Load(object sender, EventArgs e)
         {
             var entries = _context.Files.AsTracking().OrderBy(x => x.Name).ToList();
-            _filesBinding = new BindingList<FileEntry>(entries);
-            _filesBinding.AllowNew = true;
-            _filesBinding.AllowRemove = true;
+            _entryBinding = new BindingList<FileEntry>(entries);
+            _entryBinding.AllowNew = true;
+            _entryBinding.AllowRemove = true;
 
-            _filesBinding.ListChanged += FilesBinding_ListChanged;
+            _entryBinding.ListChanged += EntryBinding_ListChanged;
 
-            dataGridViewFiles.DataSource = _filesBinding;
+            dataGridViewEntries.DataSource = _entryBinding;
 
-            if (!dataGridViewFiles.Columns.Contains("Delete"))
+            if (!dataGridViewEntries.Columns.Contains("Delete"))
             {
                 var deleteButtonColumn = new DataGridViewButtonColumn
                 {
@@ -45,19 +45,19 @@ namespace pyjump.Forms
                     AutoSizeMode = DataGridViewAutoSizeColumnMode.AllCells
                 };
 
-                dataGridViewFiles.Columns.Add(deleteButtonColumn);
+                dataGridViewEntries.Columns.Add(deleteButtonColumn);
             }
 
-            countBox.Text = $"Total files: {_filesBinding.Count}";
+            countBox.Text = $"Total entries: {_entryBinding.Count}";
         }
 
-        private void FilesBinding_ListChanged(object sender, ListChangedEventArgs e) => _entriesUpdated = true;
+        private void EntryBinding_ListChanged(object sender, ListChangedEventArgs e) => _entriesUpdated = true;
 
         private void btnSaveChanges_Click(object sender, EventArgs e)
         {
             if (_entriesUpdated)
             {
-                var addedEntries = _filesBinding.Where(x => !_context.Files.Contains(x)).ToList();
+                var addedEntries = _entryBinding.Where(x => !_context.Files.Contains(x)).ToList();
                 if (addedEntries.Count > 0)
                 {
                     _context.AddRange(addedEntries);
@@ -81,16 +81,16 @@ namespace pyjump.Forms
             Close();
         }
 
-        private void dataGridViewFiles_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        private void dataGridViewEntries_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {
-            if (dataGridViewFiles.Columns[e.ColumnIndex].Name != "Delete" || e.RowIndex < 0)
+            if (dataGridViewEntries.Columns[e.ColumnIndex].Name != "Delete" || e.RowIndex < 0)
                 return;
 
             var result = MessageBox.Show("Are you sure you want to delete this entry?", "Confirm Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
             if (result != DialogResult.Yes)
                 return;
 
-            var entry = (FileEntry)dataGridViewFiles.Rows[e.RowIndex].DataBoundItem;
+            var entry = (FileEntry)dataGridViewEntries.Rows[e.RowIndex].DataBoundItem;
 
             var entryState = _context.Entry(entry).State;
 
@@ -105,7 +105,7 @@ namespace pyjump.Forms
                 _context.Files.Remove(entry);
             }
 
-            _filesBinding.Remove(entry); // Update UI
+            _entryBinding.Remove(entry); // Update UI
             _entriesUpdated = true;
         }
         #endregion
@@ -123,7 +123,7 @@ namespace pyjump.Forms
 
         private void txtSearch_TextChanged(object sender, EventArgs e)
         {
-            _searchService.PerformSearch(txtSearch.Text, _filesBinding);
+            _searchService.PerformSearch(txtSearch.Text, _entryBinding);
         }
 
         private void txtSearch_KeyDown(object sender, KeyEventArgs e)
