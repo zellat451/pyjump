@@ -116,7 +116,6 @@ namespace pyjump
         {
             using (var form = new WhitelistEditorForm())
             {
-                form.EntityEditorForm_Load(sender, e);
                 form.ShowDialog();
             }
         }
@@ -125,7 +124,6 @@ namespace pyjump
         {
             using (var form = new FilesEditorForm())
             {
-                form.EntityEditorForm_Load(sender, e);
                 form.ShowDialog();
             }
         }
