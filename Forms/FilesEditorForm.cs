@@ -3,24 +3,23 @@ using System.Data;
 using Microsoft.EntityFrameworkCore;
 using pyjump.Entities;
 using pyjump.Infrastructure;
+using pyjump.Services;
 
 namespace pyjump.Forms
 {
     public partial class FilesEditorForm : Form
     {
-        private AppDbContext _context;
+        private readonly AppDbContext _context;
         private BindingList<FileEntry> _filesBinding;
         private bool _entriesUpdated = false;
-        private List<int> _searchMatchIndexes;
-        private int _currentSearchIndex;
+        private readonly SearchService<FileEntry> _searchService;
         public FilesEditorForm()
         {
             InitializeComponent();
             _context = new AppDbContext();
-            _searchMatchIndexes = new List<int>();
-            _currentSearchIndex = -1;
             this.KeyPreview = true;
             this.KeyDown += new KeyEventHandler(FilesEditorForm_KeyDown);
+            _searchService = new SearchService<FileEntry>(dataGridViewFiles, lblSearchResults);
         }
 
         #region data listing / editing
@@ -112,89 +111,19 @@ namespace pyjump.Forms
         #endregion
 
         #region data searching
-        private static List<Func<FileEntry, string, bool>> SearchPredicates => [
-            (entry, searchStr) => entry.Name?.Contains(searchStr, StringComparison.CurrentCultureIgnoreCase) == true,
-            (entry, searchStr) => entry.FolderName?.Contains(searchStr, StringComparison.CurrentCultureIgnoreCase) == true,
-            (entry, searchStr) => entry.Owner?.Contains(searchStr, StringComparison.CurrentCultureIgnoreCase) == true,
-        ];
-        private static bool HasAnyMatch(FileEntry entry, string searchStr) => SearchPredicates.Any(x => x.Invoke(entry, searchStr));
-        private void PerformSearch(string searchText)
-        {
-            _searchMatchIndexes.Clear();
-            _currentSearchIndex = -1;
-
-            if (string.IsNullOrWhiteSpace(searchText))
-            {
-                lblSearchResults.Text = "";
-                dataGridViewFiles.ClearSelection();
-                foreach (DataGridViewRow row in dataGridViewFiles.Rows)
-                    row.DefaultCellStyle.BackColor = dataGridViewFiles.DefaultCellStyle.BackColor;
-                return;
-            }
-
-            string lowerSearch = searchText.ToLower();
-
-            for (int i = 0; i < _filesBinding.Count; i++)
-            {
-                if (HasAnyMatch(_filesBinding[i], lowerSearch))
-                    _searchMatchIndexes.Add(i);
-            }
-
-            if (_searchMatchIndexes.Count > 0)
-            {
-                _currentSearchIndex = 0;
-                HighlightCurrentMatch();
-            }
-            else
-            {
-                lblSearchResults.Text = "0 / 0";
-                dataGridViewFiles.ClearSelection();
-            }
-        }
-        private void HighlightCurrentMatch()
-        {
-            dataGridViewFiles.ClearSelection();
-
-            foreach (DataGridViewRow row in dataGridViewFiles.Rows)
-                row.DefaultCellStyle.BackColor = dataGridViewFiles.DefaultCellStyle.BackColor;
-
-            if (_currentSearchIndex < 0 || _searchMatchIndexes.Count == 0)
-            {
-                lblSearchResults.Text = "0 / 0";
-                return;
-            }
-
-            int rowIndex = _searchMatchIndexes[_currentSearchIndex];
-            var rowToHighlight = dataGridViewFiles.Rows[rowIndex];
-
-            rowToHighlight.Selected = true;
-            rowToHighlight.DefaultCellStyle.BackColor = Color.LightYellow;
-            dataGridViewFiles.FirstDisplayedScrollingRowIndex = rowIndex;
-
-            lblSearchResults.Text = $"{_currentSearchIndex + 1} / {_searchMatchIndexes.Count}";
-
-            dataGridViewFiles.FirstDisplayedScrollingRowIndex = Math.Max(0, rowIndex - 2);
-
-        }
-
-
         private void btnNext_Click(object sender, EventArgs e)
         {
-            if (_searchMatchIndexes.Count == 0) return;
-            _currentSearchIndex = (_currentSearchIndex + 1) % _searchMatchIndexes.Count;
-            HighlightCurrentMatch();
+            _searchService.NextClick();
         }
 
         private void btnPrev_Click(object sender, EventArgs e)
         {
-            if (_searchMatchIndexes.Count == 0) return;
-            _currentSearchIndex = (_currentSearchIndex - 1 + _searchMatchIndexes.Count) % _searchMatchIndexes.Count;
-            HighlightCurrentMatch();
+            _searchService.PrevClick();
         }
 
         private void txtSearch_TextChanged(object sender, EventArgs e)
         {
-            PerformSearch(txtSearch.Text);
+            _searchService.PerformSearch(txtSearch.Text, _filesBinding);
         }
 
         private void txtSearch_KeyDown(object sender, KeyEventArgs e)
