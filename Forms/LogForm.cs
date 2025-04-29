@@ -1,5 +1,4 @@
 ﻿using System.Collections.Concurrent;
-using System.Windows.Forms;
 using pyjump.Services;
 
 namespace pyjump.Forms
@@ -9,13 +8,14 @@ namespace pyjump.Forms
         public LogForm()
         {
             InitializeComponent();
-            _logTimer = new();
-            _logTimer.Interval = 1000; // update once a second
+            _logTimer = new()
+            {
+                Interval = 1000 // update once a second
+            };
             _logTimer.Tick += (s, e) => FlushLogQueue();
             _logTimer.Start();
         }
 
-        private bool firstLog = true;
         private readonly ConcurrentQueue<string> _logQueue = new();
         private readonly System.Windows.Forms.Timer _logTimer;
         public void Log(string message)
@@ -29,7 +29,7 @@ namespace pyjump.Forms
 
             if (richTextBoxLog.Lines.Length > 1000)
             {
-                richTextBoxLog.Clear(); 
+                richTextBoxLog.Clear();
             }
 
             var nbMsg = _logQueue.Count;
@@ -50,15 +50,24 @@ namespace pyjump.Forms
                         Directory.CreateDirectory(path);
                     }
 
-                    File.AppendAllText(Path.Combine(path, $"logform-{DateTime.UtcNow:yyyy-MM-dd}.log"), msg + Environment.NewLine); 
+                    File.AppendAllText(Path.Combine(path, $"logform-{DateTime.UtcNow:yyyy-MM-dd}.log"), msg + Environment.NewLine);
                 }
             }
 
             if (nbMsg > 0)
             {
                 richTextBoxLog.SelectionStart = richTextBoxLog.Text.Length;
-                richTextBoxLog.ScrollToCaret(); 
+                richTextBoxLog.ScrollToCaret();
             }
+        }
+
+        private void btnCancelTask_Click(object sender, EventArgs e)
+        {
+            var result = MessageBox.Show("Are you sure you want to cancel the current task?", "Cancel Task", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+            if (result != DialogResult.Yes)
+                return;
+            ScopedServices.CancellationTokenSource.Cancel();
+            Log("User requested cancellation.");
         }
     }
 }

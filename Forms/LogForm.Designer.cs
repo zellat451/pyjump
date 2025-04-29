@@ -29,24 +29,37 @@
         private void InitializeComponent()
         {
             richTextBoxLog = new RichTextBox();
+            btnCancelTask = new Button();
             SuspendLayout();
             // 
             // richTextBoxLog
             // 
-            richTextBoxLog.Dock = DockStyle.Fill;
-            richTextBoxLog.Location = new Point(0, 0);
+            richTextBoxLog.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            richTextBoxLog.Location = new Point(0, 1);
             richTextBoxLog.Name = "richTextBoxLog";
             richTextBoxLog.ReadOnly = true;
             richTextBoxLog.ScrollBars = RichTextBoxScrollBars.Vertical;
-            richTextBoxLog.Size = new Size(800, 450);
+            richTextBoxLog.Size = new Size(800, 413);
             richTextBoxLog.TabIndex = 0;
             richTextBoxLog.Text = "";
+            // 
+            // btnCancelTask
+            // 
+            btnCancelTask.Anchor = AnchorStyles.Bottom;
+            btnCancelTask.Location = new Point(351, 420);
+            btnCancelTask.Name = "btnCancelTask";
+            btnCancelTask.Size = new Size(107, 27);
+            btnCancelTask.TabIndex = 1;
+            btnCancelTask.Text = "Cancel";
+            btnCancelTask.UseVisualStyleBackColor = true;
+            btnCancelTask.Click += btnCancelTask_Click;
             // 
             // LogForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
+            Controls.Add(btnCancelTask);
             Controls.Add(richTextBoxLog);
             Name = "LogForm";
             Text = "logs";
@@ -56,5 +69,6 @@
         #endregion
 
         private RichTextBox richTextBoxLog;
+        private Button btnCancelTask;
     }
 }

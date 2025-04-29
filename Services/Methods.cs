@@ -15,67 +15,114 @@ namespace pyjump.Services
         /// Scans all drives and folders in the registered main drives and updates the database with the new whitelist entries.
         /// </summary>
         /// <returns></returns>
-        public static async Task ScanWhitelist()
+        public static async Task ScanWhitelist(CancellationToken cancellationToken = default)
         {
-            #region get all folder entries for whitelist
-            var drives = SingletonServices.MainDrives;
-
-            var scanner = new DriveScanner();
-            var allWhitelistEntries = await scanner.GetAllFolderNamesRecursiveAsync(drives.Data.Select(x => x.Url));
-            ConcurrentBag<WhitelistEntry> allWhitelistEntriesBag = [.. allWhitelistEntries];
-            #endregion
-
-            // check existing whitelist entries
-            using (var db = new AppDbContext())
+            try
             {
-                var existingEntries = db.Whitelist.ToList();
+                cancellationToken.ThrowIfCancellationRequested();
 
-                #region delete missing whitelist entries
-                // 1. entries existing in the database but not in the new list > remove the entries from the database
-                var toRemove = existingEntries.Where(x => !allWhitelistEntriesBag.Select(y => y.Id).Contains(x.Id)).ToList();
-                db.Whitelist.RemoveRange(toRemove);
-                SingletonServices.LogForm.Log($"Removed {toRemove.Count} entries from the database.");
-                Debug.WriteLine($"Removed {toRemove.Count} entries from the database.");
-                #endregion
+                #region get all folder entries for whitelist
+                var drives = SingletonServices.MainDrives;
 
-                #region add new whitelist entries
-                // 2. entries existing in the new list but not in the database > add the entries to the database
-                var toAdd = allWhitelistEntries.Where(x => !existingEntries.Select(y => y.Id).Contains(x.Id)).ToList();
-                db.Whitelist.AddRange(toAdd);
-                SingletonServices.LogForm.Log($"Added {toAdd.Count} entries to the database.");
-                Debug.WriteLine($"Added {toAdd.Count} entries to the database.");
-                #endregion
+                cancellationToken.ThrowIfCancellationRequested();
 
-                #region update existing whitelist entries
-                // 3. entries existing in both lists > update the entries in the database if the name | url | resource key is different
-                var toUpdate = new List<WhitelistEntry>();
-                foreach (var entry in existingEntries)
+                var scanner = new DriveScanner();
+                var allWhitelistEntries = await scanner.GetAllFolderNamesRecursiveAsync(drives.Data.Select(x => x.Url), cancellationToken);
+
+                cancellationToken.ThrowIfCancellationRequested();
+
+                if (allWhitelistEntries == null || allWhitelistEntries.Count == 0)
                 {
-                    var newEntry = allWhitelistEntries.FirstOrDefault(x => x.Id == entry.Id);
-                    if (newEntry != null)
-                    {
-                        if (entry.Name != newEntry.Name
-                            || entry.Url != newEntry.Url
-                            || entry.ResourceKey != newEntry.ResourceKey
-                            || entry.DriveId != newEntry.DriveId)
-                        {
-                            entry.Name = newEntry.Name;
-                            entry.Url = newEntry.Url;
-                            entry.ResourceKey = newEntry.ResourceKey;
-                            entry.DriveId = newEntry.DriveId;
-                            entry.LastChecked = null;
+                    SingletonServices.LogForm.Log("❌ No folders found in the main drives.");
+                    return;
+                }
+                ConcurrentBag<WhitelistEntry> allWhitelistEntriesBag = [.. allWhitelistEntries];
+                #endregion
 
-                            toUpdate.Add(entry);
+                // check existing whitelist entries
+                using (var db = new AppDbContext())
+                {
+                    var existingEntries = db.Whitelist.ToList();
+
+                    #region delete missing whitelist entries
+                    // 1. entries existing in the database but not in the new list > remove the entries from the database
+                    var toRemove = existingEntries.Where(x => !allWhitelistEntriesBag.Select(y => y.Id).Contains(x.Id)).ToList();
+                    db.Whitelist.RemoveRange(toRemove);
+                    SingletonServices.LogForm.Log($"Removed {toRemove.Count} entries from the database.");
+                    Debug.WriteLine($"Removed {toRemove.Count} entries from the database.");
+                    #endregion
+
+                    #region add new whitelist entries
+                    // 2. entries existing in the new list but not in the database > add the entries to the database
+                    var toAdd = allWhitelistEntries.Where(x => !existingEntries.Select(y => y.Id).Contains(x.Id)).ToList();
+                    db.Whitelist.AddRange(toAdd);
+                    SingletonServices.LogForm.Log($"Added {toAdd.Count} entries to the database.");
+                    Debug.WriteLine($"Added {toAdd.Count} entries to the database.");
+                    #endregion
+
+                    #region update existing whitelist entries
+                    // 3. entries existing in both lists > update the entries in the database if the name | url | resource key is different
+                    var toUpdate = new List<WhitelistEntry>();
+                    foreach (var entry in existingEntries)
+                    {
+                        try
+                        {
+                            cancellationToken.ThrowIfCancellationRequested();
+                        }
+                        catch (Exception)
+                        {
+                            SingletonServices.LogForm.Log("❌ Scan cancelled.");
+                            db.Dispose();
+                            return;
+                        }
+
+                        var newEntry = allWhitelistEntries.FirstOrDefault(x => x.Id == entry.Id);
+                        if (newEntry != null)
+                        {
+                            if (entry.Name != newEntry.Name
+                                || entry.Url != newEntry.Url
+                                || entry.ResourceKey != newEntry.ResourceKey
+                                || entry.DriveId != newEntry.DriveId)
+                            {
+                                entry.Name = newEntry.Name;
+                                entry.Url = newEntry.Url;
+                                entry.ResourceKey = newEntry.ResourceKey;
+                                entry.DriveId = newEntry.DriveId;
+                                entry.LastChecked = null;
+
+                                toUpdate.Add(entry);
+                            }
                         }
                     }
-                }
-                db.Whitelist.UpdateRange(toUpdate);
-                SingletonServices.LogForm.Log($"Updated {toUpdate.Count} entries in the database.");
-                Debug.WriteLine($"Updated {toUpdate.Count} entries in the database.");
-                #endregion
+                    db.Whitelist.UpdateRange(toUpdate);
+                    SingletonServices.LogForm.Log($"Updated {toUpdate.Count} entries in the database.");
+                    Debug.WriteLine($"Updated {toUpdate.Count} entries in the database.");
+                    #endregion
 
-                // commit the changes to the database
-                db.SaveChanges();
+                    try
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+                    }
+                    catch (Exception)
+                    {
+                        SingletonServices.LogForm.Log("❌ Scan cancelled.");
+                        db.Dispose();
+                        return;
+                    }
+
+                    // commit the changes to the database
+                    await db.SaveChangesAsync(cancellationToken);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                SingletonServices.LogForm.Log("❌ Scan cancelled.");
+                return;
+            }
+            catch (Exception e)
+            {
+                SingletonServices.LogForm.Log($"Error scanning whitelist: {e}");
+                throw;
             }
         }
         #endregion
@@ -86,133 +133,178 @@ namespace pyjump.Services
         /// </summary>
         /// <param name="loadingForm"></param>
         /// <returns></returns>
-        public static async Task ScanFiles(LoadingForm loadingForm)
+        public static async Task ScanFiles(LoadingForm loadingForm, CancellationToken cancellationToken = default)
         {
-            #region get whitelist all entries
-            // get all whitelist entries from the database
-            List<WhitelistEntry> whitelistEntries;
-            using (var db = new AppDbContext())
+            try
             {
-                whitelistEntries = [.. db.Whitelist];
-            }
-            #endregion
+                cancellationToken.ThrowIfCancellationRequested();
 
-            loadingForm.PrepareLoadingBar("Scanning files", whitelistEntries.Count);
-
-            // get all files from the whitelist entries
-            var scanner = new DriveScanner();
-            foreach (var w in whitelistEntries)
-            {
-                // get all files for one entry
-                var scannedFileEntries = await DriveScanner.GetAllFilesInWhitelistAsync(w);
-
-                // check existing file entries
+                #region get whitelist all entries
+                // get all whitelist entries from the database
+                List<WhitelistEntry> whitelistEntries;
                 using (var db = new AppDbContext())
                 {
-                    var currentFileEntries = db.Files.ToList();
+                    whitelistEntries = [.. db.Whitelist];
+                }
+                #endregion
 
-                    #region add new file entries
-                    // 1. entries existing in the new list but not in the database > add the entries to the database
-                    var toAdd = scannedFileEntries.Where(x => !currentFileEntries.Select(y => y.Id).Contains(x.Id)).ToList();
-                    try
-                    {
-                        db.Files.AddRange(toAdd);
-                    }
-                    catch (Exception e)
-                    {
-                        SingletonServices.LogForm.Log($"Error adding file entries: {e}");
-                        throw;
-                    }
-                    SingletonServices.LogForm.Log($"Added {toAdd.Count} file entries.");
-                    Debug.WriteLine($"Added {toAdd.Count} file entries.");
-                    #endregion
+                loadingForm.PrepareLoadingBar("Scanning files", whitelistEntries.Count);
 
-                    #region update existing file entries
-                    // 2. entries existing in both lists > update the entries in the database if info is different
-                    // we don't check the Type because it might have been changed manually
-                    var toUpdate = new List<FileEntry>();
-                    foreach (var entry in currentFileEntries)
-                    {
-                        var newEntry = scannedFileEntries.FirstOrDefault(x => x.Id == entry.Id);
-                        if (newEntry != null)
-                        {
-                            if (entry.Name != newEntry.Name
-                                || entry.Url != newEntry.Url
-                                || entry.ResourceKey != newEntry.ResourceKey
-                                || entry.DriveId != newEntry.DriveId
-                                || entry.LastModified != newEntry.LastModified
-                                || entry.Owner != newEntry.Owner
-                                || entry.FolderId != newEntry.FolderId
-                                || entry.FolderName != newEntry.FolderName
-                                || entry.FolderUrl != newEntry.FolderUrl)
-                            {
-                                entry.Name = newEntry.Name;
-                                entry.Url = newEntry.Url;
-                                entry.ResourceKey = newEntry.ResourceKey;
-                                entry.DriveId = newEntry.DriveId;
-                                entry.LastModified = newEntry.LastModified;
-                                entry.Owner = newEntry.Owner;
-                                entry.FolderId = newEntry.FolderId;
-                                entry.FolderName = newEntry.FolderName;
-                                entry.FolderUrl = newEntry.FolderUrl;
+                cancellationToken.ThrowIfCancellationRequested();
 
-                                toUpdate.Add(entry);
-                            }
-                        }
-                    }
-                    try
-                    {
-                        db.Files.UpdateRange(toUpdate);
-                    }
-                    catch (Exception e)
-                    {
-                        SingletonServices.LogForm.Log($"Error updating file entries: {e}");
-                        throw;
-                    }
-                    SingletonServices.LogForm.Log($"Updated {toUpdate.Count} file entries.");
-                    Debug.WriteLine($"Updated {toUpdate.Count} file entries.");
-                    #endregion
+                // get all files from the whitelist entries
+                var scanner = new DriveScanner();
+                foreach (var w in whitelistEntries)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
 
-                    #region update the lastchecked date of the whitelist entry
-                    if (scannedFileEntries.Count > 0)
+                    // get all files for one entry
+                    var scannedFileEntries = await DriveScanner.GetAllFilesInWhitelistAsync(w, cancellationToken);
+
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                    // check existing file entries
+                    using (var db = new AppDbContext())
                     {
-                        // update the last checked date of the whitelist entry to today, midnight Utc
-                        w.LastChecked = DateTime.UtcNow.Date;
+                        var currentFileEntries = db.Files.ToList();
+
+                        #region add new file entries
+                        // 1. entries existing in the new list but not in the database > add the entries to the database
+                        var toAdd = scannedFileEntries.Where(x => !currentFileEntries.Select(y => y.Id).Contains(x.Id)).ToList();
                         try
                         {
-                            db.Whitelist.Update(w);
+                            await db.Files.AddRangeAsync(toAdd, cancellationToken);
                         }
                         catch (Exception e)
                         {
-                            SingletonServices.LogForm.Log($"Error updating whitelist entry: {e}");
+                            SingletonServices.LogForm.Log($"Error adding file entries: {e}");
+                            throw;
+                        }
+                        SingletonServices.LogForm.Log($"Added {toAdd.Count} file entries.");
+                        Debug.WriteLine($"Added {toAdd.Count} file entries.");
+                        #endregion
+
+                        #region update existing file entries
+                        // 2. entries existing in both lists > update the entries in the database if info is different
+                        // we don't check the Type because it might have been changed manually
+                        var toUpdate = new List<FileEntry>();
+                        foreach (var entry in currentFileEntries)
+                        {
+                            try
+                            {
+                                cancellationToken.ThrowIfCancellationRequested();
+                            }
+                            catch (Exception)
+                            {
+                                SingletonServices.LogForm.Log("❌ Scan cancelled.");
+                                db.Dispose();
+                                return;
+                            }
+
+                            var newEntry = scannedFileEntries.FirstOrDefault(x => x.Id == entry.Id);
+                            if (newEntry != null)
+                            {
+                                if (entry.Name != newEntry.Name
+                                    || entry.Url != newEntry.Url
+                                    || entry.ResourceKey != newEntry.ResourceKey
+                                    || entry.DriveId != newEntry.DriveId
+                                    || entry.LastModified != newEntry.LastModified
+                                    || entry.Owner != newEntry.Owner
+                                    || entry.FolderId != newEntry.FolderId
+                                    || entry.FolderName != newEntry.FolderName
+                                    || entry.FolderUrl != newEntry.FolderUrl)
+                                {
+                                    entry.Name = newEntry.Name;
+                                    entry.Url = newEntry.Url;
+                                    entry.ResourceKey = newEntry.ResourceKey;
+                                    entry.DriveId = newEntry.DriveId;
+                                    entry.LastModified = newEntry.LastModified;
+                                    entry.Owner = newEntry.Owner;
+                                    entry.FolderId = newEntry.FolderId;
+                                    entry.FolderName = newEntry.FolderName;
+                                    entry.FolderUrl = newEntry.FolderUrl;
+
+                                    toUpdate.Add(entry);
+                                }
+                            }
+                        }
+                        try
+                        {
+                            db.Files.UpdateRange(toUpdate);
+                        }
+                        catch (Exception e)
+                        {
+                            SingletonServices.LogForm.Log($"Error updating file entries: {e}");
+                            throw;
+                        }
+                        SingletonServices.LogForm.Log($"Updated {toUpdate.Count} file entries.");
+                        Debug.WriteLine($"Updated {toUpdate.Count} file entries.");
+                        #endregion
+
+                        #region update the lastchecked date of the whitelist entry
+                        if (scannedFileEntries.Count > 0)
+                        {
+                            // update the last checked date of the whitelist entry to today, midnight Utc
+                            w.LastChecked = DateTime.UtcNow.Date;
+                            try
+                            {
+                                db.Whitelist.Update(w);
+                            }
+                            catch (Exception e)
+                            {
+                                SingletonServices.LogForm.Log($"Error updating whitelist entry: {e}");
+                                throw;
+                            }
+                        }
+                        #endregion
+
+                        try
+                        {
+                            cancellationToken.ThrowIfCancellationRequested();
+                        }
+                        catch (Exception)
+                        {
+                            SingletonServices.LogForm.Log("❌ Scan cancelled.");
+                            db.Dispose();
+                            return;
+                        }
+
+                        try
+                        {
+                            await db.SaveChangesAsync(cancellationToken);
+                        }
+                        catch (Exception e)
+                        {
+                            SingletonServices.LogForm.Log($"Error saving changes to the database: {e}");
                             throw;
                         }
                     }
-                    #endregion
 
-                    try
-                    {
-                        await db.SaveChangesAsync();
-                    }
-                    catch (Exception e)
-                    {
-                        SingletonServices.LogForm.Log($"Error saving changes to the database: {e}");
-                        throw;
-                    }
+                    loadingForm.IncrementProgress();
                 }
 
-                loadingForm.IncrementProgress();
-            }
+                List<FileEntry> allFiles;
+                using (var db = new AppDbContext())
+                {
+                    allFiles = [.. db.Files];
+                }
 
-            List<FileEntry> allFiles;
-            using (var db = new AppDbContext())
+                cancellationToken.ThrowIfCancellationRequested();
+
+                loadingForm.PrepareLoadingBar("Treating sets for files", allFiles.Count);
+
+                await TreatSetsForFiles(allFiles, loadingForm, cancellationToken);
+            }
+            catch (OperationCanceledException)
             {
-                allFiles = [.. db.Files];
+                SingletonServices.LogForm.Log("❌ Scan cancelled.");
+                return;
             }
-
-            loadingForm.PrepareLoadingBar("Treating sets for files", allFiles.Count);
-
-            await TreatSetsForFiles(allFiles, loadingForm);
+            catch (Exception e)
+            {
+                SingletonServices.LogForm.Log($"Error scanning files: {e}");
+                throw;
+            }
         }
 
         /// <summary>
@@ -222,10 +314,12 @@ namespace pyjump.Services
         /// <param name="fileEntries"></param>
         /// <param name="loadingForm"></param>
         /// <returns></returns>
-        private static async Task TreatSetsForFiles(List<FileEntry> fileEntries, LoadingForm loadingForm)
+        private static async Task TreatSetsForFiles(List<FileEntry> fileEntries, LoadingForm loadingForm, CancellationToken cancellationToken = default)
         {
             try
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 // regroup the files under sets
                 List<FileEntry> allFiles;
                 using (var db = new AppDbContext())
@@ -236,6 +330,8 @@ namespace pyjump.Services
                 List<string> treatedIds = [];
                 foreach (var file in fileEntries)
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
+
                     // 1. check if the file is already treated
                     if (treatedIds.Contains(file.Id))
                     {
@@ -255,6 +351,9 @@ namespace pyjump.Services
                         var similarIds = similarFiles.Select(x => x.Id).ToList();
                         existingSet = db.LNKSimilarSetFiles.FirstOrDefault(x => similarIds.Contains(x.FileEntryId));
                     }
+
+                    cancellationToken.ThrowIfCancellationRequested();
+
                     if (existingSet == null)
                     {
                         // There is no set created for that file, or it would be registered in the LNKSimilarSetFile table
@@ -267,7 +366,7 @@ namespace pyjump.Services
                         {
                             try
                             {
-                                db.SimilarSets.Add(similarSet);
+                                await db.SimilarSets.AddAsync(similarSet, cancellationToken);
                             }
                             catch (Exception e)
                             {
@@ -277,7 +376,7 @@ namespace pyjump.Services
                             // 3.a.2. save the set to the database (this will generate the Id for the set)
                             try
                             {
-                                await db.SaveChangesAsync();
+                                await db.SaveChangesAsync(cancellationToken);
                             }
                             catch (Exception e)
                             {
@@ -290,6 +389,17 @@ namespace pyjump.Services
                             // 3.a.3. add the similar files to the set
                             foreach (var similarFile in similarFiles)
                             {
+                                try
+                                {
+                                    cancellationToken.ThrowIfCancellationRequested();
+                                }
+                                catch (Exception)
+                                {
+                                    SingletonServices.LogForm.Log("❌ Sets creation cancelled.");
+                                    db.Dispose();
+                                    return;
+                                }
+
                                 var lnkSimilarSetFile = new LNKSimilarSetFile
                                 {
                                     SimilarSetId = similarSet.Id,
@@ -297,7 +407,7 @@ namespace pyjump.Services
                                 };
                                 try
                                 {
-                                    db.LNKSimilarSetFiles.Add(lnkSimilarSetFile);
+                                    await db.LNKSimilarSetFiles.AddAsync(lnkSimilarSetFile, cancellationToken);
                                 }
                                 catch (Exception e)
                                 {
@@ -309,7 +419,7 @@ namespace pyjump.Services
                             // 3.a.4. save the changes to the database
                             try
                             {
-                                await db.SaveChangesAsync();
+                                await db.SaveChangesAsync(cancellationToken);
                             }
                             catch (Exception e)
                             {
@@ -330,6 +440,17 @@ namespace pyjump.Services
                         {
                             foreach (var similarFile in filesNotInSet)
                             {
+                                try
+                                {
+                                    cancellationToken.ThrowIfCancellationRequested();
+                                }
+                                catch (Exception)
+                                {
+                                    SingletonServices.LogForm.Log("❌ Sets creation cancelled.");
+                                    db.Dispose();
+                                    return;
+                                }
+
                                 var lnkSimilarSetFile = new LNKSimilarSetFile
                                 {
                                     SimilarSetId = existingSet.SimilarSetId,
@@ -338,7 +459,7 @@ namespace pyjump.Services
                                 try
                                 {
                                     if (!db.LNKSimilarSetFiles.Contains(lnkSimilarSetFile))
-                                        db.LNKSimilarSetFiles.Add(lnkSimilarSetFile);
+                                        await db.LNKSimilarSetFiles.AddAsync(lnkSimilarSetFile, cancellationToken);
                                 }
                                 catch (Exception e)
                                 {
@@ -351,7 +472,7 @@ namespace pyjump.Services
                             // 3.b.3. save the changes to the database
                             try
                             {
-                                await db.SaveChangesAsync();
+                                await db.SaveChangesAsync(cancellationToken);
                             }
                             catch (Exception e)
                             {
@@ -359,6 +480,8 @@ namespace pyjump.Services
                                 throw;
                             }
                         }
+
+                        cancellationToken.ThrowIfCancellationRequested();
 
                         // 3.b.4. update the owner file entry id of the set
                         using (var db = new AppDbContext())
@@ -381,7 +504,7 @@ namespace pyjump.Services
                                 // 3.b.5. save the changes to the database
                                 try
                                 {
-                                    await db.SaveChangesAsync();
+                                    await db.SaveChangesAsync(cancellationToken);
                                 }
                                 catch (Exception e)
                                 {
@@ -396,6 +519,11 @@ namespace pyjump.Services
                     loadingForm.IncrementProgress();
                 }
             }
+            catch (OperationCanceledException)
+            {
+                SingletonServices.LogForm.Log("❌ Sets creation cancelled.");
+                return;
+            }
             catch (Exception e)
             {
                 SingletonServices.LogForm.Log($"Error treating sets for files: {e}");
@@ -408,10 +536,12 @@ namespace pyjump.Services
         /// </summary>
         /// <param name="loadingForm"></param>
         /// <returns></returns>
-        public static async Task ForceMatchType(LoadingForm loadingForm)
+        public static async Task ForceMatchType(LoadingForm loadingForm, CancellationToken cancellationToken = default)
         {
             try
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 // 1. get all files from the database
                 List<FileEntry> allFiles;
                 List<WhitelistEntry> allWhitelistEntries;
@@ -427,6 +557,8 @@ namespace pyjump.Services
 
                 foreach (var file in filesToCheck)
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
+
                     // get the corresponding whitelist entry
                     var whitelistEntry = allWhitelistEntries.FirstOrDefault(x => x.Id == file.FolderId);
                     if (whitelistEntry == null)
@@ -454,7 +586,7 @@ namespace pyjump.Services
                                     loadingForm.IncrementProgress();
                                     continue;
                                 }
-                                await db.SaveChangesAsync();
+                                await db.SaveChangesAsync(cancellationToken);
                             }
                             SingletonServices.LogForm.Log($"✅ File {file.Name} ({file.Id}) updated to match folder type {whitelistEntry.Type}.");
                         }
@@ -462,6 +594,11 @@ namespace pyjump.Services
                         loadingForm.IncrementProgress();
                     }
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                SingletonServices.LogForm.Log("❌ Forcing match type cancelled.");
+                return;
             }
             catch (Exception e)
             {
@@ -480,40 +617,46 @@ namespace pyjump.Services
         /// <param name="loadingForm"></param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        private static async Task UploadToSheetAsync<T>(List<T> entries, string sheetName, LoadingForm loadingForm)
+        private static async Task UploadToSheetAsync<T>(List<T> entries, string sheetName, LoadingForm loadingForm, CancellationToken cancellationToken = default)
             where T : ISheetDataEntity
         {
-            if (entries.Count == 0)
+            try
             {
-                SingletonServices.LogForm.Log($"No entries to upload to sheet '{sheetName}'.");
-                return;
-            }
+                cancellationToken.ThrowIfCancellationRequested();
 
-            var service = ScopedServices.SheetsService;
+                if (entries.Count == 0)
+                {
+                    SingletonServices.LogForm.Log($"No entries to upload to sheet '{sheetName}'.");
+                    return;
+                }
 
-            // Step 1: Get the sheet ID and current grid size
-            var spreadsheet = await service.Spreadsheets.Get(SingletonServices.SpreadsheetId).ExecuteAsync();
-            var sheet = spreadsheet.Sheets.FirstOrDefault(s => s.Properties.Title == sheetName);
-            if (sheet == null)
-            {
-                SingletonServices.LogForm.Log($"❌ Sheet '{sheetName}' not found in spreadsheet.");
-                throw new Exception($"❌ Sheet '{sheetName}' not found in spreadsheet.");
-            }
+                var service = ScopedServices.SheetsService;
 
-            int sheetId = (int)sheet.Properties.SheetId;
-            #region resize the sheet
-            var currentRowCount = sheet.Properties.GridProperties.RowCount ?? 1;
-            var currentColCount = sheet.Properties.GridProperties.ColumnCount ?? 1;
+                // Step 1: Get the sheet ID and current grid size
+                var spreadsheet = await service.Spreadsheets.Get(SingletonServices.SpreadsheetId).ExecuteAsync(cancellationToken);
+                var sheet = spreadsheet.Sheets.FirstOrDefault(s => s.Properties.Title == sheetName);
+                if (sheet == null)
+                {
+                    SingletonServices.LogForm.Log($"❌ Sheet '{sheetName}' not found in spreadsheet.");
+                    throw new Exception($"❌ Sheet '{sheetName}' not found in spreadsheet.");
+                }
 
-            int rowsNeeded = entries.Count + 1; // +1 for header row
-            int colsNeeded = T.GetSheetColumnsNumber();
+                cancellationToken.ThrowIfCancellationRequested();
 
-            // Step 2: Resize the sheet
-            var resizeRequest = new BatchUpdateSpreadsheetRequest
-            {
-                Requests =
-                [
-                    new() {
+                int sheetId = (int)sheet.Properties.SheetId;
+                #region resize the sheet
+                var currentRowCount = sheet.Properties.GridProperties.RowCount ?? 1;
+                var currentColCount = sheet.Properties.GridProperties.ColumnCount ?? 1;
+
+                int rowsNeeded = entries.Count + 1; // +1 for header row
+                int colsNeeded = T.GetSheetColumnsNumber();
+
+                // Step 2: Resize the sheet
+                var resizeRequest = new BatchUpdateSpreadsheetRequest
+                {
+                    Requests =
+                    [
+                        new() {
                         UpdateSheetProperties = new UpdateSheetPropertiesRequest
                         {
                             Properties = new SheetProperties
@@ -528,62 +671,76 @@ namespace pyjump.Services
                             Fields = "gridProperties(rowCount,columnCount)"
                         }
                     }
-                ]
-            };
+                    ]
+                };
 
-            await service.Spreadsheets.BatchUpdate(resizeRequest, SingletonServices.SpreadsheetId).ExecuteAsync();
-            #endregion
+                await service.Spreadsheets.BatchUpdate(resizeRequest, SingletonServices.SpreadsheetId).ExecuteAsync(cancellationToken);
+                #endregion
 
+                cancellationToken.ThrowIfCancellationRequested();
 
-            // Step 3: Build data and clearing requests
-            var dataRequests = new List<Request>();
+                // Step 3: Build data and clearing requests
+                var dataRequests = new List<Request>();
 
-            #region clear sheet data
-            // 3.1: Clear rows (but keep the header)
-            dataRequests.Add(new Request
-            {
-                UpdateCells = new UpdateCellsRequest
+                #region clear sheet data
+                // 3.1: Clear rows (but keep the header)
+                dataRequests.Add(new Request
                 {
-                    Range = new GridRange
+                    UpdateCells = new UpdateCellsRequest
                     {
-                        SheetId = sheetId,
-                        StartRowIndex = 1 // keep header (row 0)
-                    },
-                    Fields = "userEnteredValue"
-                }
-            });
-            #endregion
-
-            #region upload the new data
-            // 3.2: Build row data
-            var cellData = new List<RowData>();
-            foreach (var entry in entries)
-            {
-                var data = entry.GetRowData();
-                cellData.Add(new RowData
-                {
-                    Values = data
+                        Range = new GridRange
+                        {
+                            SheetId = sheetId,
+                            StartRowIndex = 1 // keep header (row 0)
+                        },
+                        Fields = "userEnteredValue"
+                    }
                 });
+                #endregion
 
-                loadingForm.IncrementProgress();
-            }
-
-            // 3.3: Write data starting from row 1 (avoiding header)
-            dataRequests.Add(new Request
-            {
-                UpdateCells = new UpdateCellsRequest
+                #region upload the new data
+                // 3.2: Build row data
+                var cellData = new List<RowData>();
+                foreach (var entry in entries)
                 {
-                    Start = new GridCoordinate { SheetId = sheetId, RowIndex = 1, ColumnIndex = 0 },
-                    Rows = cellData,
-                    Fields = "userEnteredValue"
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                    var data = entry.GetRowData();
+                    cellData.Add(new RowData
+                    {
+                        Values = data
+                    });
+
+                    loadingForm.IncrementProgress();
                 }
-            });
-            #endregion
 
-            // Step 4: Execute the data update batch
-            await service.Spreadsheets.BatchUpdate(new BatchUpdateSpreadsheetRequest { Requests = dataRequests }, SingletonServices.SpreadsheetId).ExecuteAsync();
+                // 3.3: Write data starting from row 1 (avoiding header)
+                dataRequests.Add(new Request
+                {
+                    UpdateCells = new UpdateCellsRequest
+                    {
+                        Start = new GridCoordinate { SheetId = sheetId, RowIndex = 1, ColumnIndex = 0 },
+                        Rows = cellData,
+                        Fields = "userEnteredValue"
+                    }
+                });
+                #endregion
 
-            SingletonServices.LogForm.Log($"✅ Uploaded {entries.Count} entries to sheet '{sheetName}'.");
+                // Step 4: Execute the data update batch
+                await service.Spreadsheets.BatchUpdate(new BatchUpdateSpreadsheetRequest { Requests = dataRequests }, SingletonServices.SpreadsheetId).ExecuteAsync(cancellationToken);
+
+                SingletonServices.LogForm.Log($"✅ Uploaded {entries.Count} entries to sheet '{sheetName}'.");
+            }
+            catch (OperationCanceledException)
+            {
+                SingletonServices.LogForm.Log("❌ Sheet building cancelled.");
+                return;
+            }
+            catch (Exception e)
+            {
+                SingletonServices.LogForm.Log($"❌ Error uploading to sheet '{sheetName}': {e}");
+                throw;
+            }
         }
 
         /// <summary>
@@ -591,10 +748,12 @@ namespace pyjump.Services
         /// </summary>
         /// <param name="loadingForm"></param>
         /// <returns></returns>
-        public static async Task BuildSheets(LoadingForm loadingForm)
+        public static async Task BuildSheets(LoadingForm loadingForm, CancellationToken cancellationToken = default)
         {
             try
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 loadingForm.PrepareLoadingBar("Building sheets - Initialization", 2);
 
                 // 0. initialize by getting all file entries from the database
@@ -628,8 +787,10 @@ namespace pyjump.Services
                 {
                     SingletonServices.LogForm.Log($"Found {filesNotInSet.Count} files not in a set.");
                     loadingForm.PrepareLoadingBar("Treating sets for files", filesNotInSet.Count);
-                    await TreatSetsForFiles(filesNotInSet, loadingForm);
+                    await TreatSetsForFiles(filesNotInSet, loadingForm, cancellationToken);
                 }
+
+                cancellationToken.ThrowIfCancellationRequested();
 
                 // 3. get all sets from the database
                 List<SimilarSet> allSets;
@@ -673,24 +834,31 @@ namespace pyjump.Services
                     .OrderByDescending(x => x.LastModified)
                     .ToList();
 
+                cancellationToken.ThrowIfCancellationRequested();
+
                 // 5. upload the data to the sheets
                 loadingForm.PrepareLoadingBar("Building Jumps sheet", dataSheetJump.Count);
-                await UploadToSheetAsync(dataSheetJump, Statics.Sheet.File.SHEET_J, loadingForm);
+                await UploadToSheetAsync(dataSheetJump, Statics.Sheet.File.SHEET_J, loadingForm, cancellationToken);
 
                 loadingForm.PrepareLoadingBar("Building Stories sheet", dataSheetStory.Count);
-                await UploadToSheetAsync(dataSheetStory, Statics.Sheet.File.SHEET_S, loadingForm);
+                await UploadToSheetAsync(dataSheetStory, Statics.Sheet.File.SHEET_S, loadingForm, cancellationToken);
 
                 loadingForm.PrepareLoadingBar("Building Others sheet", dataSheetOther.Count);
-                await UploadToSheetAsync(dataSheetOther, Statics.Sheet.File.SHEET_O, loadingForm);
+                await UploadToSheetAsync(dataSheetOther, Statics.Sheet.File.SHEET_O, loadingForm, cancellationToken);
 
                 loadingForm.PrepareLoadingBar("Building Jumps (Unfiltered) sheet", dataSheetJumpUnfiltered.Count);
-                await UploadToSheetAsync(dataSheetJumpUnfiltered, Statics.Sheet.File.SHEET_J_1, loadingForm);
+                await UploadToSheetAsync(dataSheetJumpUnfiltered, Statics.Sheet.File.SHEET_J_1, loadingForm, cancellationToken);
 
                 loadingForm.PrepareLoadingBar("Building Stories (Unfiltered) sheet", dataSheetStoryUnfiltered.Count);
-                await UploadToSheetAsync(dataSheetStoryUnfiltered, Statics.Sheet.File.SHEET_S_1, loadingForm);
+                await UploadToSheetAsync(dataSheetStoryUnfiltered, Statics.Sheet.File.SHEET_S_1, loadingForm, cancellationToken);
 
                 loadingForm.PrepareLoadingBar("Building Whitelist sheet", allWhitelistEntries.Count);
-                await UploadToSheetAsync(allWhitelistEntries.OrderBy(x => x.Name).ToList(), Statics.Sheet.Whitelist.SHEET_W, loadingForm);
+                await UploadToSheetAsync(allWhitelistEntries.OrderBy(x => x.Name).ToList(), Statics.Sheet.Whitelist.SHEET_W, loadingForm, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                SingletonServices.LogForm.Log("❌ Sheet building cancelled.");
+                return;
             }
             catch (Exception e)
             {
@@ -730,49 +898,80 @@ namespace pyjump.Services
         /// </summary>
         /// <param name="filesToDelete"></param>
         /// <param name="foldersToDelete"></param>
-        public static void ClearAllData(List<FileEntry> filesToDelete = null, List<WhitelistEntry> foldersToDelete = null)
+        public static async Task ClearAllData(List<FileEntry> filesToDelete = null, List<WhitelistEntry> foldersToDelete = null, CancellationToken cancellationToken = default)
         {
-            using (var db = new AppDbContext())
+            try
             {
-                if (filesToDelete != null && filesToDelete.Count > 0)
+                cancellationToken.ThrowIfCancellationRequested();
+                using (var db = new AppDbContext())
                 {
-                    db.Files.RemoveRange(filesToDelete);
-                }
-                else if (filesToDelete == null)
-                {
-                    db.Files.RemoveRange(db.Files);
-                }
+                    if (filesToDelete != null && filesToDelete.Count > 0)
+                    {
+                        db.Files.RemoveRange(filesToDelete);
+                    }
+                    else if (filesToDelete == null)
+                    {
+                        db.Files.RemoveRange(db.Files);
+                    }
 
-                if (foldersToDelete != null && foldersToDelete.Count > 0)
-                {
-                    db.Whitelist.RemoveRange(foldersToDelete);
-                }
-                else if (foldersToDelete == null)
-                {
-                    db.Whitelist.RemoveRange(db.Whitelist);
-                }
+                    if (foldersToDelete != null && foldersToDelete.Count > 0)
+                    {
+                        db.Whitelist.RemoveRange(foldersToDelete);
+                    }
+                    else if (foldersToDelete == null)
+                    {
+                        db.Whitelist.RemoveRange(db.Whitelist);
+                    }
 
-                db.SaveChanges();
+                    await db.SaveChangesAsync(cancellationToken);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                SingletonServices.LogForm.Log("❌ Data clear cancelled.");
+                return;
+            }
+            catch (Exception e)
+            {
+                SingletonServices.LogForm.Log($"Error clearing data: {e}");
+                throw;
             }
         }
 
-        public static async Task DeleteBrokenEntries(LoadingForm loadingForm)
+        public static async Task DeleteBrokenEntries(LoadingForm loadingForm, CancellationToken cancellationToken = default)
         {
-            #region get all data
-            List<FileEntry> allFileEntries;
-            List<WhitelistEntry> allWhitelistEntries;
-            using (var db = new AppDbContext())
+            try
             {
-                allFileEntries = [.. db.Files];
-                allWhitelistEntries = [.. db.Whitelist];
+                cancellationToken.ThrowIfCancellationRequested();
+
+                #region get all data
+                List<FileEntry> allFileEntries;
+                List<WhitelistEntry> allWhitelistEntries;
+                using (var db = new AppDbContext())
+                {
+                    allFileEntries = [.. db.Files];
+                    allWhitelistEntries = [.. db.Whitelist];
+                }
+                #endregion
+
+                var brokenFiles = await DriveScanner.GetInaccessibleEntries(allFileEntries, loadingForm, cancellationToken);
+                var brokenFolders = await DriveScanner.GetInaccessibleEntries(allWhitelistEntries, loadingForm, cancellationToken);
+
+                cancellationToken.ThrowIfCancellationRequested();
+
+                // delete the broken data from the database
+                await ClearAllData(brokenFiles, brokenFolders, cancellationToken);
             }
-            #endregion
-
-            var brokenFiles = await DriveScanner.GetInaccessibleEntries(allFileEntries, loadingForm);
-            var brokenFolders = await DriveScanner.GetInaccessibleEntries(allWhitelistEntries, loadingForm);
-
-            // delete the broken data from the database
-            ClearAllData(brokenFiles, brokenFolders);
+            catch (OperationCanceledException)
+            {
+                SingletonServices.LogForm.Log("❌ Data clear cancelled.");
+                return;
+            }
+            catch (Exception)
+            {
+                SingletonServices.LogForm.Log("❌ Error deleting broken entries.");
+                throw;
+            }
         }
         #endregion
     }

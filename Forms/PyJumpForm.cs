@@ -22,7 +22,7 @@ namespace pyjump
 
                 loadingForm = InitProgressBar();
 
-                await Methods.ScanFiles(loadingForm);
+                await Methods.ScanFiles(loadingForm, ScopedServices.CancellationTokenSource.Token);
                 SingletonServices.LogForm.Log("File scan completed.");
                 MessageBox.Show("File scan completed.");
             }
@@ -44,7 +44,7 @@ namespace pyjump
             {
                 InitializeEverything();
                 SingletonServices.LogForm.Log("Starting whitelist scan...");
-                await Methods.ScanWhitelist();
+                await Methods.ScanWhitelist(ScopedServices.CancellationTokenSource.Token);
                 SingletonServices.LogForm.Log("Whitelist scan completed.");
                 MessageBox.Show("Whitelist scan completed.");
             }
@@ -96,7 +96,7 @@ namespace pyjump
 
                 loadingForm = InitProgressBar();
 
-                await Methods.BuildSheets(loadingForm);
+                await Methods.BuildSheets(loadingForm, ScopedServices.CancellationTokenSource.Token);
 
                 SingletonServices.LogForm.Log("Sheets built successfully.");
                 MessageBox.Show("Sheets built successfully.");
@@ -163,18 +163,18 @@ namespace pyjump
                 // 1. scan whitelist
                 ClearEverything(true);
                 InitializeEverything();
-                await Methods.ScanWhitelist();
+                await Methods.ScanWhitelist(ScopedServices.CancellationTokenSource.Token);
 
                 // 2. scan files
                 ClearEverything(true);
                 InitializeEverything();
                 loadingForm = InitProgressBar();
-                await Methods.ScanFiles(loadingForm);
+                await Methods.ScanFiles(loadingForm, ScopedServices.CancellationTokenSource.Token);
 
                 // 3. build sheets
                 ClearEverything(true);
                 InitializeEverything();
-                await Methods.BuildSheets(loadingForm);
+                await Methods.BuildSheets(loadingForm, ScopedServices.CancellationTokenSource.Token);
 
                 // 4. go to spreadsheet
                 ClearEverything(true);
@@ -216,7 +216,7 @@ namespace pyjump
 
                 loadingForm = InitProgressBar();
 
-                await Methods.ForceMatchType(loadingForm);
+                await Methods.ForceMatchType(loadingForm, ScopedServices.CancellationTokenSource.Token);
 
                 SingletonServices.LogForm.Log("Force match completed.");
                 MessageBox.Show("Force match completed.");
@@ -232,7 +232,7 @@ namespace pyjump
             }
         }
 
-        private void btnClearAll_Click(object sender, EventArgs e)
+        private async void btnClearAll_Click(object sender, EventArgs e)
         {
             var result = MessageBox.Show(
                 "Are you sure you want to clear all the data? This will completely remove the saved Whitelist & Files.",
@@ -250,7 +250,7 @@ namespace pyjump
                 InitializeEverything();
                 SingletonServices.LogForm.Log("Clearing all data...");
 
-                Methods.ClearAllData();
+                await Methods.ClearAllData(cancellationToken: ScopedServices.CancellationTokenSource.Token);
 
                 SingletonServices.LogForm.Log("All data cleared successfully.");
                 MessageBox.Show("All data cleared successfully.");
@@ -285,7 +285,7 @@ namespace pyjump
 
                 loadingForm = InitProgressBar();
 
-                await Methods.DeleteBrokenEntries(loadingForm);
+                await Methods.DeleteBrokenEntries(loadingForm, ScopedServices.CancellationTokenSource.Token);
 
                 SingletonServices.LogForm.Log("Broken entries deleted successfully.");
                 MessageBox.Show("Broken entries deleted successfully.");

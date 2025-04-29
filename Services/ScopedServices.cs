@@ -15,12 +15,15 @@ namespace pyjump.Services
         public static DriveService DriveService { get; private set; }
         public static SheetsService SheetsService { get; private set; }
         public static Spreadsheet ActiveSpreadsheet { get; set; }
+        public static CancellationTokenSource CancellationTokenSource { get; set; }
 
         public static void Clear()
         {
             DriveService = null;
             SheetsService = null;
             ActiveSpreadsheet = null;
+            CancellationTokenSource.Cancel();
+            CancellationTokenSource.Dispose();
         }
 
         public static void Initialize()
@@ -35,6 +38,8 @@ namespace pyjump.Services
             EnsureSheetCreated<FileEntry>(Statics.Sheet.File.SHEET_S_1);
             EnsureSheetCreated<FileEntry>(Statics.Sheet.File.SHEET_O);
             EnsureSheetCreated<WhitelistEntry>(Statics.Sheet.Whitelist.SHEET_W);
+
+            CancellationTokenSource = new CancellationTokenSource();
         }
 
         private static void InitializeServices()
