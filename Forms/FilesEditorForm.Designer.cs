@@ -97,9 +97,9 @@
             lblSearchResults.AutoSize = true;
             lblSearchResults.Location = new Point(71, 43);
             lblSearchResults.Name = "lblSearchResults";
-            lblSearchResults.Size = new Size(38, 15);
+            lblSearchResults.Size = new Size(30, 15);
             lblSearchResults.TabIndex = 5;
-            lblSearchResults.Text = "label1";
+            lblSearchResults.Text = "0 / 0";
             // 
             // btnPrev
             // 
