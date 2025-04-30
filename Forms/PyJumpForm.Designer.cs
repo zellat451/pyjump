@@ -43,6 +43,11 @@ namespace pyjump
             btnDeleteBroken = new Button();
             btnLogging = new Button();
             btnThreading = new Button();
+            panelThreading = new Panel();
+            labelThreadCount = new Label();
+            textBoxThreadCountLoad = new TextBox();
+            btnThreadCount = new Button();
+            panelThreading.SuspendLayout();
             SuspendLayout();
             // 
             // btnScanFile
@@ -163,7 +168,7 @@ namespace pyjump
             // btnLogging
             // 
             btnLogging.Anchor = AnchorStyles.Bottom;
-            btnLogging.Location = new Point(236, 384);
+            btnLogging.Location = new Point(200, 384);
             btnLogging.Name = "btnLogging";
             btnLogging.Size = new Size(86, 54);
             btnLogging.TabIndex = 14;
@@ -173,19 +178,57 @@ namespace pyjump
             // btnThreading
             // 
             btnThreading.Anchor = AnchorStyles.Bottom;
-            btnThreading.Location = new Point(330, 384);
+            btnThreading.Location = new Point(24, 65);
             btnThreading.Name = "btnThreading";
             btnThreading.Size = new Size(86, 54);
             btnThreading.TabIndex = 15;
             btnThreading.UseVisualStyleBackColor = true;
             btnThreading.Click += btnThreading_Click;
             // 
+            // panelThreading
+            // 
+            panelThreading.Anchor = AnchorStyles.Bottom;
+            panelThreading.Controls.Add(btnThreadCount);
+            panelThreading.Controls.Add(labelThreadCount);
+            panelThreading.Controls.Add(textBoxThreadCountLoad);
+            panelThreading.Controls.Add(btnThreading);
+            panelThreading.Location = new Point(292, 316);
+            panelThreading.Name = "panelThreading";
+            panelThreading.Size = new Size(131, 122);
+            panelThreading.TabIndex = 16;
+            // 
+            // labelThreadCount
+            // 
+            labelThreadCount.AutoSize = true;
+            labelThreadCount.Location = new Point(10, 38);
+            labelThreadCount.Name = "labelThreadCount";
+            labelThreadCount.Size = new Size(72, 15);
+            labelThreadCount.TabIndex = 17;
+            labelThreadCount.Text = "Max threads";
+            // 
+            // textBoxThreadCountLoad
+            // 
+            textBoxThreadCountLoad.Location = new Point(10, 12);
+            textBoxThreadCountLoad.Name = "textBoxThreadCountLoad";
+            textBoxThreadCountLoad.Size = new Size(76, 23);
+            textBoxThreadCountLoad.TabIndex = 16;
+            // 
+            // btnThreadCount
+            // 
+            btnThreadCount.Location = new Point(92, 10);
+            btnThreadCount.Name = "btnThreadCount";
+            btnThreadCount.Size = new Size(33, 25);
+            btnThreadCount.TabIndex = 18;
+            btnThreadCount.Text = "✔";
+            btnThreadCount.UseVisualStyleBackColor = true;
+            btnThreadCount.Click += btnThreadCount_Click;
+            // 
             // PyJumpForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
-            Controls.Add(btnThreading);
+            Controls.Add(panelThreading);
             Controls.Add(btnLogging);
             Controls.Add(btnDeleteBroken);
             Controls.Add(btnClearAll);
@@ -200,6 +243,8 @@ namespace pyjump
             Controls.Add(btnScanFile);
             Name = "PyJumpForm";
             Text = "pyjump";
+            panelThreading.ResumeLayout(false);
+            panelThreading.PerformLayout();
             ResumeLayout(false);
         }
 
@@ -218,5 +263,9 @@ namespace pyjump
         private Button btnDeleteBroken;
         private Button btnLogging;
         private Button btnThreading;
+        private Panel panelThreading;
+        private Label labelThreadCount;
+        private TextBox textBoxThreadCountLoad;
+        private Button btnThreadCount;
     }
 }

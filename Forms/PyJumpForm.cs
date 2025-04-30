@@ -9,9 +9,11 @@ namespace pyjump
         public PyJumpForm()
         {
             InitializeComponent();
-            this.btnThreading.Text = GetCurrentThreadingButtonText();
             this.btnLogging.Text = GetCurrentLoggingButtonText();
+            this.btnThreading.Text = GetCurrentThreadingButtonText();
+            this.UpdateThreadCountInfos();
             SingletonServices.RegisterForm(new Forms.LogForm());
+            this.textBoxThreadCountLoad.KeyDown += new KeyEventHandler(ThreadCountBox_KeyDown);
         }
 
         #region button methods
@@ -322,13 +324,61 @@ namespace pyjump
             {
                 SingletonServices.InvertPermissionThreading();
                 this.btnThreading.Text = GetCurrentThreadingButtonText();
+                this.UpdateThreadCountInfos();
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Something went wrong: {ex}");
             }
         }
+
+        private void btnThreadCount_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                var success = int.TryParse(textBoxThreadCountLoad.Text, out var value);
+                if (!success)
+                {
+                    MessageBox.Show("Please enter a valid thread number.");
+                    return;
+                }
+
+                SingletonServices.SetMaxThreads(value);
+                if (value < 1)
+                {
+                    MessageBox.Show("Thread count lower than 1: resetting to 1. Warning, this will be slow.");
+                }
+                else if (value > 10)
+                {
+                    MessageBox.Show($"Thread count set to {value}. Warning, Google apis have a limit on request number per second.");
+                }
+                else if (value > 100)
+                {
+                    value = 100;
+                    MessageBox.Show($"Thread count higer than 100: set to {value}. Warning, Google apis have a limit on request number per second.");
+                }
+                else MessageBox.Show($"Thread count set to {value}.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Something went wrong: {ex}");
+            }
+            finally
+            {
+                this.UpdateThreadCountInfos();
+            }
+        }
         #endregion
+
+        private void ThreadCountBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                e.Handled = true;
+                e.SuppressKeyPress = true;
+                this.btnThreadCount_Click(sender, EventArgs.Empty);
+            }
+        }
 
         #region private methods
         private static string GetCurrentLoggingButtonText()
@@ -355,6 +405,22 @@ namespace pyjump
             }
         }
 
+        private void UpdateThreadCountInfos()
+        {
+            if (SingletonServices.AllowThreading)
+            {
+                this.btnThreadCount.Enabled = true;
+                this.textBoxThreadCountLoad.Enabled = true;
+                this.textBoxThreadCountLoad.Text = $"{SingletonServices.MaxThreads}";
+            }
+            else
+            {
+                this.btnThreadCount.Enabled = false;
+                this.textBoxThreadCountLoad.Enabled = false;
+                this.textBoxThreadCountLoad.Text = "N/A";
+            }
+        }
+
         private void InitializeEverything()
         {
             this.Enabled = false;
@@ -378,6 +444,5 @@ namespace pyjump
             return loadingForm;
         }
         #endregion
-
     }
 }

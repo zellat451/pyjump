@@ -82,9 +82,9 @@ namespace pyjump.Services
                 // open the appsettings.json file as json, and get the value 'maxThreads'
                 var maxThread = GetAppsettingsValue("maxThreads");
                 MaxThreads = int.Parse(maxThread);
-                if (MaxThreads < 2)
+                if (MaxThreads < 1)
                 {
-                    MaxThreads = 2;
+                    MaxThreads = 1;
                 }
             }
             catch (Exception e)
@@ -103,6 +103,18 @@ namespace pyjump.Services
         public static void InvertPermissionFileLogging() => AllowLogFile = !AllowLogFile;
 
         public static void InvertPermissionThreading() => AllowThreading = !AllowThreading;
+
+        public static void SetMaxThreads(int max)
+        {
+            if (max < 1)
+            {
+                MaxThreads = 1;
+            }
+            else
+            {
+                MaxThreads = max;
+            }
+        }
 
         public static JsonNode GetJsonAppsettings()
         {
