@@ -285,115 +285,6 @@ namespace pyjump.Services
         }
 
         /// <summary>
-        /// Extracts folderId, resourceKey, and driveId from a given URL.
-        /// </summary>
-        /// <param name="url"></param>
-        /// <returns></returns>
-        private (string folderId, string resourceKey, string driveId) ExtractFolderInfosFromUrl(string url)
-        {
-            // Initialize default values
-            string folderId = null;
-            string resourceKey = null;
-            string driveId = null;
-
-            // Matches for folderId, resourceKey, and driveId in the URL
-            var folderMatch = Regex.Match(url, @"(?:folders/|id=)([a-zA-Z0-9_-]+)");
-            if (folderMatch.Success)
-            {
-                folderId = folderMatch.Groups[1].Value;
-            }
-
-            // Check for resourceKey in the URL
-            var resourceKeyMatch = Regex.Match(url, @"(?:resourcekey=)([a-zA-Z0-9_-]+)");
-            if (resourceKeyMatch.Success)
-            {
-                resourceKey = resourceKeyMatch.Groups[1].Value;
-            }
-
-            // Check for driveId (tid) in the URL (Shared Drives)
-            var driveIdMatch = Regex.Match(url, @"(?:tid=)([a-zA-Z0-9_-]+)");
-            if (driveIdMatch.Success)
-            {
-                driveId = driveIdMatch.Groups[1].Value;
-            }
-
-            // Return tuple containing folderId, resourceKey, and driveId
-            return (folderId, resourceKey, driveId);
-        }
-
-        /// <summary>
-        /// Builds a Google Drive folder URL using the provided folderId, resourceKey, and tid (Shared Drive ID).
-        /// </summary>
-        /// <param name="folderId"></param>
-        /// <param name="resourceKey"></param>
-        /// <param name="tid"></param>
-        /// <returns></returns>
-        private static string BuildFolderUrl(string folderId, string resourceKey, string tid)
-        {
-            // Construct the base URL for the folder
-            var url = $"https://drive.google.com/drive/folders/{folderId}";
-
-            // If a resourceKey is provided, add it to the URL
-            if (!string.IsNullOrEmpty(resourceKey))
-            {
-                url += $"?resourcekey={Uri.EscapeDataString(resourceKey)}";
-            }
-
-            // If a tid (Shared Drive ID) is provided, append it to the URL as a query parameter
-            if (!string.IsNullOrEmpty(tid))
-            {
-                // If there's already a query parameter (resourcekey), append the tid as another parameter
-                if (url.Contains('?'))
-                {
-                    url += $"&tid={Uri.EscapeDataString(tid)}";
-                }
-                else
-                {
-                    // Otherwise, add tid as the first query parameter
-                    url += $"?tid={Uri.EscapeDataString(tid)}";
-                }
-            }
-
-            return url;
-        }
-
-        /// <summary>
-        /// Builds a Google Drive file URL using the provided fileId, resourceKey, and tid (Shared Drive ID).
-        /// </summary>
-        /// <param name="fileId"></param>
-        /// <param name="resourceKey"></param>
-        /// <param name="tid"></param>
-        /// <returns></returns>
-        private static string BuildFileUrl(string fileId, string resourceKey, string tid)
-        {
-            // Construct the base URL for the file
-            var url = $"https://drive.google.com/file/d/{fileId}/view";
-
-            // If a resourceKey is provided, add it to the URL
-            if (!string.IsNullOrEmpty(resourceKey))
-            {
-                url += $"?resourcekey={Uri.EscapeDataString(resourceKey)}";
-            }
-
-            // If a tid (Shared Drive ID) is provided, append it to the URL as a query parameter
-            if (!string.IsNullOrEmpty(tid))
-            {
-                // If there's already a query parameter (resourcekey), append the tid as another parameter
-                if (url.Contains('?'))
-                {
-                    url += $"&tid={Uri.EscapeDataString(tid)}";
-                }
-                else
-                {
-                    // Otherwise, add tid as the first query parameter
-                    url += $"?tid={Uri.EscapeDataString(tid)}";
-                }
-            }
-
-            return url;
-        }
-
-        /// <summary>
         /// Get all files in a given whitelist entry.
         /// </summary>
         /// <param name="whitelist"></param>
@@ -640,6 +531,7 @@ namespace pyjump.Services
             }
         }
 
+        #region private common methods
         private static void AddRequestParameter(Google.Apis.Drive.v3.FilesResource.GetRequest request, string name, string value)
         {
             if (!string.IsNullOrEmpty(value))
@@ -654,6 +546,116 @@ namespace pyjump.Services
                 });
             }
         }
+
+        /// <summary>
+        /// Extracts folderId, resourceKey, and driveId from a given URL.
+        /// </summary>
+        /// <param name="url"></param>
+        /// <returns></returns>
+        private (string folderId, string resourceKey, string driveId) ExtractFolderInfosFromUrl(string url)
+        {
+            // Initialize default values
+            string folderId = null;
+            string resourceKey = null;
+            string driveId = null;
+
+            // Matches for folderId, resourceKey, and driveId in the URL
+            var folderMatch = Regex.Match(url, @"(?:folders/|id=)([a-zA-Z0-9_-]+)");
+            if (folderMatch.Success)
+            {
+                folderId = folderMatch.Groups[1].Value;
+            }
+
+            // Check for resourceKey in the URL
+            var resourceKeyMatch = Regex.Match(url, @"(?:resourcekey=)([a-zA-Z0-9_-]+)");
+            if (resourceKeyMatch.Success)
+            {
+                resourceKey = resourceKeyMatch.Groups[1].Value;
+            }
+
+            // Check for driveId (tid) in the URL (Shared Drives)
+            var driveIdMatch = Regex.Match(url, @"(?:tid=)([a-zA-Z0-9_-]+)");
+            if (driveIdMatch.Success)
+            {
+                driveId = driveIdMatch.Groups[1].Value;
+            }
+
+            // Return tuple containing folderId, resourceKey, and driveId
+            return (folderId, resourceKey, driveId);
+        }
+
+        /// <summary>
+        /// Builds a Google Drive folder URL using the provided folderId, resourceKey, and tid (Shared Drive ID).
+        /// </summary>
+        /// <param name="folderId"></param>
+        /// <param name="resourceKey"></param>
+        /// <param name="tid"></param>
+        /// <returns></returns>
+        private static string BuildFolderUrl(string folderId, string resourceKey, string tid)
+        {
+            // Construct the base URL for the folder
+            var url = $"https://drive.google.com/drive/folders/{folderId}";
+
+            // If a resourceKey is provided, add it to the URL
+            if (!string.IsNullOrEmpty(resourceKey))
+            {
+                url += $"?resourcekey={Uri.EscapeDataString(resourceKey)}";
+            }
+
+            // If a tid (Shared Drive ID) is provided, append it to the URL as a query parameter
+            if (!string.IsNullOrEmpty(tid))
+            {
+                // If there's already a query parameter (resourcekey), append the tid as another parameter
+                if (url.Contains('?'))
+                {
+                    url += $"&tid={Uri.EscapeDataString(tid)}";
+                }
+                else
+                {
+                    // Otherwise, add tid as the first query parameter
+                    url += $"?tid={Uri.EscapeDataString(tid)}";
+                }
+            }
+
+            return url;
+        }
+
+        /// <summary>
+        /// Builds a Google Drive file URL using the provided fileId, resourceKey, and tid (Shared Drive ID).
+        /// </summary>
+        /// <param name="fileId"></param>
+        /// <param name="resourceKey"></param>
+        /// <param name="tid"></param>
+        /// <returns></returns>
+        private static string BuildFileUrl(string fileId, string resourceKey, string tid)
+        {
+            // Construct the base URL for the file
+            var url = $"https://drive.google.com/file/d/{fileId}/view";
+
+            // If a resourceKey is provided, add it to the URL
+            if (!string.IsNullOrEmpty(resourceKey))
+            {
+                url += $"?resourcekey={Uri.EscapeDataString(resourceKey)}";
+            }
+
+            // If a tid (Shared Drive ID) is provided, append it to the URL as a query parameter
+            if (!string.IsNullOrEmpty(tid))
+            {
+                // If there's already a query parameter (resourcekey), append the tid as another parameter
+                if (url.Contains('?'))
+                {
+                    url += $"&tid={Uri.EscapeDataString(tid)}";
+                }
+                else
+                {
+                    // Otherwise, add tid as the first query parameter
+                    url += $"?tid={Uri.EscapeDataString(tid)}";
+                }
+            }
+
+            return url;
+        } 
+        #endregion
 
     }
 
