@@ -283,6 +283,15 @@ namespace pyjump.Services
                                 }
                             }
                         }
+                        catch (OperationCanceledException)
+                        {
+                            SingletonServices.LogForm.Log("❌ Scan cancelled.");
+                            return;
+                        }
+                        catch (Exception ex)
+                        {
+                            SingletonServices.LogForm.Log($"❌ Error in thread: {ex.Message}");
+                        }
                         finally
                         {
                             countdown.Signal();

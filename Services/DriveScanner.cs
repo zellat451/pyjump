@@ -2,6 +2,7 @@
 using System.Net;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Threading;
 using Google.Apis.Drive.v3.Data;
 using pyjump.Entities;
 using pyjump.Forms;
@@ -458,9 +459,42 @@ namespace pyjump.Services
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var brokenEntries = new List<T>();
-
                 var isFolderCheck = typeof(T) == typeof(WhitelistEntry);
+
+                loadingForm.PrepareLoadingBar($"Checking {(isFolderCheck ? "folders" : "files")}", entries.Count);
+
+                if (SingletonServices.AllowThreading)
+                {
+                    // Multi-threaded mode
+                    return await GetInaccessibleEntriesMultiThread(entries, loadingForm, isFolderCheck, cancellationToken);
+                }
+                else
+                {
+                    // Single-threaded mode
+                    return await GetInaccessibleEntriesSingleThread(entries, loadingForm, isFolderCheck, cancellationToken);
+                }
+
+            }
+            catch (OperationCanceledException)
+            {
+                SingletonServices.LogForm.Log("🔍 Entry checking cancelled.");
+                return [];
+            }
+            catch (Exception e)
+            {
+                SingletonServices.LogForm.Log($"❌ Error checking entries: {e.Message}");
+                throw;
+            }
+        }
+
+        private static async Task<List<T>> GetInaccessibleEntriesSingleThread<T>(List<T> entries, LoadingForm loadingForm, bool isFolderCheck, CancellationToken cancellationToken = default)
+            where T : ISheetDataEntity
+        {
+            try
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                var brokenEntries = new List<T>();
 
                 loadingForm.PrepareLoadingBar($"Checking {(isFolderCheck ? "folders" : "files")}", entries.Count);
 
@@ -518,6 +552,129 @@ namespace pyjump.Services
                 }
 
                 return brokenEntries;
+            }
+            catch (OperationCanceledException)
+            {
+                SingletonServices.LogForm.Log("🔍 Entry checking cancelled.");
+                return [];
+            }
+            catch (Exception e)
+            {
+                SingletonServices.LogForm.Log($"❌ Error checking entries: {e.Message}");
+                throw;
+            }
+        }
+
+        private static async Task<List<T>> GetInaccessibleEntriesMultiThread<T>(List<T> entries, LoadingForm loadingForm, bool isFolderCheck, CancellationToken cancellationToken = default)
+            where T : ISheetDataEntity
+        {
+            try
+            {
+                var maxThreads = SingletonServices.MaxThreads;
+                var entryQueue = new BlockingCollection<T>(new ConcurrentQueue<T>(entries));
+                entryQueue.CompleteAdding();
+                var brokenEntries = new ConcurrentBag<T>();
+                var threads = new List<Thread>();
+                var countdown = new CountdownEvent(maxThreads);
+
+                for (int i = 0; i < maxThreads; i++)
+                {
+                    var thread = new Thread(async () =>
+                    {
+                        try
+                        {
+                            foreach (var entry in entryQueue.GetConsumingEnumerable(cancellationToken))
+                            {
+                                if (cancellationToken.IsCancellationRequested)
+                                    break;
+
+                                try
+                                {
+                                    try
+                                    {
+                                        var request = ScopedServices.DriveService.Files.Get(entry.Id);
+                                        request.SupportsAllDrives = true;
+                                        if (!string.IsNullOrEmpty(entry.ResourceKey))
+                                            AddRequestParameter(request, "resourceKey", entry.ResourceKey);
+                                        if (!string.IsNullOrEmpty(entry.DriveId))
+                                            AddRequestParameter(request, "driveId", entry.DriveId);
+
+                                        var file = await request.ExecuteAsync();
+
+                                        if (file.Trashed.HasValue && file.Trashed.Value)
+                                        {
+                                            SingletonServices.LogForm.Log($"⚠️ Entry {entry.Name} ({entry.Url}) is in trash. Adding to deletion list.");
+                                            brokenEntries.Add(entry);
+                                        }
+                                        else if (isFolderCheck && file.MimeType != GoogleMimeTypes.Folder)
+                                        {
+                                            SingletonServices.LogForm.Log($"⚠️ Entry {entry.Name} ({entry.Url}) is not a folder anymore. Adding to deletion list.");
+                                            brokenEntries.Add(entry);
+                                        }
+                                        else if (!isFolderCheck && file.MimeType == GoogleMimeTypes.Folder)
+                                        {
+                                            SingletonServices.LogForm.Log($"⚠️ Entry {entry.Name} ({entry.Url}) is now a folder, for some reason. Adding to deletion list.");
+                                            brokenEntries.Add(entry);
+                                        }
+                                        else
+                                        {
+                                            SingletonServices.LogForm.Log($"✅ Entry {entry.Name} (id: {entry.Id}, url: {entry.Url}) is accessible.");
+                                        }
+                                    }
+                                    catch (Google.GoogleApiException ex) when (ex.HttpStatusCode == System.Net.HttpStatusCode.NotFound)
+                                    {
+                                        SingletonServices.LogForm.Log($"⚠️ Entry {entry.Name} ({entry.Url}) not found (404). May be unauthorized to check status. Skipping it.");
+                                    }
+                                    catch (Google.GoogleApiException ex) when (ex.HttpStatusCode == System.Net.HttpStatusCode.Forbidden)
+                                    {
+                                        SingletonServices.LogForm.Log($"⚠️ Entry {entry.Name} ({entry.Url}) inaccessible (403). Adding to deletion list.");
+                                        brokenEntries.Add(entry);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        SingletonServices.LogForm.Log($"❌ Unexpected error checking Entry {entry.Name} (id: {entry.Id}, url: {entry.Url}). Skipping it: {ex.Message}");
+                                    }
+                                    finally
+                                    {
+                                        loadingForm.IncrementProgress();
+                                    }
+                                }
+                                catch (OperationCanceledException)
+                                {
+                                    SingletonServices.LogForm.Log("❌ File scan cancelled.");
+                                    break;
+                                }
+                                catch (Exception ex)
+                                {
+                                    SingletonServices.LogForm.Log($"❌ Error scanning entry: {ex.Message}");
+                                }
+                            }
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            SingletonServices.LogForm.Log("🔍 Entry checking cancelled.");
+                            return;
+                        }
+                        catch (Exception ex)
+                        {
+                            SingletonServices.LogForm.Log($"❌ Error in thread: {ex.Message}");
+                        }
+                        finally
+                        {
+                            countdown.Signal();
+                        }
+                    })
+                    {
+                        IsBackground = true
+                    };
+                    threads.Add(thread);
+                    thread.Start();
+                }
+
+                // Wait for all threads to finish
+                await Task.Run(countdown.Wait, cancellationToken);
+
+                return [.. brokenEntries];
             }
             catch (OperationCanceledException)
             {
