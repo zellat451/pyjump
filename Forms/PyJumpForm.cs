@@ -9,6 +9,8 @@ namespace pyjump
         public PyJumpForm()
         {
             InitializeComponent();
+            this.btnThreading.Text = GetCurrentThreadingButtonText();
+            this.btnLogging.Text = GetCurrentLoggingButtonText();
         }
 
         #region button methods
@@ -313,6 +315,18 @@ namespace pyjump
                 MessageBox.Show($"Something went wrong: {ex}");
             }
         }
+        private void btnThreading_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                SingletonServices.InvertPermissionThreading();
+                this.btnThreading.Text = GetCurrentThreadingButtonText();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Something went wrong: {ex}");
+            }
+        }
         #endregion
 
         #region private methods
@@ -325,6 +339,18 @@ namespace pyjump
             else
             {
                 return "Enable Logging";
+            }
+        }
+
+        private static string GetCurrentThreadingButtonText()
+        {
+            if (SingletonServices.AllowThreading)
+            {
+                return "Disable Threading";
+            }
+            else
+            {
+                return "Enable Threading";
             }
         }
 
@@ -351,5 +377,6 @@ namespace pyjump
             return loadingForm;
         }
         #endregion
+
     }
 }

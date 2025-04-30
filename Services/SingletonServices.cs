@@ -14,6 +14,8 @@ namespace pyjump.Services
         public static string SpreadsheetId { get; private set; }
         public static bool AllowLogFile { get; private set; }
         public static LogForm LogForm { get; private set; }
+        public static bool AllowThreading { get; private set; }
+        public static int MaxThreads { get; private set; }
 
         public static void Initialize()
         {
@@ -53,13 +55,41 @@ namespace pyjump.Services
 
             try
             {
-                // open the appsettings.json file as json, and get the value 'allow_log_file'
+                // open the appsettings.json file as json, and get the value 'allowLogFile'
                 var allowLogFile = GetAppsettingsValue("allowLogFile");
                 AllowLogFile = bool.Parse(allowLogFile);
             }
             catch (Exception e)
             {
                 Debug.WriteLine("Error reading allowLogFile from appsettings: " + e.Message);
+                throw;
+            }
+
+            try
+            {
+                // open the appsettings.json file as json, and get the value 'allowThreading'
+                var allowThreading = GetAppsettingsValue("allowThreading");
+                AllowThreading = bool.Parse(allowThreading);
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine("Error reading allowThreading from appsettings: " + e.Message);
+                throw;
+            }
+
+            try
+            {
+                // open the appsettings.json file as json, and get the value 'maxThreads'
+                var maxThread = GetAppsettingsValue("maxThreads");
+                MaxThreads = int.Parse(maxThread);
+                if (MaxThreads < 2)
+                {
+                    MaxThreads = 2;
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine("Error reading maxThreads from appsettings: " + e.Message);
                 throw;
             }
         }
@@ -71,6 +101,8 @@ namespace pyjump.Services
         }
 
         public static void InvertPermissionFileLogging() => AllowLogFile = !AllowLogFile;
+
+        public static void InvertPermissionThreading() => AllowThreading = !AllowThreading;
 
         public static JsonNode GetJsonAppsettings()
         {

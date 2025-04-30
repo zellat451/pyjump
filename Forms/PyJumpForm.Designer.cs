@@ -42,10 +42,12 @@ namespace pyjump
             btnClearAll = new Button();
             btnDeleteBroken = new Button();
             btnLogging = new Button();
+            btnThreading = new Button();
             SuspendLayout();
             // 
             // btnScanFile
             // 
+            btnScanFile.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             btnScanFile.Location = new Point(271, 83);
             btnScanFile.Name = "btnScanFile";
             btnScanFile.Size = new Size(233, 87);
@@ -96,6 +98,7 @@ namespace pyjump
             // 
             // btnBuildSheets
             // 
+            btnBuildSheets.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             btnBuildSheets.Location = new Point(542, 83);
             btnBuildSheets.Name = "btnBuildSheets";
             btnBuildSheets.Size = new Size(222, 87);
@@ -116,6 +119,7 @@ namespace pyjump
             // 
             // btnFren
             // 
+            btnFren.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             btnFren.Location = new Point(456, 236);
             btnFren.Name = "btnFren";
             btnFren.Size = new Size(308, 182);
@@ -126,6 +130,7 @@ namespace pyjump
             // 
             // btnForceMatch
             // 
+            btnForceMatch.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
             btnForceMatch.Location = new Point(330, 176);
             btnForceMatch.Name = "btnForceMatch";
             btnForceMatch.Size = new Size(122, 30);
@@ -136,6 +141,7 @@ namespace pyjump
             // 
             // btnClearAll
             // 
+            btnClearAll.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             btnClearAll.Location = new Point(26, 385);
             btnClearAll.Name = "btnClearAll";
             btnClearAll.Size = new Size(106, 33);
@@ -156,19 +162,30 @@ namespace pyjump
             // 
             // btnLogging
             // 
+            btnLogging.Anchor = AnchorStyles.Bottom;
             btnLogging.Location = new Point(236, 384);
             btnLogging.Name = "btnLogging";
-            btnLogging.Size = new Size(131, 34);
+            btnLogging.Size = new Size(86, 54);
             btnLogging.TabIndex = 14;
-            btnLogging.Text = GetCurrentLoggingButtonText();
             btnLogging.UseVisualStyleBackColor = true;
             btnLogging.Click += btnLogging_Click;
+            // 
+            // btnThreading
+            // 
+            btnThreading.Anchor = AnchorStyles.Bottom;
+            btnThreading.Location = new Point(330, 384);
+            btnThreading.Name = "btnThreading";
+            btnThreading.Size = new Size(86, 54);
+            btnThreading.TabIndex = 15;
+            btnThreading.UseVisualStyleBackColor = true;
+            btnThreading.Click += btnThreading_Click;
             // 
             // PyJumpForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
+            Controls.Add(btnThreading);
             Controls.Add(btnLogging);
             Controls.Add(btnDeleteBroken);
             Controls.Add(btnClearAll);
@@ -184,8 +201,6 @@ namespace pyjump
             Name = "PyJumpForm";
             Text = "pyjump";
             ResumeLayout(false);
-
-            SingletonServices.RegisterForm(new Forms.LogForm());
         }
 
         #endregion
@@ -202,5 +217,6 @@ namespace pyjump
         private Button btnClearAll;
         private Button btnDeleteBroken;
         private Button btnLogging;
+        private Button btnThreading;
     }
 }
