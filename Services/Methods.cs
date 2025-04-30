@@ -156,7 +156,7 @@ namespace pyjump.Services
                 // get all files from the whitelist entries
                 var scanner = new DriveScanner();
 
-                if (SingletonServices.AllowThreading == false)
+                if (!SingletonServices.AllowThreading)
                 {
                     await ScanFilesSingleThread(whitelistEntries, loadingForm, cancellationToken);
                 }
