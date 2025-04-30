@@ -32,7 +32,10 @@ namespace pyjump.Services
         private readonly ConcurrentBag<WhitelistEntry> _foundFolderNames;
         private readonly ConcurrentBag<string> _storiesKeywords;
 
-        private readonly ConcurrentBag<(string folderId, string resourceKey, string driveId, string parentName)> _folderQueue;
+        private readonly BlockingCollection<(string folderId, string resourceKey, string driveId, string parentName)> _folderQueue
+            = [.. new ConcurrentQueue<(string, string, string, string)>()];
+
+        private int _activeWorkers = 0;
 
         /// <summary>
         /// Get all folder names recursively from the given folder URLs.
@@ -45,21 +48,90 @@ namespace pyjump.Services
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                // find whitelist entries from maind drives
-                var rootFolderIds = folderUrls.Select(ExtractFolderInfosFromUrl).Where(inf => !string.IsNullOrEmpty(inf.folderId)).Distinct();
+                var rootFolderIds = folderUrls.Select(ExtractFolderInfosFromUrl)
+                                              .Where(inf => !string.IsNullOrEmpty(inf.folderId))
+                                              .Distinct();
 
                 foreach (var (folderId, resourceKey, driveId) in rootFolderIds)
-                    _folderQueue.Add((folderId, resourceKey, driveId, string.Empty));
+                    _folderQueue.Add((folderId, resourceKey, driveId, string.Empty), cancellationToken);
 
-
-                while (!_folderQueue.IsEmpty)
+                if (!SingletonServices.AllowThreading)
                 {
-                    cancellationToken.ThrowIfCancellationRequested();
+                    // Single-threaded mode
+                    while (_folderQueue.TryTake(out var folder))
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        await TraverseFolderAsync(folder.folderId, folder.resourceKey, folder.driveId, folder.parentName, cancellationToken);
+                    }
+                }
+                else
+                {
+                    // Multi-threaded mode with dedicated threads
+                    var threads = new List<Thread>();
+                    int threadCount = SingletonServices.MaxThreads;
 
-                    var success = _folderQueue.TryTake(out var folder);
-                    if (!success)
-                        continue;
-                    await TraverseFolderAsync(folder.folderId, folder.resourceKey, folder.driveId, folder.parentName, cancellationToken);
+                    for (int i = 0; i < threadCount; i++)
+                    {
+                        var thread = new Thread(() =>
+                        {
+                            try
+                            {
+                                while (!_folderQueue.IsCompleted)
+                                {
+                                    if (_folderQueue.TryTake(out var folder, Timeout.Infinite, cancellationToken))
+                                    {
+                                        try
+                                        {
+                                            Interlocked.Increment(ref _activeWorkers);
+                                            TraverseFolderAsync(folder.folderId, folder.resourceKey, folder.driveId, folder.parentName, cancellationToken)
+                                                .Wait(cancellationToken);
+                                            Interlocked.Decrement(ref _activeWorkers);
+                                        }
+                                        catch (OperationCanceledException)
+                                        {
+                                            // Graceful thread exit on cancellation
+                                        }
+                                        catch (AggregateException ae) when (ae.InnerExceptions.All(e => e is OperationCanceledException))
+                                        {
+                                            // Also OK if the task was canceled internally
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            SingletonServices.LogForm.Log($"⚠️ Worker thread error: {ex.Message}");
+                                        }
+
+                                    }
+                                }
+                            }
+                            catch (OperationCanceledException)
+                            {
+                                // Thread ends gracefully
+                            }
+                            catch (Exception ex)
+                            {
+                                SingletonServices.LogForm.Log($"⚠️ Worker thread error: {ex.Message}");
+                            }
+                        })
+                        {
+                            IsBackground = true
+                        };
+                        thread.Start();
+                        threads.Add(thread);
+                    }
+
+                    // Monitor for cancellation
+                    while (!_folderQueue.IsCompleted && !cancellationToken.IsCancellationRequested)
+                    {
+                        await Task.Delay(200, cancellationToken); // avoid tight polling
+                        if (_folderQueue.Count == 0 && Interlocked.CompareExchange(ref _activeWorkers, 0, 0) == 0)
+                        {
+                            _folderQueue.CompleteAdding();
+                            break;
+                        }
+                    }
+
+                    foreach (var thread in threads)
+                        thread.Join();
                 }
 
                 cancellationToken.ThrowIfCancellationRequested();
