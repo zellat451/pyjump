@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Threading;
 using Google.Apis.Sheets.v4.Data;
 using pyjump.Entities;
 using pyjump.Forms;
@@ -154,6 +155,52 @@ namespace pyjump.Services
 
                 // get all files from the whitelist entries
                 var scanner = new DriveScanner();
+
+                if (SingletonServices.AllowThreading == false)
+                {
+                    await ScanFilesSingleThread(whitelistEntries, loadingForm, cancellationToken);
+                }
+                else
+                {
+                    await ScanFilesMultiThread(whitelistEntries, loadingForm, cancellationToken);
+                }
+
+                cancellationToken.ThrowIfCancellationRequested();
+
+                List<FileEntry> allFiles;
+                using (var db = new AppDbContext())
+                {
+                    allFiles = [.. db.Files];
+                }
+
+                cancellationToken.ThrowIfCancellationRequested();
+
+                loadingForm.PrepareLoadingBar("Treating sets for files", allFiles.Count);
+
+                await TreatSetsForFiles(allFiles, loadingForm, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                SingletonServices.LogForm.Log("❌ Scan cancelled.");
+                return;
+            }
+            catch (Exception e)
+            {
+                SingletonServices.LogForm.Log($"Error scanning files: {e}");
+                throw;
+            }
+        }
+
+        private static async Task ScanFilesSingleThread(List<WhitelistEntry> whitelistEntries, LoadingForm loadingForm, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (whitelistEntries == null || whitelistEntries.Count == 0)
+                {
+                    SingletonServices.LogForm.Log("❌ No whitelist entries to scan.");
+                    return;
+                }
+
                 foreach (var w in whitelistEntries)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
@@ -161,6 +208,117 @@ namespace pyjump.Services
                     // get all files for one entry
                     var scannedFileEntries = await DriveScanner.GetAllFilesInWhitelistAsync(w, cancellationToken);
 
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                    await ScannedFilesToDb([(w, scannedFileEntries)], cancellationToken);
+
+                    loadingForm.IncrementProgress();
+                }
+
+            }
+            catch (OperationCanceledException)
+            {
+                SingletonServices.LogForm.Log("❌ Scan cancelled.");
+                return;
+            }
+            catch (Exception e)
+            {
+                SingletonServices.LogForm.Log($"Error scanning files: {e}");
+                throw;
+            }
+        }
+
+        public static async Task ScanFilesMultiThread(List<WhitelistEntry> whitelistEntries, LoadingForm loadingForm, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (whitelistEntries == null || whitelistEntries.Count == 0)
+                {
+                    SingletonServices.LogForm.Log("❌ No whitelist entries to scan.");
+                    return;
+                }
+                var maxThreads = SingletonServices.MaxThreads;
+                var entryQueue = new BlockingCollection<WhitelistEntry>(new ConcurrentQueue<WhitelistEntry>(whitelistEntries));
+                entryQueue.CompleteAdding();
+
+                var fileResults = new ConcurrentBag<FileEntry>();
+                var whitelistUpdates = new ConcurrentBag<WhitelistEntry>();
+                var threads = new List<Thread>();
+                var countdown = new CountdownEvent(maxThreads);
+
+                for (int i = 0; i < maxThreads; i++)
+                {
+                    var thread = new Thread(() =>
+                    {
+                        try
+                        {
+                            foreach (var w in entryQueue.GetConsumingEnumerable(cancellationToken))
+                            {
+                                if (cancellationToken.IsCancellationRequested)
+                                    break;
+
+                                try
+                                {
+                                    var scannedFiles = DriveScanner.GetAllFilesInWhitelistAsync(w, cancellationToken).GetAwaiter().GetResult();
+                                    if (cancellationToken.IsCancellationRequested) break;
+
+                                    foreach (var f in scannedFiles)
+                                        fileResults.Add(f);
+
+                                    if (scannedFiles.Count > 0)
+                                    {
+                                        whitelistUpdates.Add(w);
+                                    }
+
+                                    loadingForm.IncrementProgress();
+                                }
+                                catch (OperationCanceledException)
+                                {
+                                    SingletonServices.LogForm.Log("❌ File scan cancelled.");
+                                    break;
+                                }
+                                catch (Exception ex)
+                                {
+                                    SingletonServices.LogForm.Log($"❌ Error scanning entry: {ex.Message}");
+                                }
+                            }
+                        }
+                        finally
+                        {
+                            countdown.Signal();
+                        }
+                    })
+                    {
+                        IsBackground = true
+                    };
+                    threads.Add(thread);
+                    thread.Start();
+                }
+
+                // Wait for all threads to finish
+                await Task.Run(countdown.Wait, cancellationToken);
+
+                // Final DB write
+                await ScannedFilesToDb([.. whitelistUpdates.Select(w => (w, fileResults.Where(f => f.FolderId == w.Id).ToList()))], cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                SingletonServices.LogForm.Log("❌ Scan cancelled.");
+                return;
+            }
+            catch (Exception e)
+            {
+                SingletonServices.LogForm.Log($"Error scanning files: {e}");
+                throw;
+            }
+        }
+
+        private static async Task ScannedFilesToDb(List<(WhitelistEntry whitelist, List<FileEntry> scannedFileEntries)> sets, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                foreach (var (whitelist, scannedFileEntries) in sets)
+                {
                     cancellationToken.ThrowIfCancellationRequested();
 
                     // check existing file entries
@@ -178,6 +336,7 @@ namespace pyjump.Services
                         catch (Exception e)
                         {
                             SingletonServices.LogForm.Log($"Error adding file entries: {e}");
+                            db.Dispose();
                             throw;
                         }
                         SingletonServices.LogForm.Log($"Added {toAdd.Count} file entries.");
@@ -235,6 +394,7 @@ namespace pyjump.Services
                         catch (Exception e)
                         {
                             SingletonServices.LogForm.Log($"Error updating file entries: {e}");
+                            db.Dispose();
                             throw;
                         }
                         SingletonServices.LogForm.Log($"Updated {toUpdate.Count} file entries.");
@@ -245,14 +405,15 @@ namespace pyjump.Services
                         if (scannedFileEntries.Count > 0)
                         {
                             // update the last checked date of the whitelist entry to today, midnight Utc
-                            w.LastChecked = DateTime.UtcNow.Date;
+                            whitelist.LastChecked = DateTime.UtcNow.Date;
                             try
                             {
-                                db.Whitelist.Update(w);
+                                db.Whitelist.Update(whitelist);
                             }
                             catch (Exception e)
                             {
                                 SingletonServices.LogForm.Log($"Error updating whitelist entry: {e}");
+                                db.Dispose();
                                 throw;
                             }
                         }
@@ -276,24 +437,11 @@ namespace pyjump.Services
                         catch (Exception e)
                         {
                             SingletonServices.LogForm.Log($"Error saving changes to the database: {e}");
+                            db.Dispose();
                             throw;
                         }
                     }
-
-                    loadingForm.IncrementProgress();
                 }
-
-                List<FileEntry> allFiles;
-                using (var db = new AppDbContext())
-                {
-                    allFiles = [.. db.Files];
-                }
-
-                cancellationToken.ThrowIfCancellationRequested();
-
-                loadingForm.PrepareLoadingBar("Treating sets for files", allFiles.Count);
-
-                await TreatSetsForFiles(allFiles, loadingForm, cancellationToken);
             }
             catch (OperationCanceledException)
             {
@@ -302,7 +450,7 @@ namespace pyjump.Services
             }
             catch (Exception e)
             {
-                SingletonServices.LogForm.Log($"Error scanning files: {e}");
+                SingletonServices.LogForm.Log($"Error saving files to database: {e}");
                 throw;
             }
         }
