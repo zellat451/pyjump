@@ -11,6 +11,7 @@ namespace pyjump
             InitializeComponent();
             this.btnThreading.Text = GetCurrentThreadingButtonText();
             this.btnLogging.Text = GetCurrentLoggingButtonText();
+            SingletonServices.RegisterForm(new Forms.LogForm());
         }
 
         #region button methods
