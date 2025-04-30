@@ -152,6 +152,7 @@ No, Fren does not delete broken entries. It is not their job. They work hard eno
 1. `Clear all data`: Clears all the data in the DB. Does not affect the data uploaded to the Google Sheets document.
 1. `:)`: The Fren button. It does everything for you. It scans the whitelist, scans the files, and uploads the data to the Google Sheets document. It also opens the document in your browser at the end.
 1. `Enable/Disable Logging`: Enables or disables copying logs in a file. If active, all logs will be copied in a file named after today's date in the `logs` folder. The file will be created if it doesn't exist, and appended to if it does. `false` by default, so we don't spam your disk with logs.
+1. `Enable/Disable Threading`: Enables or disables multithreading. If active, the application will use multiple threads to scan the files and folders. This is much faster, but it may cause issues with the Google API request limits. `true` by default with `5` threads, which should be within limit. You can dynamically change the number of threads with the text box above the Enabling button, or before launch in the appsettings.json file. The application will use the number of threads specified in the file. It will use the default value of `5` threads. If you set it to a negative number, it will use `1` thread.
 
 ---
 
@@ -159,3 +160,5 @@ No, Fren does not delete broken entries. It is not their job. They work hard eno
 
 Unfortunately, we can't use multithreading due to api constraints. Google puts a limit on how many requests you can make on a minute, and I haven't found a way to make my tasks wait it out and try again.
 I tried, and it's sooooo much faster... but then it locks up after a few hundred files and never starts again. So we're taking it one by one for now. Still faster and easier to use than the google app script, at least for me.
+
+**As of 2025-04-30, this app finally supports multithreading. It is much faster, but it is still limited by the Google APIs.**
