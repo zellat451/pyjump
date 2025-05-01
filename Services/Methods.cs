@@ -248,7 +248,7 @@ namespace pyjump.Services
 
                 for (int i = 0; i < maxThreads; i++)
                 {
-                    var thread = new Thread(() =>
+                    var thread = new Thread(async () =>
                     {
                         try
                         {
@@ -259,7 +259,7 @@ namespace pyjump.Services
 
                                 try
                                 {
-                                    var scannedFiles = DriveScanner.GetAllFilesInWhitelistAsync(w, cancellationToken).GetAwaiter().GetResult();
+                                    var scannedFiles = await DriveScanner.GetAllFilesInWhitelistAsync(w, cancellationToken);
                                     if (cancellationToken.IsCancellationRequested) break;
 
                                     foreach (var f in scannedFiles)

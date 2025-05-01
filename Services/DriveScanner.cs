@@ -73,7 +73,7 @@ namespace pyjump.Services
 
                     for (int i = 0; i < threadCount; i++)
                     {
-                        var thread = new Thread(() =>
+                        var thread = new Thread(async () =>
                         {
                             try
                             {
@@ -84,8 +84,7 @@ namespace pyjump.Services
                                         try
                                         {
                                             Interlocked.Increment(ref _activeWorkers);
-                                            TraverseFolderAsync(folder.folderId, folder.resourceKey, folder.driveId, folder.parentName, cancellationToken)
-                                                .Wait(cancellationToken);
+                                            await TraverseFolderAsync(folder.folderId, folder.resourceKey, folder.driveId, folder.parentName, cancellationToken);
                                             Interlocked.Decrement(ref _activeWorkers);
                                         }
                                         catch (OperationCanceledException)
