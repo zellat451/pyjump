@@ -368,7 +368,6 @@ namespace pyjump
                 this.UpdateThreadCountInfos();
             }
         }
-        #endregion
 
         private void ThreadCountBox_KeyDown(object sender, KeyEventArgs e)
         {
@@ -379,6 +378,88 @@ namespace pyjump
                 this.btnThreadCount_Click(sender, EventArgs.Empty);
             }
         }
+
+        private async void btnDataImport_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                InitializeEverything();
+
+                SingletonServices.LogForm.Log("Importing data...");
+
+                string filePath;
+                using (OpenFileDialog openFileDialog = new OpenFileDialog())
+                {
+                    openFileDialog.Title = "Select a file to import from";
+                    openFileDialog.Filter = "All files (*.*)|*.json";
+
+                    if (openFileDialog.ShowDialog() == DialogResult.OK)
+                    {
+                        // Get the path of the selected file
+                        filePath = openFileDialog.FileName;
+                    }
+                    else
+                    {
+                        SingletonServices.LogForm.Log("Operation cancelled by user.");
+                        return;
+                    }
+                }
+
+                await Methods.ImportData(filePath, ScopedServices.CancellationTokenSource.Token);
+
+                SingletonServices.LogForm.Log("Data imported successfully.");
+                MessageBox.Show("Data imported successfully.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Something went wrong: {ex}");
+            }
+            finally
+            {
+                ClearEverything();
+            }
+        }
+
+        private async void btnDataExport_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                InitializeEverything();
+
+                SingletonServices.LogForm.Log("Exporting data...");
+
+                string folderPath;
+                using (FolderBrowserDialog saveFileDialog = new FolderBrowserDialog())
+                {
+                    saveFileDialog.Description = "Select a folder to export to";
+                    saveFileDialog.ShowNewFolderButton = true;
+                    if (saveFileDialog.ShowDialog() == DialogResult.OK)
+                    {
+                        // Get the path of the selected folder
+                        folderPath = saveFileDialog.SelectedPath;
+                    }
+                    else
+                    {
+                        SingletonServices.LogForm.Log("Operation cancelled by user.");
+                        return;
+                    }
+                }
+
+                await Methods.ExportData(folderPath, ScopedServices.CancellationTokenSource.Token);
+
+                SingletonServices.LogForm.Log("Data exported successfully.");
+                MessageBox.Show("Data exported successfully.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Something went wrong: {ex}");
+            }
+            finally
+            {
+                ClearEverything();
+            }
+        }
+        #endregion
 
         #region private methods
         private static string GetCurrentLoggingButtonText()

@@ -1,6 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Threading;
+using System.Text.Json;
 using Google.Apis.Sheets.v4.Data;
 using pyjump.Entities;
 using pyjump.Forms;
@@ -455,7 +455,7 @@ namespace pyjump.Services
                             throw;
                         }
                     }
-                
+
                     loadingForm?.IncrementProgress();
                 }
             }
@@ -1137,6 +1137,117 @@ namespace pyjump.Services
                 throw;
             }
         }
+
+        /// <summary>
+        /// import data from a json file
+        /// </summary>
+        /// <param name="filePath"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public static async Task ImportData(string filePath, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                // 1. read the data from the file
+                if (!File.Exists(filePath))
+                {
+                    SingletonServices.LogForm.Log($"❌ File not found: {filePath}");
+                    return;
+                }
+                var datajson = await File.ReadAllTextAsync(filePath, cancellationToken);
+                if (datajson == null || datajson.Length == 0)
+                {
+                    SingletonServices.LogForm.Log("❌ No data found in the file.");
+                    return;
+                }
+
+                var data = JsonSerializer.Deserialize<DataSet>(datajson, new JsonSerializerOptions() { PropertyNameCaseInsensitive = true });
+
+                // 2. load the data into the database
+                if (data == null || ((data.FileEntries == null || data.FileEntries.Count == 0) && (data.WhitelistEntries == null || data.WhitelistEntries.Count == 0)))
+                {
+                    SingletonServices.LogForm.Log("❌ No data found in the file.");
+                    return;
+                }
+
+                using (var db = new AppDbContext())
+                {
+                    // 2.1. load the files entries
+                    if (data.FileEntries != null && data.FileEntries.Count > 0)
+                    {
+                        db.Files.AddRange(data.FileEntries);
+                    }
+                    // 2.2. load the whitelist entries
+                    if (data.WhitelistEntries != null && data.WhitelistEntries.Count > 0)
+                    {
+                        db.Whitelist.AddRange(data.WhitelistEntries);
+                    }
+
+                    await db.SaveChangesAsync(cancellationToken);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                SingletonServices.LogForm.Log("❌ Data import cancelled.");
+                return;
+            }
+
+            catch (Exception e)
+            {
+                SingletonServices.LogForm.Log($"Error importing data: {e}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Export data to a json file (name is generated from the current date)
+        /// </summary>
+        /// <param name="folderPath"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public static async Task ExportData(string folderPath, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                // 1. get the current date
+                var date = DateTime.UtcNow.ToString("yyyy-MM-dd_HH-mm-ss");
+
+                // 2. create the file name
+                var fileName = $"PyJump_DataExport_{date}.json";
+                var filePath = Path.Combine(folderPath, fileName);
+
+                // 3. get all data from the database
+                DataSet data;
+                using (var db = new AppDbContext())
+                {
+                    data = new DataSet
+                    {
+                        FileEntries = [.. db.Files],
+                        WhitelistEntries = [.. db.Whitelist]
+                    };
+                }
+                // 4. serialize the data to json
+                var json = JsonSerializer.Serialize(data, new JsonSerializerOptions() { WriteIndented = true });
+
+                // 5. write the json to the file
+                await File.WriteAllTextAsync(filePath, json, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                SingletonServices.LogForm.Log("❌ Data export cancelled.");
+                return;
+            }
+            catch (Exception e)
+            {
+                SingletonServices.LogForm.Log($"Error exporting data: {e}");
+                throw;
+            }
+        }
+
         #endregion
     }
 }
