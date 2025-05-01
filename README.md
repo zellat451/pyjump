@@ -73,17 +73,18 @@ Don't forget: if you can't access the folder with your google account, neither w
 ```
 
 3. This is the way the application will decide on which list the files will be uploaded to. 
-More specifically, this is a list of (case-insensitive) keywords that the application will look for in the folder names. 
-All files in the folder will be uploaded to the list `Stories` instead of `Jumps`.
-Do **not** use these keywords in the names of your `mainDrives`, unless you want all sub-folders to be `Stories` by default.
+More specifically, this is a list of (case-insensitive) keywords that the application will look for in the folder and file names.
+If the scanning finds these keywords in the name of either files or folders, it will set the type of the folder/file to the one specified next to that keyword.
+By default, Folders are `j` (Jump) and files take the same type as their folder.
 ```json
 {
-	"stories_keywords": [
-		"/stories",
-		"for stories",
-		"writefagging",
-		"discussions"
-	]
+	 "keywords": {
+        "/stories": "s",
+        "\\stories": "s",
+        "for stories": "s",
+        "writefagging": "s",
+        "discussions": "s"
+	}
 }
 ```
 
@@ -98,7 +99,7 @@ Do **not** use these keywords in the names of your `mainDrives`, unless you want
 	- You can also remove folders manually, but be careful with that. They will be added the next time you scan the whitelist.
    	- Folders have many information. What interests you is `Type`. It can take many values:
 		- `j`: Jump. This is the default type. It means that the folder is a jump folder. All files found in this folder will be uploaded to the `Jumps` list.
-		- `s`: Story. Thsi is the default type if the folder's `Name` contains the keywords defined in appsettings.json. This means that the folder is a story folder. All files found in this folder will be uploaded to the `Stories` list.
+		- `s`: Story. This means that the folder is a story folder. All files found in this folder will be uploaded to the `Stories` list.
 		- `o`: Other. This type is never used in the application. It is just a placeholder for future use if you need it.
 		- `-`: Blacklisted. This means that the folder is blacklisted. All files found in this folder will be ignored and not uploaded to any list. In fact, the folder will be ignored during the file crawling.
 5. Click the button `scan Files` to start scanning the produced `Whitelist` for their files. This may take some time.
@@ -114,7 +115,7 @@ Do **not** use these keywords in the names of your `mainDrives`, unless you want
 		- `s`: Story. It means that the file is a story file. It will be uploaded to the `Stories` list.
 		- `o`: Other. It means that the file is a file of another type. It will be uploaded to the `Others` list.
 		- `-`: Blacklisted. This means that the file is blacklisted. It will be ignored and not uploaded to any list.
-		- By default, a file will use the same type as the whitelist entry it linked to. You can edit it manually, it will not be reset by future scans.
+		- By default, a file will use the same type as the whitelist entry it linked to. If the file name contains one of the `keywords` from the appsetting, it will be given the corresponding type. You can also edit it manually. It will not be reset by future scans, even if the file infos are updated.
 7. Click the button `Build Sheets` to start uploading the files to the Google Sheets document. This is actually pretty fast.
 	- The application will reupload the entire content of the database every time.
 	- Blacklisted files will be ignored.
@@ -152,7 +153,9 @@ No, Fren does not delete broken entries. It is not their job. They work hard eno
 1. `Clear all data`: Clears all the data in the DB. Does not affect the data uploaded to the Google Sheets document.
 1. `:)`: The Fren button. It does everything for you. It scans the whitelist, scans the files, and uploads the data to the Google Sheets document. It also opens the document in your browser at the end.
 1. `Enable/Disable Logging`: Enables or disables copying logs in a file. If active, all logs will be copied in a file named after today's date in the `logs` folder. The file will be created if it doesn't exist, and appended to if it does. `false` by default, so we don't spam your disk with logs.
-1. `Enable/Disable Threading`: Enables or disables multithreading. If active, the application will use multiple threads to scan the files and folders. This is much faster, but it may cause issues with the Google API request limits. `true` by default with `5` threads, which should be within limit. You can dynamically change the number of threads with the text box above the Enabling button, or before launch in the appsettings.json file. The application will use the number of threads specified in the file. It will use the default value of `5` threads. If you set it to a negative number, it will use `1` thread.
+1. `Enable/Disable Threading`: Enables or disables multithreading. If active, the application will use multiple threads to scan the files and folders. This is much faster, but it may cause issues with the Google API request limits. `true` by default with `5` threads, which should be within limit. 
+You can dynamically change the number of threads with the text box above the Enabling button, or before launch in the appsettings.json file. The application will use the number of threads specified in the file. It will use the default value of `5` threads. If you set it to a negative number, it will use `1` thread.
+1. `Import/Export data`: Imports or exports the data in the DB to a json file. This is useful if you want to backup your data, especially between version updates. You can decide on the export folder, but the name is automatically generated from the current date. Imported data will overwrite the current data in the DB. The import file must be a json file, and it must be in the same format as the export file.
 
 ---
 

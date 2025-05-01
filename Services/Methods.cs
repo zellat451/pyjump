@@ -1165,7 +1165,7 @@ namespace pyjump.Services
 
                 var data = JsonSerializer.Deserialize<DataSet>(datajson, new JsonSerializerOptions() { PropertyNameCaseInsensitive = true });
 
-                // 2. load the data into the database
+                // 2. load the data into the database (erase exisintg data)
                 if (data == null || ((data.FileEntries == null || data.FileEntries.Count == 0) && (data.WhitelistEntries == null || data.WhitelistEntries.Count == 0)))
                 {
                     SingletonServices.LogForm.Log("❌ No data found in the file.");
@@ -1174,17 +1174,20 @@ namespace pyjump.Services
 
                 using (var db = new AppDbContext())
                 {
-                    // 2.1. load the files entries
+                    // 2.b. add the data to the database
                     if (data.FileEntries != null && data.FileEntries.Count > 0)
                     {
-                        db.Files.AddRange(data.FileEntries);
+                        // remove the existing file entries
+                        db.Files.RemoveRange(db.Files);
+                        await db.Files.AddRangeAsync(data.FileEntries, cancellationToken);
                     }
-                    // 2.2. load the whitelist entries
                     if (data.WhitelistEntries != null && data.WhitelistEntries.Count > 0)
                     {
-                        db.Whitelist.AddRange(data.WhitelistEntries);
+                        // remove the existing whitelist entries
+                        db.Whitelist.RemoveRange(db.Whitelist);
+                        await db.Whitelist.AddRangeAsync(data.WhitelistEntries, cancellationToken);
                     }
-
+                    // 2.c. save the changes to the database
                     await db.SaveChangesAsync(cancellationToken);
                 }
             }
