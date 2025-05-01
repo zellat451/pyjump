@@ -212,7 +212,7 @@ namespace pyjump.Services
 
                     cancellationToken.ThrowIfCancellationRequested();
 
-                    await ScannedFilesToDb([(w, scannedFileEntries)], cancellationToken);
+                    await ScannedFilesToDb([(w, scannedFileEntries)], cancellationToken: cancellationToken);
 
                     loadingForm.IncrementProgress();
                 }
@@ -312,7 +312,7 @@ namespace pyjump.Services
                 await Task.Run(countdown.Wait, cancellationToken);
 
                 // Final DB write
-                await ScannedFilesToDb([.. whitelistUpdates.Select(w => (w, fileResults.Where(f => f.FolderId == w.Id).ToList()))], cancellationToken);
+                await ScannedFilesToDb([.. whitelistUpdates.Select(w => (w, fileResults.Where(f => f.FolderId == w.Id).ToList()))], loadingForm, cancellationToken);
             }
             catch (OperationCanceledException)
             {
@@ -326,10 +326,11 @@ namespace pyjump.Services
             }
         }
 
-        private static async Task ScannedFilesToDb(List<(WhitelistEntry whitelist, List<FileEntry> scannedFileEntries)> sets, CancellationToken cancellationToken = default)
+        private static async Task ScannedFilesToDb(List<(WhitelistEntry whitelist, List<FileEntry> scannedFileEntries)> sets, LoadingForm loadingForm = null, CancellationToken cancellationToken = default)
         {
             try
             {
+                loadingForm?.PrepareLoadingBar("Saving files to database", sets.Count);
                 foreach (var (whitelist, scannedFileEntries) in sets)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
@@ -454,6 +455,8 @@ namespace pyjump.Services
                             throw;
                         }
                     }
+                
+                    loadingForm?.IncrementProgress();
                 }
             }
             catch (OperationCanceledException)

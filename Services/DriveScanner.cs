@@ -21,9 +21,9 @@ namespace pyjump.Services
                 _keywords = [];
             else
             {
-                var storiesK = JsonSerializer.Deserialize<Dictionary<string, string>>(jsonKeywords, options: new() { PropertyNameCaseInsensitive = true });
-                _keywords = new ConcurrentDictionary<string, string>(storiesK);
-                foreach (var k in _keywords.Where(x => FolderType.AllTypes.Contains(x.Value)))
+                var keywords = JsonSerializer.Deserialize<Dictionary<string, string>>(jsonKeywords, options: new() { PropertyNameCaseInsensitive = true });
+                _keywords = new ConcurrentDictionary<string, string>(keywords);
+                foreach (var k in _keywords.Where(x => !FolderType.AllTypes.Contains(x.Value)))
                     _keywords.Remove(k.Key, out _);
             }
 
