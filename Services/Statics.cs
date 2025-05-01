@@ -42,6 +42,14 @@
             public const string Story = "s";
             public const string Other = "o";
             public const string Blacklisted = "-";
+
+            public static readonly List<string> AllTypes =
+            [
+                Jump,
+                Story,
+                Other,
+                Blacklisted
+            ];
         }
 
         public static class GoogleMimeTypes

@@ -2,7 +2,6 @@
 using System.Net;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using System.Threading;
 using Google.Apis.Drive.v3.Data;
 using pyjump.Entities;
 using pyjump.Forms;
@@ -17,13 +16,15 @@ namespace pyjump.Services
         {
             _visitedFolderIds = [];
             _foundFolderNames = [];
-            var jsonKeywords = SingletonServices.GetAppsettingsValue("stories_keywords");
+            var jsonKeywords = SingletonServices.GetAppsettingsValue("keywords");
             if (string.IsNullOrEmpty(jsonKeywords))
-                _storiesKeywords = [];
+                _keywords = [];
             else
             {
-                var storiesK = JsonSerializer.Deserialize<List<string>>(jsonKeywords, options: new() { PropertyNameCaseInsensitive = true });
-                _storiesKeywords = [.. storiesK];
+                var storiesK = JsonSerializer.Deserialize<Dictionary<string, string>>(jsonKeywords, options: new() { PropertyNameCaseInsensitive = true });
+                _keywords = new ConcurrentDictionary<string, string>(storiesK);
+                foreach (var k in _keywords.Where(x => FolderType.AllTypes.Contains(x.Value)))
+                    _keywords.Remove(k.Key, out _);
             }
 
             _folderQueue = [];
@@ -31,7 +32,7 @@ namespace pyjump.Services
 
         private readonly ConcurrentDictionary<string, bool> _visitedFolderIds;
         private readonly ConcurrentBag<WhitelistEntry> _foundFolderNames;
-        private readonly ConcurrentBag<string> _storiesKeywords;
+        private readonly ConcurrentDictionary<string, string> _keywords;
 
         private readonly BlockingCollection<(string folderId, string resourceKey, string driveId, string parentName)> _folderQueue
             = [.. new ConcurrentQueue<(string, string, string, string)>()];
@@ -179,7 +180,12 @@ namespace pyjump.Services
                     if (!string.IsNullOrEmpty(driveId))
                         AddRequestParameter(request, "driveId", driveId);
 
-                    folderMetadata = await request.ExecuteAsync();
+                    folderMetadata = await request.ExecuteAsync(cancellationToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    SingletonServices.LogForm.Log("🔍 Folder scanning cancelled.");
+                    throw;
                 }
                 catch (Google.GoogleApiException ex) when (ex.HttpStatusCode == HttpStatusCode.NotFound)
                 {
@@ -217,9 +223,7 @@ namespace pyjump.Services
                         : Path.Combine(parentName, folderMetadata.Name),
                     Url = BuildFolderUrl(folderMetadata.Id, folderMetadata.ResourceKey, folderMetadata.DriveId),
                 };
-                whitelistEntry.Type = (_storiesKeywords.Any(s => whitelistEntry.Name.Contains(s, StringComparison.OrdinalIgnoreCase)))
-                    ? FolderType.Story
-                    : FolderType.Jump;
+                whitelistEntry.Type = GetCorrespondingType(whitelistEntry);
                 _foundFolderNames.Add(whitelistEntry);
                 SingletonServices.LogForm.Log($"✅ Found folder: {whitelistEntry.Name} ({folderMetadata.Id})");
                 if (_foundFolderNames.Count % 50 == 0)
@@ -240,7 +244,12 @@ namespace pyjump.Services
                         request.PageToken = pageToken;
                         request.SupportsAllDrives = true;
 
-                        result = await request.ExecuteAsync();
+                        result = await request.ExecuteAsync(cancellationToken);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        SingletonServices.LogForm.Log("🔍 Folder scanning cancelled.");
+                        throw;
                     }
                     catch (Exception ex)
                     {
@@ -251,15 +260,23 @@ namespace pyjump.Services
                     foreach (var file in result.Files)
                     {
                         cancellationToken.ThrowIfCancellationRequested();
-                        if (file.MimeType == GoogleMimeTypes.Folder)
+                        try
                         {
-                            _folderQueue.Add((file.Id, file.ResourceKey, file.DriveId, whitelistEntry.Name));
+                            if (file.MimeType == GoogleMimeTypes.Folder)
+                            {
+                                _folderQueue.Add((file.Id, file.ResourceKey, file.DriveId, whitelistEntry.Name), cancellationToken);
+                            }
+                            else if (file.MimeType == GoogleMimeTypes.Shortcut &&
+                                     file.ShortcutDetails?.TargetMimeType == GoogleMimeTypes.Folder &&
+                                     file.ShortcutDetails?.TargetId != null)
+                            {
+                                _folderQueue.Add((file.ShortcutDetails.TargetId, file.ShortcutDetails.TargetResourceKey, file.DriveId, whitelistEntry.Name), cancellationToken);
+                            }
                         }
-                        else if (file.MimeType == GoogleMimeTypes.Shortcut &&
-                                 file.ShortcutDetails?.TargetMimeType == GoogleMimeTypes.Folder &&
-                                 file.ShortcutDetails?.TargetId != null)
+                        catch (OperationCanceledException)
                         {
-                            _folderQueue.Add((file.ShortcutDetails.TargetId, file.ShortcutDetails.TargetResourceKey, file.DriveId, whitelistEntry.Name));
+                            SingletonServices.LogForm.Log("🔍 Folder scanning cancelled.");
+                            throw;
                         }
                     }
 
@@ -289,7 +306,7 @@ namespace pyjump.Services
         /// </summary>
         /// <param name="whitelist"></param>
         /// <returns></returns>
-        public static async Task<List<FileEntry>> GetAllFilesInWhitelistAsync(WhitelistEntry whitelist, CancellationToken cancellationToken = default)
+        public async Task<List<FileEntry>> GetAllFilesInWhitelistAsync(WhitelistEntry whitelist, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -321,7 +338,7 @@ namespace pyjump.Services
                         request.PageToken = pageToken;
                         request.SupportsAllDrives = true;
 
-                        result = await request.ExecuteAsync();
+                        result = await request.ExecuteAsync(cancellationToken);
                     }
                     catch (Google.GoogleApiException ex) when (ex.HttpStatusCode == HttpStatusCode.NotFound)
                     {
@@ -364,7 +381,12 @@ namespace pyjump.Services
                                 if (!string.IsNullOrEmpty(file.DriveId))
                                     AddRequestParameter(request, "driveId", file.DriveId);
 
-                                actualFile = await request.ExecuteAsync();
+                                actualFile = await request.ExecuteAsync(cancellationToken);
+                            }
+                            catch (OperationCanceledException)
+                            {
+                                SingletonServices.LogForm.Log("🔍 File scanning cancelled.");
+                                throw;
                             }
                             catch (Google.GoogleApiException ex) when (ex.HttpStatusCode == HttpStatusCode.NotFound)
                             {
@@ -384,8 +406,8 @@ namespace pyjump.Services
                             }
 
                             if (actualFile.MimeType == GoogleMimeTypes.Folder)
-                                continue; 
-                            
+                                continue;
+
                             cancellationToken.ThrowIfCancellationRequested();
                         }
 
@@ -424,8 +446,8 @@ namespace pyjump.Services
                             FolderId = whitelist.Id,
                             FolderName = whitelist.Name,
                             FolderUrl = whitelist.Url,
-                            Type = whitelist.Type
                         };
+                        fileEntry.Type = this.GetCorrespondingType(fileEntry, whitelist);
 
                         files.Add(fileEntry);
                         SingletonServices.LogForm.Log($"📄 Found file: {fileEntry.Name} in {whitelist.Name}");
@@ -509,7 +531,7 @@ namespace pyjump.Services
                         if (!string.IsNullOrEmpty(entry.DriveId))
                             AddRequestParameter(request, "driveId", entry.DriveId);
 
-                        var file = await request.ExecuteAsync();
+                        var file = await request.ExecuteAsync(cancellationToken);
 
                         if (file.Trashed.HasValue && file.Trashed.Value)
                         {
@@ -530,6 +552,11 @@ namespace pyjump.Services
                         {
                             SingletonServices.LogForm.Log($"✅ Entry {entry.Name} (id: {entry.Id}, url: {entry.Url}) is accessible.");
                         }
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        SingletonServices.LogForm.Log("🔍 Scanning cancelled.");
+                        throw;
                     }
                     catch (Google.GoogleApiException ex) when (ex.HttpStatusCode == System.Net.HttpStatusCode.NotFound)
                     {
@@ -810,7 +837,39 @@ namespace pyjump.Services
             }
 
             return url;
-        } 
+        }
+
+        /// <summary>
+        /// Return jump type, or the corresponding type if the entry name contains a keyword.
+        /// </summary>
+        /// <param name="entryName"></param>
+        /// <returns></returns>
+        private string GetCorrespondingType(WhitelistEntry whitelist)
+        {
+            foreach (var keyword in _keywords)
+            {
+                if (whitelist.Name.Contains(keyword.Key, StringComparison.OrdinalIgnoreCase))
+                    return keyword.Value;
+            }
+            return FolderType.Jump;
+        }
+
+        /// <summary>
+        /// Get the corresponding type if the file name contains a keyword, or the default type (whitelist type).
+        /// </summary>
+        /// <param name="file"></param>
+        /// <param name="whitelist"></param>
+        /// <returns></returns>
+        private string GetCorrespondingType(FileEntry file, WhitelistEntry whitelist)
+        {
+            foreach (var keyword in _keywords)
+            {
+                if (file.Name.Contains(keyword.Key, StringComparison.OrdinalIgnoreCase))
+                    return keyword.Value;
+            }
+            // If no keywords match, return the whitelist type
+            return whitelist.Type;
+        }
         #endregion
 
     }

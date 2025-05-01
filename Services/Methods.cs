@@ -201,12 +201,14 @@ namespace pyjump.Services
                     return;
                 }
 
+                var scanner = new DriveScanner();
+
                 foreach (var w in whitelistEntries)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
 
                     // get all files for one entry
-                    var scannedFileEntries = await DriveScanner.GetAllFilesInWhitelistAsync(w, cancellationToken);
+                    var scannedFileEntries = await scanner.GetAllFilesInWhitelistAsync(w, cancellationToken);
 
                     cancellationToken.ThrowIfCancellationRequested();
 
@@ -246,6 +248,8 @@ namespace pyjump.Services
                 var threads = new List<Thread>();
                 var countdown = new CountdownEvent(maxThreads);
 
+                var scanner = new DriveScanner();
+
                 for (int i = 0; i < maxThreads; i++)
                 {
                     var thread = new Thread(async () =>
@@ -259,7 +263,7 @@ namespace pyjump.Services
 
                                 try
                                 {
-                                    var scannedFiles = await DriveScanner.GetAllFilesInWhitelistAsync(w, cancellationToken);
+                                    var scannedFiles = await scanner.GetAllFilesInWhitelistAsync(w, cancellationToken);
                                     if (cancellationToken.IsCancellationRequested) break;
 
                                     foreach (var f in scannedFiles)
