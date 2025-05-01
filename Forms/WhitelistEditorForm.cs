@@ -31,6 +31,11 @@ namespace pyjump.Forms
 
         private void dataGridViewEntries_CellContentClick(object sender, DataGridViewCellEventArgs e)
         {
+            _searchService.ClickCellContent(e);
+        }
+
+        private void dataGridViewEntries_CellContentEdit(object sender, DataGridViewCellEventArgs e)
+        {
             _searchService.EditCellContent(e);
         }
         #endregion

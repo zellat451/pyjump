@@ -73,6 +73,7 @@
             dataGridViewEntries.Size = new Size(736, 304);
             dataGridViewEntries.TabIndex = 2;
             dataGridViewEntries.CellContentClick += dataGridViewEntries_CellContentClick;
+            dataGridViewEntries.CellValueChanged += dataGridViewEntries_CellContentEdit;
             // 
             // countBox
             // 

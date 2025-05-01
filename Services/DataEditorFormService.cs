@@ -28,7 +28,7 @@ namespace pyjump.Services
         private BindingList<T> _entryBinding;
         private bool _entriesUpdated;
 
-        #region MyRegion
+        #region buttons & grid
         public void EntityEditorForm_Load()
         {
             var entries = _context.Set<T>().AsTracking().OrderBy(x => x.Name).ToList();
@@ -86,10 +86,13 @@ namespace pyjump.Services
             return true;
         }
 
-        public void EditCellContent(DataGridViewCellEventArgs e)
+        public void EditCellContent(DataGridViewCellEventArgs e) => _entriesUpdated = true;
+        public void ClickCellContent(DataGridViewCellEventArgs e)
         {
             if (_dataGridViewEntries.Columns[e.ColumnIndex].Name != "Delete" || e.RowIndex < 0)
+            {
                 return;
+            }
 
             var result = MessageBox.Show("Are you sure you want to delete this entry?", "Confirm Delete", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
             if (result != DialogResult.Yes)
