@@ -1100,19 +1100,21 @@ namespace pyjump.Services
             }
         }
 
-        public static async Task DeleteBrokenEntries(LoadingForm loadingForm, CancellationToken cancellationToken = default)
+        public static async Task DeleteBrokenEntries(bool deleteFiles, bool deleteWhitelist, LoadingForm loadingForm, CancellationToken cancellationToken = default)
         {
             try
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
                 #region get all data
-                List<FileEntry> allFileEntries;
-                List<WhitelistEntry> allWhitelistEntries;
+                List<FileEntry> allFileEntries = null;
+                List<WhitelistEntry> allWhitelistEntries = null;
                 using (var db = new AppDbContext())
                 {
-                    allFileEntries = [.. db.Files];
-                    allWhitelistEntries = [.. db.Whitelist];
+                    if(deleteFiles)
+                        allFileEntries = [.. db.Files];
+                    if (deleteWhitelist)
+                        allWhitelistEntries = [.. db.Whitelist];
                 }
                 #endregion
 

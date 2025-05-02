@@ -478,6 +478,8 @@ namespace pyjump.Services
         {
             try
             {
+                if (entries == null || entries.Count == 0) return [];
+
                 cancellationToken.ThrowIfCancellationRequested();
 
                 var isFolderCheck = typeof(T) == typeof(WhitelistEntry);

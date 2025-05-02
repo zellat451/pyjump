@@ -301,12 +301,30 @@ namespace pyjump
             LoadingForm loadingForm = null;
             try
             {
+                var isDeleteWhitelist = MessageBox.Show(
+                    "Do you want to delete the broken Whitelist entries?",
+                    "Confirmation",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning);
+
+                var isDeleteFiles = MessageBox.Show(
+                    "Do you want to delete the broken File entries?",
+                    "Confirmation",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning);
+
+                if (isDeleteFiles != DialogResult.Yes && isDeleteWhitelist != DialogResult.Yes) return;
+
                 InitializeEverything();
                 SingletonServices.LogForm.Log("Deleting broken entries...");
 
                 loadingForm = InitProgressBar();
 
-                await Methods.DeleteBrokenEntries(loadingForm, ScopedServices.CancellationTokenSource.Token);
+                await Methods.DeleteBrokenEntries(
+                    isDeleteFiles == DialogResult.Yes,
+                    isDeleteWhitelist == DialogResult.Yes,
+                    loadingForm,
+                    ScopedServices.CancellationTokenSource.Token);
 
                 SingletonServices.LogForm.Log("Broken entries deleted successfully.");
                 MessageBox.Show("Broken entries deleted successfully.");
