@@ -45,16 +45,8 @@ namespace pyjump.Services
                 {
                     var existingEntries = db.Whitelist.ToList();
 
-                    #region delete missing whitelist entries
-                    // 1. entries existing in the database but not in the new list > remove the entries from the database
-                    var toRemove = existingEntries.Where(x => !allWhitelistEntriesBag.Select(y => y.Id).Contains(x.Id)).ToList();
-                    db.Whitelist.RemoveRange(toRemove);
-                    SingletonServices.LogForm.Log($"Removed {toRemove.Count} entries from the database.");
-                    Debug.WriteLine($"Removed {toRemove.Count} entries from the database.");
-                    #endregion
-
                     #region add new whitelist entries
-                    // 2. entries existing in the new list but not in the database > add the entries to the database
+                    // 1. entries existing in the new list but not in the database > add the entries to the database
                     var toAdd = allWhitelistEntries.Where(x => !existingEntries.Select(y => y.Id).Contains(x.Id)).ToList();
                     db.Whitelist.AddRange(toAdd);
                     SingletonServices.LogForm.Log($"Added {toAdd.Count} entries to the database.");
@@ -62,7 +54,7 @@ namespace pyjump.Services
                     #endregion
 
                     #region update existing whitelist entries
-                    // 3. entries existing in both lists > update the entries in the database if the name | url | resource key is different
+                    // 2. entries existing in both lists > update the entries in the database if the name | url | resource key is different
                     var toUpdate = new List<WhitelistEntry>();
                     foreach (var entry in existingEntries)
                     {
@@ -111,7 +103,7 @@ namespace pyjump.Services
                         return;
                     }
 
-                    // commit the changes to the database
+                    // 3. commit the changes to the database
                     await db.SaveChangesAsync(cancellationToken);
                 }
             }
