@@ -151,8 +151,10 @@ No, Fren does not delete broken entries. It is not their job. They work hard eno
 1. `Scan Files`: Scans the whitelist for their files recursively. This may take some time. Only scans new files from the last time the whitelist entry was checked, to go quicker.
 1. `Reset Whitelist Times`: Resets the `LastChecked` date of all whitelist entries to null. This will force a complete scan of all files in the whitelist.
 1. `Delete broken entries`: Removes all broken entries from the DB, such as trashed files or folders, or those you don't have the permissions for anymore. This may take some time. This does not delete the folders or files which return an error `404 Not Found`, because it is possible that the API simply doesn't have the permissions to check them despite them being there.
+	- You can select to delete either the files or the folders, or both using the checkboxes next to the button.
 1. `Build sheets`: Uploads the files to the Google Sheets document.
-1. `Clear all data`: Clears all the data in the DB. Does not affect the data uploaded to the Google Sheets document. It will comfirm the deletion of Whitelist & Files separately.
+1. `Clear all data`: Clears all the data in the DB. Does not affect the data uploaded to the Google Sheets document.
+	- You can select to clear either the files or the folders, or both using the checkboxes next to the button.
 1. `:)`: The Fren button. It does everything for you. It scans the whitelist, scans the files, and uploads the data to the Google Sheets document. It also opens the document in your browser at the end.
 1. `Enable/Disable Logging`: Enables or disables copying logs in a local file. If active, all logs will be copied in a file named after today's date in the `logs` folder. The folder/file will be created if it doesn't exist, and appended to if it does. `false` by default, so we don't spam your disk with logs.
 1. `Enable/Disable Threading`: Enables or disables multithreading. If active, the application will use multiple threads to scan the files and folders. This is much faster, but it may cause issues with the Google API request limits. `true` by default with `5` threads, which should be within limit. 
