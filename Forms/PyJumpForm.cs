@@ -239,8 +239,23 @@ namespace pyjump
 
         private async void btnClearAll_Click(object sender, EventArgs e)
         {
+            var isClearWhitelist = cbClearW.Checked;
+            var isClearFiles = cbClearF.Checked;
+
+            if (!isClearWhitelist && !isClearFiles)
+            {
+                MessageBox.Show("Please select at least one option to clear.");
+                return;
+            }
+
+            var msgStart = "Are you sure you want to clear all the data? This will completely remove the saved";
+            var msgEnd = "permanently.";
+            var msg = isClearWhitelist && isClearFiles
+                ? $"{msgStart} Whitelist and Files {msgEnd}"
+                : $"{msgStart} {(isClearWhitelist ? "Whitelist" : "Files")} {msgEnd}";
+
             var result = MessageBox.Show(
-                "Are you sure you want to clear all the data? This will completely remove the saved Whitelist & Files.",
+                msg,
                 "Confirmation",
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Warning);
@@ -255,21 +270,9 @@ namespace pyjump
                 InitializeEverything();
                 SingletonServices.LogForm.Log("Clearing all data...");
 
-                var isClearWhitelist = MessageBox.Show(
-                    "Do you want to clear the Whitelist?",
-                    "Confirmation",
-                    MessageBoxButtons.YesNo,
-                    MessageBoxIcon.Warning);
-
-                var isClearFiles = MessageBox.Show(
-                    "Do you want to clear the Files?",
-                    "Confirmation",
-                    MessageBoxButtons.YesNo,
-                    MessageBoxIcon.Warning);
-
                 await Methods.ClearAllData(
-                    isClearFiles == DialogResult.OK ? null : [],
-                    isClearWhitelist == DialogResult.OK ? null : [],
+                    isClearFiles ? null : [],
+                    isClearWhitelist ? null : [],
                     cancellationToken: ScopedServices.CancellationTokenSource.Token
                 );
 
@@ -288,8 +291,22 @@ namespace pyjump
 
         private async void btnDeleteBroken_Click(object sender, EventArgs e)
         {
+            var isDeleteWhitelist = cbDelW.Checked;
+            var isDeleteFiles = cbDelF.Checked;
+
+            if (!isDeleteWhitelist && !isDeleteFiles)
+            {
+                MessageBox.Show("Please select at least one option to delete.");
+                return;
+            }
+
+            var msgStart = "Are you sure you want to delete all broken";
+            var msgEnd = "entries? This will take a while.";
+            var msg = isDeleteWhitelist && isDeleteFiles
+                ? $"{msgStart} Whitelist and Files {msgEnd}"
+                : $"{msgStart} {(isDeleteWhitelist ? "Whitelist" : "File")} {msgEnd}";
             var result = MessageBox.Show(
-                "Are you sure you want to delete all broken entries? This will take a while.",
+                msg,
                 "Confirmation",
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Warning);
@@ -301,28 +318,14 @@ namespace pyjump
             LoadingForm loadingForm = null;
             try
             {
-                var isDeleteWhitelist = MessageBox.Show(
-                    "Do you want to delete the broken Whitelist entries?",
-                    "Confirmation",
-                    MessageBoxButtons.YesNo,
-                    MessageBoxIcon.Warning);
-
-                var isDeleteFiles = MessageBox.Show(
-                    "Do you want to delete the broken File entries?",
-                    "Confirmation",
-                    MessageBoxButtons.YesNo,
-                    MessageBoxIcon.Warning);
-
-                if (isDeleteFiles != DialogResult.Yes && isDeleteWhitelist != DialogResult.Yes) return;
-
                 InitializeEverything();
                 SingletonServices.LogForm.Log("Deleting broken entries...");
 
                 loadingForm = InitProgressBar();
 
                 await Methods.DeleteBrokenEntries(
-                    isDeleteFiles == DialogResult.Yes,
-                    isDeleteWhitelist == DialogResult.Yes,
+                    isDeleteFiles,
+                    isDeleteWhitelist,
                     loadingForm,
                     ScopedServices.CancellationTokenSource.Token);
 

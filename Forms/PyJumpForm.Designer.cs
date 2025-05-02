@@ -48,16 +48,31 @@ namespace pyjump
             labelThreadCount = new Label();
             textBoxThreadCountLoad = new TextBox();
             btnDataImport = new Button();
-            panelData = new Panel();
+            panelImpExp = new Panel();
             btnDataExport = new Button();
+            button1 = new Button();
+            panelW = new Panel();
+            panelF = new Panel();
+            panelEdit = new Panel();
+            panelClear = new Panel();
+            panel1 = new Panel();
+            cbDelW = new CheckBox();
+            cbDelF = new CheckBox();
+            cbClearW = new CheckBox();
+            cbClearF = new CheckBox();
             panelThreading.SuspendLayout();
-            panelData.SuspendLayout();
+            panelImpExp.SuspendLayout();
+            panelW.SuspendLayout();
+            panelF.SuspendLayout();
+            panelEdit.SuspendLayout();
+            panelClear.SuspendLayout();
+            panel1.SuspendLayout();
             SuspendLayout();
             // 
             // btnScanFile
             // 
             btnScanFile.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-            btnScanFile.Location = new Point(271, 83);
+            btnScanFile.Location = new Point(7, 3);
             btnScanFile.Name = "btnScanFile";
             btnScanFile.Size = new Size(233, 87);
             btnScanFile.TabIndex = 0;
@@ -67,7 +82,7 @@ namespace pyjump
             // 
             // btnEditWhitelist
             // 
-            btnEditWhitelist.Location = new Point(271, 12);
+            btnEditWhitelist.Location = new Point(3, 3);
             btnEditWhitelist.Name = "btnEditWhitelist";
             btnEditWhitelist.Size = new Size(107, 45);
             btnEditWhitelist.TabIndex = 4;
@@ -77,7 +92,7 @@ namespace pyjump
             // 
             // btnScanWhitelist
             // 
-            btnScanWhitelist.Location = new Point(12, 83);
+            btnScanWhitelist.Location = new Point(3, 3);
             btnScanWhitelist.Name = "btnScanWhitelist";
             btnScanWhitelist.Size = new Size(233, 87);
             btnScanWhitelist.TabIndex = 5;
@@ -87,7 +102,7 @@ namespace pyjump
             // 
             // btnEditFiles
             // 
-            btnEditFiles.Location = new Point(397, 12);
+            btnEditFiles.Location = new Point(112, 3);
             btnEditFiles.Name = "btnEditFiles";
             btnEditFiles.Size = new Size(107, 45);
             btnEditFiles.TabIndex = 6;
@@ -97,9 +112,9 @@ namespace pyjump
             // 
             // btnResetWhitelistTimes
             // 
-            btnResetWhitelistTimes.Location = new Point(61, 176);
+            btnResetWhitelistTimes.Location = new Point(3, 96);
             btnResetWhitelistTimes.Name = "btnResetWhitelistTimes";
-            btnResetWhitelistTimes.Size = new Size(139, 30);
+            btnResetWhitelistTimes.Size = new Size(106, 39);
             btnResetWhitelistTimes.TabIndex = 7;
             btnResetWhitelistTimes.Text = "Reset Whitelist Times";
             btnResetWhitelistTimes.UseVisualStyleBackColor = true;
@@ -107,10 +122,9 @@ namespace pyjump
             // 
             // btnBuildSheets
             // 
-            btnBuildSheets.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            btnBuildSheets.Location = new Point(542, 83);
+            btnBuildSheets.Location = new Point(510, 86);
             btnBuildSheets.Name = "btnBuildSheets";
-            btnBuildSheets.Size = new Size(222, 87);
+            btnBuildSheets.Size = new Size(210, 87);
             btnBuildSheets.TabIndex = 8;
             btnBuildSheets.Text = "Build sheets";
             btnBuildSheets.UseVisualStyleBackColor = true;
@@ -129,9 +143,9 @@ namespace pyjump
             // btnFren
             // 
             btnFren.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            btnFren.Location = new Point(456, 236);
+            btnFren.Location = new Point(484, 266);
             btnFren.Name = "btnFren";
-            btnFren.Size = new Size(308, 182);
+            btnFren.Size = new Size(295, 172);
             btnFren.TabIndex = 10;
             btnFren.Text = ":)";
             btnFren.UseVisualStyleBackColor = true;
@@ -140,7 +154,7 @@ namespace pyjump
             // btnForceMatch
             // 
             btnForceMatch.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-            btnForceMatch.Location = new Point(330, 176);
+            btnForceMatch.Location = new Point(59, 94);
             btnForceMatch.Name = "btnForceMatch";
             btnForceMatch.Size = new Size(122, 30);
             btnForceMatch.TabIndex = 11;
@@ -151,9 +165,9 @@ namespace pyjump
             // btnClearAll
             // 
             btnClearAll.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            btnClearAll.Location = new Point(26, 385);
+            btnClearAll.Location = new Point(3, 12);
             btnClearAll.Name = "btnClearAll";
-            btnClearAll.Size = new Size(106, 33);
+            btnClearAll.Size = new Size(81, 76);
             btnClearAll.TabIndex = 12;
             btnClearAll.Text = "Clear all data";
             btnClearAll.UseVisualStyleBackColor = true;
@@ -161,9 +175,9 @@ namespace pyjump
             // 
             // btnDeleteBroken
             // 
-            btnDeleteBroken.Location = new Point(180, 224);
+            btnDeleteBroken.Location = new Point(3, 14);
             btnDeleteBroken.Name = "btnDeleteBroken";
-            btnDeleteBroken.Size = new Size(154, 86);
+            btnDeleteBroken.Size = new Size(78, 73);
             btnDeleteBroken.TabIndex = 13;
             btnDeleteBroken.Text = "Delete broken entries";
             btnDeleteBroken.UseVisualStyleBackColor = true;
@@ -172,10 +186,11 @@ namespace pyjump
             // btnLogging
             // 
             btnLogging.Anchor = AnchorStyles.Bottom;
-            btnLogging.Location = new Point(200, 384);
+            btnLogging.Location = new Point(210, 384);
             btnLogging.Name = "btnLogging";
             btnLogging.Size = new Size(86, 54);
             btnLogging.TabIndex = 14;
+            btnLogging.Text = "logging";
             btnLogging.UseVisualStyleBackColor = true;
             btnLogging.Click += btnLogging_Click;
             // 
@@ -186,6 +201,7 @@ namespace pyjump
             btnThreading.Name = "btnThreading";
             btnThreading.Size = new Size(86, 54);
             btnThreading.TabIndex = 15;
+            btnThreading.Text = "threading";
             btnThreading.UseVisualStyleBackColor = true;
             btnThreading.Click += btnThreading_Click;
             // 
@@ -196,7 +212,7 @@ namespace pyjump
             panelThreading.Controls.Add(labelThreadCount);
             panelThreading.Controls.Add(textBoxThreadCountLoad);
             panelThreading.Controls.Add(btnThreading);
-            panelThreading.Location = new Point(292, 316);
+            panelThreading.Location = new Point(311, 316);
             panelThreading.Name = "panelThreading";
             panelThreading.Size = new Size(131, 122);
             panelThreading.TabIndex = 16;
@@ -229,7 +245,7 @@ namespace pyjump
             // 
             // btnDataImport
             // 
-            btnDataImport.Location = new Point(21, 25);
+            btnDataImport.Location = new Point(3, 42);
             btnDataImport.Name = "btnDataImport";
             btnDataImport.Size = new Size(85, 34);
             btnDataImport.TabIndex = 17;
@@ -237,19 +253,19 @@ namespace pyjump
             btnDataImport.UseVisualStyleBackColor = true;
             btnDataImport.Click += btnDataImport_Click;
             // 
-            // panelData
+            // panelImpExp
             // 
-            panelData.Anchor = AnchorStyles.Left;
-            panelData.Controls.Add(btnDataExport);
-            panelData.Controls.Add(btnDataImport);
-            panelData.Location = new Point(12, 224);
-            panelData.Name = "panelData";
-            panelData.Size = new Size(126, 127);
-            panelData.TabIndex = 18;
+            panelImpExp.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+            panelImpExp.Controls.Add(btnDataExport);
+            panelImpExp.Controls.Add(btnDataImport);
+            panelImpExp.Location = new Point(203, 246);
+            panelImpExp.Name = "panelImpExp";
+            panelImpExp.Size = new Size(102, 84);
+            panelImpExp.TabIndex = 18;
             // 
             // btnDataExport
             // 
-            btnDataExport.Location = new Point(21, 63);
+            btnDataExport.Location = new Point(3, 3);
             btnDataExport.Name = "btnDataExport";
             btnDataExport.Size = new Size(85, 33);
             btnDataExport.TabIndex = 18;
@@ -257,30 +273,133 @@ namespace pyjump
             btnDataExport.UseVisualStyleBackColor = true;
             btnDataExport.Click += btnDataExport_Click;
             // 
+            // button1
+            // 
+            button1.Location = new Point(129, 96);
+            button1.Name = "button1";
+            button1.Size = new Size(107, 39);
+            button1.TabIndex = 19;
+            button1.Text = "button1";
+            button1.UseVisualStyleBackColor = true;
+            // 
+            // panelW
+            // 
+            panelW.Controls.Add(btnScanWhitelist);
+            panelW.Controls.Add(btnResetWhitelistTimes);
+            panelW.Controls.Add(button1);
+            panelW.Location = new Point(12, 83);
+            panelW.Name = "panelW";
+            panelW.Size = new Size(243, 141);
+            panelW.TabIndex = 20;
+            // 
+            // panelF
+            // 
+            panelF.Controls.Add(btnScanFile);
+            panelF.Controls.Add(btnForceMatch);
+            panelF.Location = new Point(261, 83);
+            panelF.Name = "panelF";
+            panelF.Size = new Size(243, 141);
+            panelF.TabIndex = 21;
+            // 
+            // panelEdit
+            // 
+            panelEdit.Controls.Add(btnEditWhitelist);
+            panelEdit.Controls.Add(btnEditFiles);
+            panelEdit.Location = new Point(268, 9);
+            panelEdit.Name = "panelEdit";
+            panelEdit.Size = new Size(222, 68);
+            panelEdit.TabIndex = 22;
+            // 
+            // panelClear
+            // 
+            panelClear.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+            panelClear.Controls.Add(cbClearF);
+            panelClear.Controls.Add(cbClearW);
+            panelClear.Controls.Add(btnClearAll);
+            panelClear.Location = new Point(12, 338);
+            panelClear.Name = "panelClear";
+            panelClear.Size = new Size(179, 100);
+            panelClear.TabIndex = 25;
+            // 
+            // panel1
+            // 
+            panel1.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+            panel1.Controls.Add(cbDelF);
+            panel1.Controls.Add(cbDelW);
+            panel1.Controls.Add(btnDeleteBroken);
+            panel1.Location = new Point(12, 232);
+            panel1.Name = "panel1";
+            panel1.Size = new Size(179, 100);
+            panel1.TabIndex = 26;
+            // 
+            // cbDelW
+            // 
+            cbDelW.AutoSize = true;
+            cbDelW.Location = new Point(87, 31);
+            cbDelW.Name = "cbDelW";
+            cbDelW.Size = new Size(72, 19);
+            cbDelW.TabIndex = 14;
+            cbDelW.Text = "Whitelist";
+            cbDelW.UseVisualStyleBackColor = true;
+            // 
+            // cbDelF
+            // 
+            cbDelF.AutoSize = true;
+            cbDelF.Location = new Point(87, 56);
+            cbDelF.Name = "cbDelF";
+            cbDelF.Size = new Size(49, 19);
+            cbDelF.TabIndex = 15;
+            cbDelF.Text = "Files";
+            cbDelF.UseVisualStyleBackColor = true;
+            // 
+            // cbClearW
+            // 
+            cbClearW.AutoSize = true;
+            cbClearW.Location = new Point(87, 26);
+            cbClearW.Name = "cbClearW";
+            cbClearW.Size = new Size(72, 19);
+            cbClearW.TabIndex = 13;
+            cbClearW.Text = "Whitelist";
+            cbClearW.UseVisualStyleBackColor = true;
+            // 
+            // cbClearF
+            // 
+            cbClearF.AutoSize = true;
+            cbClearF.Location = new Point(87, 51);
+            cbClearF.Name = "cbClearF";
+            cbClearF.Size = new Size(49, 19);
+            cbClearF.TabIndex = 14;
+            cbClearF.Text = "Files";
+            cbClearF.UseVisualStyleBackColor = true;
+            // 
             // PyJumpForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
-            Controls.Add(panelData);
+            Controls.Add(panel1);
+            Controls.Add(panelClear);
+            Controls.Add(panelEdit);
+            Controls.Add(panelF);
+            Controls.Add(panelW);
+            Controls.Add(panelImpExp);
             Controls.Add(panelThreading);
             Controls.Add(btnLogging);
-            Controls.Add(btnDeleteBroken);
-            Controls.Add(btnClearAll);
-            Controls.Add(btnForceMatch);
             Controls.Add(btnFren);
             Controls.Add(btnGoToSheet);
             Controls.Add(btnBuildSheets);
-            Controls.Add(btnResetWhitelistTimes);
-            Controls.Add(btnEditFiles);
-            Controls.Add(btnScanWhitelist);
-            Controls.Add(btnEditWhitelist);
-            Controls.Add(btnScanFile);
             Name = "PyJumpForm";
             Text = "pyjump";
             panelThreading.ResumeLayout(false);
             panelThreading.PerformLayout();
-            panelData.ResumeLayout(false);
+            panelImpExp.ResumeLayout(false);
+            panelW.ResumeLayout(false);
+            panelF.ResumeLayout(false);
+            panelEdit.ResumeLayout(false);
+            panelClear.ResumeLayout(false);
+            panelClear.PerformLayout();
+            panel1.ResumeLayout(false);
+            panel1.PerformLayout();
             ResumeLayout(false);
         }
 
@@ -304,7 +423,17 @@ namespace pyjump
         private TextBox textBoxThreadCountLoad;
         private Button btnThreadCount;
         private Button btnDataImport;
-        private Panel panelData;
+        private Panel panelImpExp;
         private Button btnDataExport;
+        private Button button1;
+        private Panel panelW;
+        private Panel panelF;
+        private Panel panelEdit;
+        private Panel panelClear;
+        private Panel panel1;
+        private CheckBox cbClearF;
+        private CheckBox cbClearW;
+        private CheckBox cbDelF;
+        private CheckBox cbDelW;
     }
 }
