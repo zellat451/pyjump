@@ -4,7 +4,8 @@ This tool helps crawling Google Drive files, categorizing them, and uploading th
 
 It's designed to work locally on your machine and uses your personal Google account for access.
 
-(Yes, I know it's in c#, I coded the damned thing. It just started as a python program, and then I forgot to rename it when I switched language. Do me a solid and assume it means 'pretty jump listing' or something.)
+(Yes, I know it's in c#, I coded the damned thing. It just started as a python program, and then I forgot to rename it when I switched language. 
+Do me a solid and pretend it means 'pretty jump listing' or something.)
 
 
 [Click here to download the zip](https://github.com/zellat451/pyjump/releases/latest)
@@ -29,7 +30,8 @@ If you want to log on another identity, delete the `token.json` folder/file in t
 
 Do **not** share your token file publicly. It is your google account identity and possesses all your access rights.
 
-All google drive api-using projects require an identity on Google Cloud Console. I made one for myself, which you can still use, but you can create your own if you want.
+All google drive api-using projects require an identity on Google Cloud Console. 
+I made one for myself, which you can still use, but you can create your own if you want.
 
 If you want to use your own Google Cloud Console project:
 1. Go to the [Google Cloud Console](https://console.cloud.google.com/)
@@ -95,9 +97,9 @@ By default, Folders are `j` (Jump) and files take the same type as their folder.
 2. Connect to your Google account (if not already done)
 3. Click the button `scan Whitelist` to start scanning the `mainDrives` for their folders recursively. This may take some time.
 4. You can use the button `Edit Whitelist` to see what's registered in the whitelist. 
-   	- You can also add folders manually, but be careful with that. They will be deleted the next time you scan the whitelist.
+   	- You can also add folders manually.
 	- You can also remove folders manually, but be careful with that. They will be added the next time you scan the whitelist.
-   	- Folders have many information. What interests you is `Type`. It can take many values:
+   	- Folders have many informations. What interests you is `Type`. It can take many values:
 		- `j`: Jump. This is the default type. It means that the folder is a jump folder. All files found in this folder will be uploaded to the `Jumps` list.
 		- `s`: Story. This means that the folder is a story folder. All files found in this folder will be uploaded to the `Stories` list.
 		- `o`: Other. This type is never used in the application. It is just a placeholder for future use if you need it.
@@ -110,7 +112,7 @@ By default, Folders are `j` (Jump) and files take the same type as their folder.
 	- You can also remove files manually, but be careful with that.
 		- If the files you removed were in the past, then the scanning will not find them again.
 		- You can use the button `Reset Whitelist Times` to force a complete scan once again.
-	- Files have many information. What interests you is that every file is linked to a whitelist entry and shares its `Type` by default. It can take many values:
+	- Files have many informations. What interests you is that every file is linked to a whitelist entry and shares its `Type` by default. It can take many values:
 		- `j`: Jump. It means that the file is a jump file. It will be uploaded to the `Jumps` list.
 		- `s`: Story. It means that the file is a story file. It will be uploaded to the `Stories` list.
 		- `o`: Other. It means that the file is a file of another type. It will be uploaded to the `Others` list.
@@ -148,11 +150,11 @@ No, Fren does not delete broken entries. It is not their job. They work hard eno
 1. `Scan Whitelist`: Scans the `mainDrives` for their folders recursively. This may take some time.
 1. `Scan Files`: Scans the whitelist for their files recursively. This may take some time. Only scans new files from the last time the whitelist entry was checked, to go quicker.
 1. `Reset Whitelist Times`: Resets the `LastChecked` date of all whitelist entries to null. This will force a complete scan of all files in the whitelist.
-1. `Delete broken entries`: Removes all broken entries from the DB, such as trashed files or folders, or those you don't have the permissions for anymore. This may take some time.
+1. `Delete broken entries`: Removes all broken entries from the DB, such as trashed files or folders, or those you don't have the permissions for anymore. This may take some time. This does not delete the folders or files which return an error `404 Not Found`, because it is possible that the API simply doesn't have the permissions to check them despite them being there.
 1. `Build sheets`: Uploads the files to the Google Sheets document.
-1. `Clear all data`: Clears all the data in the DB. Does not affect the data uploaded to the Google Sheets document.
+1. `Clear all data`: Clears all the data in the DB. Does not affect the data uploaded to the Google Sheets document. It will comfirm the deletion of Whitelist & Files separately.
 1. `:)`: The Fren button. It does everything for you. It scans the whitelist, scans the files, and uploads the data to the Google Sheets document. It also opens the document in your browser at the end.
-1. `Enable/Disable Logging`: Enables or disables copying logs in a file. If active, all logs will be copied in a file named after today's date in the `logs` folder. The file will be created if it doesn't exist, and appended to if it does. `false` by default, so we don't spam your disk with logs.
+1. `Enable/Disable Logging`: Enables or disables copying logs in a local file. If active, all logs will be copied in a file named after today's date in the `logs` folder. The folder/file will be created if it doesn't exist, and appended to if it does. `false` by default, so we don't spam your disk with logs.
 1. `Enable/Disable Threading`: Enables or disables multithreading. If active, the application will use multiple threads to scan the files and folders. This is much faster, but it may cause issues with the Google API request limits. `true` by default with `5` threads, which should be within limit. 
 You can dynamically change the number of threads with the text box above the Enabling button, or before launch in the appsettings.json file. The application will use the number of threads specified in the file. It will use the default value of `5` threads. If you set it to a negative number, it will use `1` thread.
 1. `Import/Export data`: Imports or exports the data in the DB to a json file. This is useful if you want to backup your data, especially between version updates. You can decide on the export folder, but the name is automatically generated from the current date. Imported data will overwrite the current data in the DB. The import file must be a json file, and it must be in the same format as the export file.
@@ -161,7 +163,7 @@ You can dynamically change the number of threads with the text box above the Ena
 
 # End notes
 
-Unfortunately, we can't use multithreading due to api constraints. Google puts a limit on how many requests you can make on a minute, and I haven't found a way to make my tasks wait it out and try again.
-I tried, and it's sooooo much faster... but then it locks up after a few hundred files and never starts again. So we're taking it one by one for now. Still faster and easier to use than the google app script, at least for me.
+<s>Unfortunately, we can't use multithreading due to api constraints. Google puts a limit on how many requests you can make on a minute, and I haven't found a way to make my tasks wait it out and try again.
+I tried, and it's sooooo much faster... but then it locks up after a few hundred files and never starts again. So we're taking it one by one for now. Still faster and easier to use than the google app script, at least for me.</s>
 
 **As of 2025-04-30, this app finally supports multithreading. It is much faster, but it is still limited by the Google APIs.**
