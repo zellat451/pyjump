@@ -22,7 +22,12 @@ namespace pyjump.Services
             DriveService = null;
             SheetsService = null;
             ActiveSpreadsheet = null;
-            CancellationTokenSource.Cancel();
+
+            try
+            {
+                CancellationTokenSource.Cancel();
+            }
+            catch (ObjectDisposedException) { }
             CancellationTokenSource.Dispose();
         }
 
