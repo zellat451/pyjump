@@ -1058,6 +1058,12 @@ namespace pyjump.Services
         {
             try
             {
+                if (filesToDelete != null && filesToDelete.Count == 0 && foldersToDelete != null && foldersToDelete.Count == 0)
+                {
+                    SingletonServices.LogForm.Log("❌ No files or folders to delete.");
+                    return;
+                }
+
                 cancellationToken.ThrowIfCancellationRequested();
                 using (var db = new AppDbContext())
                 {

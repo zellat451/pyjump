@@ -255,7 +255,23 @@ namespace pyjump
                 InitializeEverything();
                 SingletonServices.LogForm.Log("Clearing all data...");
 
-                await Methods.ClearAllData(cancellationToken: ScopedServices.CancellationTokenSource.Token);
+                var isClearWhitelist = MessageBox.Show(
+                    "Do you want to clear the Whitelist?",
+                    "Confirmation",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning);
+
+                var isClearFiles = MessageBox.Show(
+                    "Do you want to clear the Files?",
+                    "Confirmation",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning);
+
+                await Methods.ClearAllData(
+                    isClearFiles == DialogResult.OK ? null : [],
+                    isClearWhitelist == DialogResult.OK ? null : [],
+                    cancellationToken: ScopedServices.CancellationTokenSource.Token
+                );
 
                 SingletonServices.LogForm.Log("All data cleared successfully.");
                 MessageBox.Show("All data cleared successfully.");
