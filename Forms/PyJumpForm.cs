@@ -19,15 +19,14 @@ namespace pyjump
         #region button methods
         private async void btnScanFiles_Click(object sender, EventArgs e)
         {
-            LoadingForm loadingForm = null;
+            
             try
             {
                 InitializeEverything();
-                SingletonServices.LogForm.Log("Starting file scan...");
+                SingletonServices.LogForm.Log("Starting file scan...");                
 
-                loadingForm = InitProgressBar();
+                await Methods.ScanFiles(ScopedServices.CancellationTokenSource.Token);
 
-                await Methods.ScanFiles(loadingForm, ScopedServices.CancellationTokenSource.Token);
                 SingletonServices.LogForm.Log("File scan completed.");
                 MessageBox.Show("File scan completed.");
             }
@@ -36,9 +35,7 @@ namespace pyjump
                 MessageBox.Show($"Something went wrong: {ex}");
             }
             finally
-            {
-
-                loadingForm?.Close();
+            {                
                 ClearEverything();
             }
         }
@@ -49,7 +46,9 @@ namespace pyjump
             {
                 InitializeEverything();
                 SingletonServices.LogForm.Log("Starting whitelist scan...");
+
                 await Methods.ScanWhitelist(ScopedServices.CancellationTokenSource.Token);
+
                 SingletonServices.LogForm.Log("Whitelist scan completed.");
                 MessageBox.Show("Whitelist scan completed.");
             }
@@ -94,15 +93,13 @@ namespace pyjump
 
         private async void btnBuildSheets_Click(object sender, EventArgs e)
         {
-            LoadingForm loadingForm = null;
+            
             try
             {
                 InitializeEverything();
-                SingletonServices.LogForm.Log("Building sheets...");
+                SingletonServices.LogForm.Log("Building sheets...");                
 
-                loadingForm = InitProgressBar();
-
-                await Methods.BuildSheets(loadingForm, ScopedServices.CancellationTokenSource.Token);
+                await Methods.BuildSheets(ScopedServices.CancellationTokenSource.Token);
 
                 SingletonServices.LogForm.Log("Sheets built successfully.");
                 MessageBox.Show("Sheets built successfully.");
@@ -112,8 +109,7 @@ namespace pyjump
                 MessageBox.Show($"Something went wrong: {ex}");
             }
             finally
-            {
-                loadingForm?.Close();
+            {                
                 ClearEverything();
             }
         }
@@ -160,7 +156,7 @@ namespace pyjump
         {
             // Fren resets all scoped services after every method call just in case, because Fren is a good fren.
             // And also, the two times I tried to use the same scoped service, it broke the database.
-            LoadingForm loadingForm = null;
+            
             try
             {
                 InitializeEverything();
@@ -178,10 +174,9 @@ namespace pyjump
                 {
                     // scan files
                     ClearEverything(true);
-                    InitializeEverything();
-                    loadingForm?.Close();
-                    loadingForm = InitProgressBar();
-                    await Methods.ScanFiles(loadingForm, ScopedServices.CancellationTokenSource.Token); 
+                    InitializeEverything();                    
+                    
+                    await Methods.ScanFiles(ScopedServices.CancellationTokenSource.Token); 
                 }
 
                 if (cbFrenDelLinksW.Checked || cbFrenDelLinksF.Checked)
@@ -191,13 +186,11 @@ namespace pyjump
 
                     // delete links
                     ClearEverything(true);
-                    InitializeEverything();
-                    loadingForm?.Close();
-                    loadingForm = InitProgressBar();
+                    InitializeEverything();                    
+                    
                     await Methods.DeleteBrokenEntries(
                         isDeleteFiles,
                         isDeleteWhitelist,
-                        loadingForm,
                         ScopedServices.CancellationTokenSource.Token);
                 }
 
@@ -205,10 +198,9 @@ namespace pyjump
                 {
                     // build sheets
                     ClearEverything(true);
-                    InitializeEverything();
-                    loadingForm?.Close();
-                    loadingForm = InitProgressBar();
-                    await Methods.BuildSheets(loadingForm, ScopedServices.CancellationTokenSource.Token); 
+                    InitializeEverything();                    
+                    
+                    await Methods.BuildSheets(ScopedServices.CancellationTokenSource.Token); 
                 }
 
                 if (cbFrenOpenSheet.Checked)
@@ -227,8 +219,7 @@ namespace pyjump
                 MessageBox.Show($"Something went wrong: {ex}");
             }
             finally
-            {
-                loadingForm?.Close();
+            {                
                 ClearEverything();
             }
         }
@@ -245,16 +236,13 @@ namespace pyjump
             {
                 return; // If user says No, exit the function early
             }
-
-            LoadingForm loadingForm = null;
+            
             try
             {
                 InitializeEverything();
-                SingletonServices.LogForm.Log("Starting force match...");
+                SingletonServices.LogForm.Log("Starting force match...");                
 
-                loadingForm = InitProgressBar();
-
-                await Methods.ForceMatchType(loadingForm, ScopedServices.CancellationTokenSource.Token);
+                await Methods.ForceMatchType(ScopedServices.CancellationTokenSource.Token);
 
                 SingletonServices.LogForm.Log("Force match completed.");
                 MessageBox.Show("Force match completed.");
@@ -264,8 +252,7 @@ namespace pyjump
                 MessageBox.Show($"Something went wrong: {ex}");
             }
             finally
-            {
-                loadingForm?.Close();
+            {                
                 ClearEverything();
             }
         }
@@ -348,18 +335,14 @@ namespace pyjump
                 return; // If user says No, exit the function early
             }
 
-            LoadingForm loadingForm = null;
             try
             {
                 InitializeEverything();
                 SingletonServices.LogForm.Log("Deleting broken entries...");
 
-                loadingForm = InitProgressBar();
-
                 await Methods.DeleteBrokenEntries(
                     isDeleteFiles,
                     isDeleteWhitelist,
-                    loadingForm,
                     ScopedServices.CancellationTokenSource.Token);
 
                 SingletonServices.LogForm.Log("Broken entries deleted successfully.");
@@ -371,7 +354,6 @@ namespace pyjump
             }
             finally
             {
-                loadingForm?.Close();
                 ClearEverything();
             }
         }
@@ -578,6 +560,7 @@ namespace pyjump
             Cursor.Current = Cursors.WaitCursor;
             SingletonServices.LogForm.Show();
             ScopedServices.Initialize();
+            ScopedServices.ResetProgressBar();
         }
 
         private void ClearEverything(bool keepLog = false)
@@ -586,13 +569,6 @@ namespace pyjump
             if (!keepLog) SingletonServices.LogForm.Hide();
             this.Enabled = true;
             Cursor.Current = Cursors.Default;
-        }
-
-        private static LoadingForm InitProgressBar()
-        {
-            var loadingForm = new LoadingForm();
-            loadingForm.Show();
-            return loadingForm;
         }
         #endregion
     }

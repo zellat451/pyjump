@@ -473,7 +473,7 @@ namespace pyjump.Services
             }
         }
 
-        public static async Task<List<T>> GetInaccessibleEntries<T>(List<T> entries, LoadingForm loadingForm, CancellationToken cancellationToken = default)
+        public static async Task<List<T>> GetInaccessibleEntries<T>(List<T> entries, CancellationToken cancellationToken = default)
             where T : ISheetDataEntity
         {
             try
@@ -484,17 +484,17 @@ namespace pyjump.Services
 
                 var isFolderCheck = typeof(T) == typeof(WhitelistEntry);
 
-                loadingForm.PrepareLoadingBar($"Checking {(isFolderCheck ? "folders" : "files")}", entries.Count);
+                ScopedServices.LoadingForm.PrepareLoadingBar($"Checking {(isFolderCheck ? "folders" : "files")}", entries.Count);
 
                 if (SingletonServices.AllowThreading)
                 {
                     // Multi-threaded mode
-                    return await GetInaccessibleEntriesMultiThread(entries, loadingForm, isFolderCheck, cancellationToken);
+                    return await GetInaccessibleEntriesMultiThread(entries, isFolderCheck, cancellationToken);
                 }
                 else
                 {
                     // Single-threaded mode
-                    return await GetInaccessibleEntriesSingleThread(entries, loadingForm, isFolderCheck, cancellationToken);
+                    return await GetInaccessibleEntriesSingleThread(entries, isFolderCheck, cancellationToken);
                 }
 
             }
@@ -510,7 +510,7 @@ namespace pyjump.Services
             }
         }
 
-        private static async Task<List<T>> GetInaccessibleEntriesSingleThread<T>(List<T> entries, LoadingForm loadingForm, bool isFolderCheck, CancellationToken cancellationToken = default)
+        private static async Task<List<T>> GetInaccessibleEntriesSingleThread<T>(List<T> entries, bool isFolderCheck, CancellationToken cancellationToken = default)
             where T : ISheetDataEntity
         {
             try
@@ -519,7 +519,7 @@ namespace pyjump.Services
 
                 var brokenEntries = new List<T>();
 
-                loadingForm.PrepareLoadingBar($"Checking {(isFolderCheck ? "folders" : "files")}", entries.Count);
+                ScopedServices.LoadingForm.PrepareLoadingBar($"Checking {(isFolderCheck ? "folders" : "files")}", entries.Count);
 
                 foreach (var entry in entries)
                 {
@@ -575,7 +575,7 @@ namespace pyjump.Services
                     }
                     finally
                     {
-                        loadingForm.IncrementProgress();
+                        ScopedServices.LoadingForm.IncrementProgress();
                     }
                 }
 
@@ -593,7 +593,7 @@ namespace pyjump.Services
             }
         }
 
-        private static async Task<List<T>> GetInaccessibleEntriesMultiThread<T>(List<T> entries, LoadingForm loadingForm, bool isFolderCheck, CancellationToken cancellationToken = default)
+        private static async Task<List<T>> GetInaccessibleEntriesMultiThread<T>(List<T> entries, bool isFolderCheck, CancellationToken cancellationToken = default)
             where T : ISheetDataEntity
         {
             try
@@ -664,7 +664,7 @@ namespace pyjump.Services
                                     }
                                     finally
                                     {
-                                        loadingForm.IncrementProgress();
+                                        ScopedServices.LoadingForm.IncrementProgress();
                                     }
                                 }
                                 catch (OperationCanceledException)

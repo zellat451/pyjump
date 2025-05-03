@@ -43,10 +43,12 @@ namespace pyjump.Forms
             }
             else
             {
+                this.Show();
                 LabelText = labelText;
                 progressBar.Maximum = max;
                 progressBar.Value = 0;
                 labelProgress.Text = $"{LabelText}... 0%";
+                labelProgress.Refresh();
             }
         }
 

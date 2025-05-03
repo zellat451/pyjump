@@ -126,7 +126,7 @@ namespace pyjump.Services
         /// </summary>
         /// <param name="loadingForm"></param>
         /// <returns></returns>
-        public static async Task ScanFiles(LoadingForm loadingForm, CancellationToken cancellationToken = default)
+        public static async Task ScanFiles(CancellationToken cancellationToken = default)
         {
             try
             {
@@ -141,7 +141,7 @@ namespace pyjump.Services
                 }
                 #endregion
 
-                loadingForm.PrepareLoadingBar("Scanning files", whitelistEntries.Count);
+                ScopedServices.LoadingForm.PrepareLoadingBar("Scanning files", whitelistEntries.Count);
 
                 cancellationToken.ThrowIfCancellationRequested();
 
@@ -150,11 +150,11 @@ namespace pyjump.Services
 
                 if (!SingletonServices.AllowThreading)
                 {
-                    await ScanFilesSingleThread(whitelistEntries, loadingForm, cancellationToken);
+                    await ScanFilesSingleThread(whitelistEntries, cancellationToken);
                 }
                 else
                 {
-                    await ScanFilesMultiThread(whitelistEntries, loadingForm, cancellationToken);
+                    await ScanFilesMultiThread(whitelistEntries, cancellationToken);
                 }
 
                 cancellationToken.ThrowIfCancellationRequested();
@@ -167,9 +167,9 @@ namespace pyjump.Services
 
                 cancellationToken.ThrowIfCancellationRequested();
 
-                loadingForm.PrepareLoadingBar("Treating sets for files", allFiles.Count);
+                ScopedServices.LoadingForm.PrepareLoadingBar("Treating sets for files", allFiles.Count);
 
-                await TreatSetsForFiles(allFiles, loadingForm, cancellationToken);
+                await TreatSetsForFiles(allFiles, cancellationToken);
             }
             catch (OperationCanceledException)
             {
@@ -183,7 +183,7 @@ namespace pyjump.Services
             }
         }
 
-        private static async Task ScanFilesSingleThread(List<WhitelistEntry> whitelistEntries, LoadingForm loadingForm, CancellationToken cancellationToken = default)
+        private static async Task ScanFilesSingleThread(List<WhitelistEntry> whitelistEntries, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -206,7 +206,7 @@ namespace pyjump.Services
 
                     await ScannedFilesToDb([(w, scannedFileEntries)], cancellationToken: cancellationToken);
 
-                    loadingForm.IncrementProgress();
+                    ScopedServices.LoadingForm.IncrementProgress();
                 }
 
             }
@@ -222,7 +222,7 @@ namespace pyjump.Services
             }
         }
 
-        public static async Task ScanFilesMultiThread(List<WhitelistEntry> whitelistEntries, LoadingForm loadingForm, CancellationToken cancellationToken = default)
+        public static async Task ScanFilesMultiThread(List<WhitelistEntry> whitelistEntries, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -266,7 +266,7 @@ namespace pyjump.Services
                                         whitelistUpdates.Add(w);
                                     }
 
-                                    loadingForm.IncrementProgress();
+                                    ScopedServices.LoadingForm.IncrementProgress();
                                 }
                                 catch (OperationCanceledException)
                                 {
@@ -304,7 +304,7 @@ namespace pyjump.Services
                 await Task.Run(countdown.Wait, cancellationToken);
 
                 // Final DB write
-                await ScannedFilesToDb([.. whitelistUpdates.Select(w => (w, fileResults.Where(f => f.FolderId == w.Id).ToList()))], loadingForm, cancellationToken);
+                await ScannedFilesToDb([.. whitelistUpdates.Select(w => (w, fileResults.Where(f => f.FolderId == w.Id).ToList()))], cancellationToken);
             }
             catch (OperationCanceledException)
             {
@@ -318,11 +318,11 @@ namespace pyjump.Services
             }
         }
 
-        private static async Task ScannedFilesToDb(List<(WhitelistEntry whitelist, List<FileEntry> scannedFileEntries)> sets, LoadingForm loadingForm = null, CancellationToken cancellationToken = default)
+        private static async Task ScannedFilesToDb(List<(WhitelistEntry whitelist, List<FileEntry> scannedFileEntries)> sets = null, CancellationToken cancellationToken = default)
         {
             try
             {
-                loadingForm?.PrepareLoadingBar("Saving files to database", sets.Count);
+                ScopedServices.LoadingForm?.PrepareLoadingBar("Saving files to database", sets.Count);
                 foreach (var (whitelist, scannedFileEntries) in sets)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
@@ -448,7 +448,7 @@ namespace pyjump.Services
                         }
                     }
 
-                    loadingForm?.IncrementProgress();
+                    ScopedServices.LoadingForm?.IncrementProgress();
                 }
             }
             catch (OperationCanceledException)
@@ -470,7 +470,7 @@ namespace pyjump.Services
         /// <param name="fileEntries"></param>
         /// <param name="loadingForm"></param>
         /// <returns></returns>
-        private static async Task TreatSetsForFiles(List<FileEntry> fileEntries, LoadingForm loadingForm, CancellationToken cancellationToken = default)
+        private static async Task TreatSetsForFiles(List<FileEntry> fileEntries, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -491,7 +491,7 @@ namespace pyjump.Services
                     // 1. check if the file is already treated
                     if (treatedIds.Contains(file.Id))
                     {
-                        loadingForm.IncrementProgress();
+                        ScopedServices.LoadingForm.IncrementProgress();
                         continue;
                     }
 
@@ -672,7 +672,7 @@ namespace pyjump.Services
                     }
 
                     SingletonServices.LogForm.Log($"✅ Set created/updated for {similarFiles.Count} files.");
-                    loadingForm.IncrementProgress();
+                    ScopedServices.LoadingForm.IncrementProgress();
                 }
             }
             catch (OperationCanceledException)
@@ -692,7 +692,7 @@ namespace pyjump.Services
         /// </summary>
         /// <param name="loadingForm"></param>
         /// <returns></returns>
-        public static async Task ForceMatchType(LoadingForm loadingForm, CancellationToken cancellationToken = default)
+        public static async Task ForceMatchType(CancellationToken cancellationToken = default)
         {
             try
             {
@@ -709,7 +709,7 @@ namespace pyjump.Services
 
                 var filesToCheck = allFiles.Where(x => !string.IsNullOrWhiteSpace(x.FolderId)).ToList();
 
-                loadingForm.PrepareLoadingBar("Forcing files to match type with folder", filesToCheck.Count);
+                ScopedServices.LoadingForm.PrepareLoadingBar("Forcing files to match type with folder", filesToCheck.Count);
 
                 foreach (var file in filesToCheck)
                 {
@@ -720,7 +720,7 @@ namespace pyjump.Services
                     if (whitelistEntry == null)
                     {
                         SingletonServices.LogForm.Log($"❌ Whitelist entry not found for file {file.Name} ({file.Id})");
-                        loadingForm.IncrementProgress();
+                        ScopedServices.LoadingForm.IncrementProgress();
                         continue;
                     }
                     else
@@ -739,7 +739,7 @@ namespace pyjump.Services
                                 catch (Exception e)
                                 {
                                     SingletonServices.LogForm.Log($"Error updating file type: {e}");
-                                    loadingForm.IncrementProgress();
+                                    ScopedServices.LoadingForm.IncrementProgress();
                                     continue;
                                 }
                                 await db.SaveChangesAsync(cancellationToken);
@@ -747,7 +747,7 @@ namespace pyjump.Services
                             SingletonServices.LogForm.Log($"✅ File {file.Name} ({file.Id}) updated to match folder type {whitelistEntry.Type}.");
                         }
 
-                        loadingForm.IncrementProgress();
+                        ScopedServices.LoadingForm.IncrementProgress();
                     }
                 }
             }
@@ -773,7 +773,7 @@ namespace pyjump.Services
         /// <param name="loadingForm"></param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        private static async Task UploadToSheetAsync<T>(List<T> entries, string sheetName, LoadingForm loadingForm, CancellationToken cancellationToken = default)
+        private static async Task UploadToSheetAsync<T>(List<T> entries, string sheetName, CancellationToken cancellationToken = default)
             where T : ISheetDataEntity
         {
             try
@@ -867,7 +867,7 @@ namespace pyjump.Services
                         Values = data
                     });
 
-                    loadingForm.IncrementProgress();
+                    ScopedServices.LoadingForm.IncrementProgress();
                 }
 
                 // 3.3: Write data starting from row 1 (avoiding header)
@@ -904,13 +904,13 @@ namespace pyjump.Services
         /// </summary>
         /// <param name="loadingForm"></param>
         /// <returns></returns>
-        public static async Task BuildSheets(LoadingForm loadingForm, CancellationToken cancellationToken = default)
+        public static async Task BuildSheets(CancellationToken cancellationToken = default)
         {
             try
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                loadingForm.PrepareLoadingBar("Building sheets - Initialization", 2);
+                ScopedServices.LoadingForm.PrepareLoadingBar("Building sheets - Initialization", 2);
 
                 // 0. initialize by getting all file entries from the database
                 List<FileEntry> allFiles;
@@ -925,7 +925,7 @@ namespace pyjump.Services
                     allWhitelistEntries = [.. db.Whitelist];
                 }
 
-                loadingForm.IncrementProgress();
+                ScopedServices.LoadingForm.IncrementProgress();
 
                 // 1. get all files which are not registered in the LNKSimilarSetFile table
                 List<LNKSimilarSetFile> lnkSimilarSetFiles;
@@ -936,14 +936,14 @@ namespace pyjump.Services
 
                 var filesNotInSet = allFiles.Where(x => !lnkSimilarSetFiles.Select(y => y.FileEntryId).Contains(x.Id)).ToList();
 
-                loadingForm.IncrementProgress();
+                ScopedServices.LoadingForm.IncrementProgress();
 
                 // 2. generate sets for the files not in a set
                 if (filesNotInSet.Count > 0)
                 {
                     SingletonServices.LogForm.Log($"Found {filesNotInSet.Count} files not in a set.");
-                    loadingForm.PrepareLoadingBar("Treating sets for files", filesNotInSet.Count);
-                    await TreatSetsForFiles(filesNotInSet, loadingForm, cancellationToken);
+                    ScopedServices.LoadingForm.PrepareLoadingBar("Treating sets for files", filesNotInSet.Count);
+                    await TreatSetsForFiles(filesNotInSet, cancellationToken);
                 }
 
                 cancellationToken.ThrowIfCancellationRequested();
@@ -993,23 +993,23 @@ namespace pyjump.Services
                 cancellationToken.ThrowIfCancellationRequested();
 
                 // 5. upload the data to the sheets
-                loadingForm.PrepareLoadingBar("Building Jumps sheet", dataSheetJump.Count);
-                await UploadToSheetAsync(dataSheetJump, Statics.Sheet.File.SHEET_J, loadingForm, cancellationToken);
+                ScopedServices.LoadingForm.PrepareLoadingBar("Building Jumps sheet", dataSheetJump.Count);
+                await UploadToSheetAsync(dataSheetJump, Statics.Sheet.File.SHEET_J, cancellationToken);
 
-                loadingForm.PrepareLoadingBar("Building Stories sheet", dataSheetStory.Count);
-                await UploadToSheetAsync(dataSheetStory, Statics.Sheet.File.SHEET_S, loadingForm, cancellationToken);
+                ScopedServices.LoadingForm.PrepareLoadingBar("Building Stories sheet", dataSheetStory.Count);
+                await UploadToSheetAsync(dataSheetStory, Statics.Sheet.File.SHEET_S, cancellationToken);
 
-                loadingForm.PrepareLoadingBar("Building Others sheet", dataSheetOther.Count);
-                await UploadToSheetAsync(dataSheetOther, Statics.Sheet.File.SHEET_O, loadingForm, cancellationToken);
+                ScopedServices.LoadingForm.PrepareLoadingBar("Building Others sheet", dataSheetOther.Count);
+                await UploadToSheetAsync(dataSheetOther, Statics.Sheet.File.SHEET_O, cancellationToken);
 
-                loadingForm.PrepareLoadingBar("Building Jumps (Unfiltered) sheet", dataSheetJumpUnfiltered.Count);
-                await UploadToSheetAsync(dataSheetJumpUnfiltered, Statics.Sheet.File.SHEET_J_1, loadingForm, cancellationToken);
+                ScopedServices.LoadingForm.PrepareLoadingBar("Building Jumps (Unfiltered) sheet", dataSheetJumpUnfiltered.Count);
+                await UploadToSheetAsync(dataSheetJumpUnfiltered, Statics.Sheet.File.SHEET_J_1, cancellationToken);
 
-                loadingForm.PrepareLoadingBar("Building Stories (Unfiltered) sheet", dataSheetStoryUnfiltered.Count);
-                await UploadToSheetAsync(dataSheetStoryUnfiltered, Statics.Sheet.File.SHEET_S_1, loadingForm, cancellationToken);
+                ScopedServices.LoadingForm.PrepareLoadingBar("Building Stories (Unfiltered) sheet", dataSheetStoryUnfiltered.Count);
+                await UploadToSheetAsync(dataSheetStoryUnfiltered, Statics.Sheet.File.SHEET_S_1, cancellationToken);
 
-                loadingForm.PrepareLoadingBar("Building Whitelist sheet", allWhitelistEntries.Count);
-                await UploadToSheetAsync(allWhitelistEntries.OrderBy(x => x.Name).ToList(), Statics.Sheet.Whitelist.SHEET_W, loadingForm, cancellationToken);
+                ScopedServices.LoadingForm.PrepareLoadingBar("Building Whitelist sheet", allWhitelistEntries.Count);
+                await UploadToSheetAsync(allWhitelistEntries.OrderBy(x => x.Name).ToList(), Statics.Sheet.Whitelist.SHEET_W, cancellationToken);
             }
             catch (OperationCanceledException)
             {
@@ -1100,7 +1100,7 @@ namespace pyjump.Services
             }
         }
 
-        public static async Task DeleteBrokenEntries(bool deleteFiles, bool deleteWhitelist, LoadingForm loadingForm, CancellationToken cancellationToken = default)
+        public static async Task DeleteBrokenEntries(bool deleteFiles, bool deleteWhitelist, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -1118,8 +1118,8 @@ namespace pyjump.Services
                 }
                 #endregion
 
-                var brokenFiles = await DriveScanner.GetInaccessibleEntries(allFileEntries, loadingForm, cancellationToken);
-                var brokenFolders = await DriveScanner.GetInaccessibleEntries(allWhitelistEntries, loadingForm, cancellationToken);
+                var brokenFiles = await DriveScanner.GetInaccessibleEntries(allFileEntries, cancellationToken);
+                var brokenFolders = await DriveScanner.GetInaccessibleEntries(allWhitelistEntries, cancellationToken);
 
                 cancellationToken.ThrowIfCancellationRequested();
 
