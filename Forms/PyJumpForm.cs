@@ -1,3 +1,4 @@
+using System.Text.Json;
 using pyjump.Forms;
 using pyjump.Infrastructure;
 using pyjump.Services;
@@ -9,21 +10,36 @@ namespace pyjump
         public PyJumpForm()
         {
             InitializeComponent();
+
             this.btnLogging.Text = GetCurrentLoggingButtonText();
+
             this.btnThreading.Text = GetCurrentThreadingButtonText();
             this.UpdateThreadCountInfos();
-            SingletonServices.RegisterForm(new Forms.LogForm());
             this.textBoxThreadCountLoad.KeyDown += new KeyEventHandler(ThreadCountBox_KeyDown);
+
+            this.LoadCheckboxPreferences();
+            cbClearW.CheckedChanged += cbAll_CheckedChanged;
+            cbClearF.CheckedChanged += cbAll_CheckedChanged;
+            cbDelW.CheckedChanged += cbAll_CheckedChanged;
+            cbDelF.CheckedChanged += cbAll_CheckedChanged;
+            cbFrenScanW.CheckedChanged += cbAll_CheckedChanged;
+            cbFrenScanF.CheckedChanged += cbAll_CheckedChanged;
+            cbFrenDelLinksW.CheckedChanged += cbAll_CheckedChanged;
+            cbFrenDelLinksF.CheckedChanged += cbAll_CheckedChanged;
+            cbFrenBuildSheets.CheckedChanged += cbAll_CheckedChanged;
+            cbFrenOpenSheet.CheckedChanged += cbAll_CheckedChanged;
+
+            SingletonServices.RegisterForm(new Forms.LogForm());
         }
 
         #region button methods
         private async void btnScanFiles_Click(object sender, EventArgs e)
         {
-            
+
             try
             {
                 InitializeEverything();
-                SingletonServices.LogForm.Log("Starting file scan...");                
+                SingletonServices.LogForm.Log("Starting file scan...");
 
                 await Methods.ScanFiles(ScopedServices.CancellationTokenSource.Token);
 
@@ -35,7 +51,7 @@ namespace pyjump
                 MessageBox.Show($"Something went wrong: {ex}");
             }
             finally
-            {                
+            {
                 ClearEverything();
             }
         }
@@ -61,7 +77,7 @@ namespace pyjump
                 ClearEverything();
             }
         }
-      
+
         private void btnResetWhitelistTimes_Click(object sender, EventArgs e)
         {
             try
@@ -93,11 +109,11 @@ namespace pyjump
 
         private async void btnBuildSheets_Click(object sender, EventArgs e)
         {
-            
+
             try
             {
                 InitializeEverything();
-                SingletonServices.LogForm.Log("Building sheets...");                
+                SingletonServices.LogForm.Log("Building sheets...");
 
                 await Methods.BuildSheets(ScopedServices.CancellationTokenSource.Token);
 
@@ -109,7 +125,7 @@ namespace pyjump
                 MessageBox.Show($"Something went wrong: {ex}");
             }
             finally
-            {                
+            {
                 ClearEverything();
             }
         }
@@ -164,7 +180,7 @@ namespace pyjump
         {
             // Fren resets all scoped services after every method call just in case, because Fren is a good fren.
             // And also, the two times I tried to use the same scoped service, it broke the database.
-            
+
             try
             {
                 InitializeEverything();
@@ -175,16 +191,16 @@ namespace pyjump
                     // scan whitelist
                     ClearEverything(true);
                     InitializeEverything();
-                    await Methods.ScanWhitelist(ScopedServices.CancellationTokenSource.Token); 
+                    await Methods.ScanWhitelist(ScopedServices.CancellationTokenSource.Token);
                 }
 
                 if (cbFrenScanF.Checked)
                 {
                     // scan files
                     ClearEverything(true);
-                    InitializeEverything();                    
-                    
-                    await Methods.ScanFiles(ScopedServices.CancellationTokenSource.Token); 
+                    InitializeEverything();
+
+                    await Methods.ScanFiles(ScopedServices.CancellationTokenSource.Token);
                 }
 
                 if (cbFrenDelLinksW.Checked || cbFrenDelLinksF.Checked)
@@ -194,8 +210,8 @@ namespace pyjump
 
                     // delete links
                     ClearEverything(true);
-                    InitializeEverything();                    
-                    
+                    InitializeEverything();
+
                     await Methods.DeleteBrokenEntries(
                         isDeleteFiles,
                         isDeleteWhitelist,
@@ -206,9 +222,9 @@ namespace pyjump
                 {
                     // build sheets
                     ClearEverything(true);
-                    InitializeEverything();                    
-                    
-                    await Methods.BuildSheets(ScopedServices.CancellationTokenSource.Token); 
+                    InitializeEverything();
+
+                    await Methods.BuildSheets(ScopedServices.CancellationTokenSource.Token);
                 }
 
                 if (cbFrenOpenSheet.Checked)
@@ -216,7 +232,7 @@ namespace pyjump
                     // go to spreadsheet
                     ClearEverything(true);
                     InitializeEverything();
-                    Methods.GoToSheet(); 
+                    Methods.GoToSheet();
                 }
 
                 SingletonServices.LogForm.Log("Fren done. Fren does good work. Enjoy Fren's work, Fren's fren. :)");
@@ -227,7 +243,7 @@ namespace pyjump
                 MessageBox.Show($"Something went wrong: {ex}");
             }
             finally
-            {                
+            {
                 ClearEverything();
             }
         }
@@ -244,11 +260,11 @@ namespace pyjump
             {
                 return; // If user says No, exit the function early
             }
-            
+
             try
             {
                 InitializeEverything();
-                SingletonServices.LogForm.Log("Starting force match...");                
+                SingletonServices.LogForm.Log("Starting force match...");
 
                 await Methods.ForceMatchType(ScopedServices.CancellationTokenSource.Token);
 
@@ -260,7 +276,7 @@ namespace pyjump
                 MessageBox.Show($"Something went wrong: {ex}");
             }
             finally
-            {                
+            {
                 ClearEverything();
             }
         }
@@ -378,7 +394,7 @@ namespace pyjump
                 MessageBox.Show($"Something went wrong: {ex}");
             }
         }
-   
+
         private void btnThreading_Click(object sender, EventArgs e)
         {
             try
@@ -578,6 +594,75 @@ namespace pyjump
             if (!keepLog) SingletonServices.LogForm.Hide();
             this.Enabled = true;
             Cursor.Current = Cursors.Default;
+        }
+
+        private List<Control> GetAllControls(Control parent)
+        {
+            List<Control> controls = new List<Control>();
+
+            foreach (Control child in parent.Controls)
+            {
+                controls.Add(child);
+                // Recursively add child controls
+                controls.AddRange(GetAllControls(child));
+            }
+
+            return controls;
+        }
+
+        private void LoadCheckboxPreferences()
+        {
+            try
+            {
+                // Load checkbox preferences from a file
+                var filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "checkbox_preferences.json");
+                if (File.Exists(filePath))
+                {
+                    var json = File.ReadAllText(filePath);
+                    var preferences = JsonSerializer.Deserialize<Dictionary<string, bool>>(json);
+                    if (preferences != null)
+                    {
+                        List<Control> controls = GetAllControls(this);
+                        foreach (var checkBox in controls.OfType<CheckBox>())
+                        {
+                            if (preferences.TryGetValue(checkBox.Name, out bool value))
+                            {
+                                checkBox.Checked = value;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Something went wrong: " + ex);
+            }
+        }
+
+        private void cbAll_CheckedChanged(object sender, EventArgs e)
+        {
+            try
+            {
+                // Save new checkbox preferences in a file
+                var checkBox = sender as CheckBox;
+                var name = checkBox.Name;
+                var isChecked = checkBox.Checked;
+
+                var filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "checkbox_preferences.json");
+                var preferences = new Dictionary<string, bool>();
+                if (File.Exists(filePath))
+                {
+                    var json = File.ReadAllText(filePath);
+                    preferences = JsonSerializer.Deserialize<Dictionary<string, bool>>(json);
+                }
+                preferences[name] = isChecked;
+                var jsonString = JsonSerializer.Serialize(preferences);
+                File.WriteAllText(filePath, jsonString);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Something went wrong: " + ex);
+            }
         }
         #endregion
     }
