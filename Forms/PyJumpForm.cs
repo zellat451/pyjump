@@ -179,6 +179,7 @@ namespace pyjump
                     // scan files
                     ClearEverything(true);
                     InitializeEverything();
+                    loadingForm?.Close();
                     loadingForm = InitProgressBar();
                     await Methods.ScanFiles(loadingForm, ScopedServices.CancellationTokenSource.Token); 
                 }
@@ -191,6 +192,7 @@ namespace pyjump
                     // delete links
                     ClearEverything(true);
                     InitializeEverything();
+                    loadingForm?.Close();
                     loadingForm = InitProgressBar();
                     await Methods.DeleteBrokenEntries(
                         isDeleteFiles,
@@ -204,6 +206,8 @@ namespace pyjump
                     // build sheets
                     ClearEverything(true);
                     InitializeEverything();
+                    loadingForm?.Close();
+                    loadingForm = InitProgressBar();
                     await Methods.BuildSheets(loadingForm, ScopedServices.CancellationTokenSource.Token); 
                 }
 
