@@ -138,7 +138,9 @@ By default, Folders are `j` (Jump) and files take the same type as their folder.
 1. Uploads the data to the spreadsheet
 1. And it opens the spreadsheet for you at the end
 
-No, Fren does not delete broken entries. It is not their job. They work hard enough already, and it takes too long. You can do that manually if you want, or use the button `Delete broken entries` to remove all broken entries from the DB.
+That's all that Fren does by default, though you can change also tell it to delete broken entries, or to do less things by using the checkbox next to the button.
+
+All checkboxes have a default value. You can change them if you want, and the app will remember them for the next time you launch it.
 
 ---
 
@@ -151,11 +153,17 @@ No, Fren does not delete broken entries. It is not their job. They work hard eno
 1. `Scan Files`: Scans the whitelist for their files recursively. This may take some time. Only scans new files from the last time the whitelist entry was checked, to go quicker.
 1. `Reset Whitelist Times`: Resets the `LastChecked` date of all whitelist entries to null. This will force a complete scan of all files in the whitelist.
 1. `Delete broken entries`: Removes all broken entries from the DB, such as trashed files or folders, or those you don't have the permissions for anymore. This may take some time. This does not delete the folders or files which return an error `404 Not Found`, because it is possible that the API simply doesn't have the permissions to check them despite them being there.
-	- You can select to delete either the files or the folders, or both using the checkboxes next to the button.
+	- You can select to delete either the files, or the folders, or both using the checkboxes next to the button.
 1. `Build sheets`: Uploads the files to the Google Sheets document.
 1. `Clear all data`: Clears all the data in the DB. Does not affect the data uploaded to the Google Sheets document.
-	- You can select to clear either the files or the folders, or both using the checkboxes next to the button.
-1. `:)`: The Fren button. It does everything for you. It scans the whitelist, scans the files, and uploads the data to the Google Sheets document. It also opens the document in your browser at the end.
+	- You can select to clear either the files, or the folders, or both using the checkboxes next to the button.
+1. `:)`: The Fren button. It does everything for you. You can set what you want Fren to do using the checkboxes next to the button.
+	- `Scan Whitelist`: Scans the `mainDrives` for their folders recursively. This may take some time. (Checked by default)
+	- `Scan Files`: Scans the whitelist for their files recursively. This may take some time. Only scans new files from the last time the whitelist entry was checked, to go quicker. (Checked by default)
+	- `Broken Whitelist`: Scans the whitelist for broken links, and removes them from the DB. This may take some time.
+	- `Broken Files`: Scans the files for broken links, and removes them from the DB. This may take some time.
+	- `Build Sheets`: Uploads the files to the Google Sheets document. (Checked by default)
+	- `Go to sheet`: Opens the Google Sheets document in your browser. (Checked by default)
 1. `Enable/Disable Logging`: Enables or disables copying logs in a local file. If active, all logs will be copied in a file named after today's date in the `logs` folder. The folder/file will be created if it doesn't exist, and appended to if it does. `false` by default, so we don't spam your disk with logs.
 1. `Enable/Disable Threading`: Enables or disables multithreading. If active, the application will use multiple threads to scan the files and folders. This is much faster, but it may cause issues with the Google API request limits. `true` by default with `5` threads, which should be within limit. 
 You can dynamically change the number of threads with the text box above the Enabling button, or before launch in the appsettings.json file. The application will use the number of threads specified in the file. It will use the default value of `5` threads. If you set it to a negative number, it will use `1` thread.
