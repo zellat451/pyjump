@@ -116,18 +116,26 @@ namespace pyjump
 
         private void btnEditWhitelist_Click(object sender, EventArgs e)
         {
+            this.Enabled = false;
+            Cursor.Current = Cursors.WaitCursor;
             using (var form = new WhitelistEditorForm())
             {
                 form.ShowDialog();
             }
+            this.Enabled = true;
+            Cursor.Current = Cursors.Default;
         }
 
         private void btnEditFiles_Click(object sender, EventArgs e)
         {
+            this.Enabled = false;
+            Cursor.Current = Cursors.WaitCursor;
             using (var form = new FilesEditorForm())
             {
                 form.ShowDialog();
             }
+            this.Enabled = true;
+            Cursor.Current = Cursors.Default;
         }
 
         private void btnGoToSheet_Click(object sender, EventArgs e)
@@ -370,6 +378,7 @@ namespace pyjump
                 MessageBox.Show($"Something went wrong: {ex}");
             }
         }
+   
         private void btnThreading_Click(object sender, EventArgs e)
         {
             try
