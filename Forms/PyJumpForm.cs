@@ -62,6 +62,7 @@ namespace pyjump
                 ClearEverything();
             }
         }
+      
         private void btnResetWhitelistTimes_Click(object sender, EventArgs e)
         {
             try
@@ -165,26 +166,54 @@ namespace pyjump
                 InitializeEverything();
                 SingletonServices.LogForm.Log("I Fren. Fren says 'hi' :)");
 
-                // 1. scan whitelist
-                ClearEverything(true);
-                InitializeEverything();
-                await Methods.ScanWhitelist(ScopedServices.CancellationTokenSource.Token);
+                if (cbFrenScanW.Checked)
+                {
+                    // scan whitelist
+                    ClearEverything(true);
+                    InitializeEverything();
+                    await Methods.ScanWhitelist(ScopedServices.CancellationTokenSource.Token); 
+                }
 
-                // 2. scan files
-                ClearEverything(true);
-                InitializeEverything();
-                loadingForm = InitProgressBar();
-                await Methods.ScanFiles(loadingForm, ScopedServices.CancellationTokenSource.Token);
+                if (cbFrenScanF.Checked)
+                {
+                    // scan files
+                    ClearEverything(true);
+                    InitializeEverything();
+                    loadingForm = InitProgressBar();
+                    await Methods.ScanFiles(loadingForm, ScopedServices.CancellationTokenSource.Token); 
+                }
 
-                // 3. build sheets
-                ClearEverything(true);
-                InitializeEverything();
-                await Methods.BuildSheets(loadingForm, ScopedServices.CancellationTokenSource.Token);
+                if (cbFrenDelLinksW.Checked || cbFrenDelLinksF.Checked)
+                {
+                    var isDeleteWhitelist = cbFrenDelLinksW.Checked;
+                    var isDeleteFiles = cbFrenDelLinksF.Checked;
 
-                // 4. go to spreadsheet
-                ClearEverything(true);
-                InitializeEverything();
-                Methods.GoToSheet();
+                    // delete links
+                    ClearEverything(true);
+                    InitializeEverything();
+                    loadingForm = InitProgressBar();
+                    await Methods.DeleteBrokenEntries(
+                        isDeleteFiles,
+                        isDeleteWhitelist,
+                        loadingForm,
+                        ScopedServices.CancellationTokenSource.Token);
+                }
+
+                if (cbFrenBuildSheets.Checked)
+                {
+                    // build sheets
+                    ClearEverything(true);
+                    InitializeEverything();
+                    await Methods.BuildSheets(loadingForm, ScopedServices.CancellationTokenSource.Token); 
+                }
+
+                if (cbFrenOpenSheet.Checked)
+                {
+                    // go to spreadsheet
+                    ClearEverything(true);
+                    InitializeEverything();
+                    Methods.GoToSheet(); 
+                }
 
                 SingletonServices.LogForm.Log("Fren done. Fren does good work. Enjoy Fren's work, Fren's fren. :)");
                 MessageBox.Show("Your friend worked hard. We all thank Fren for their automation efforts. bye-bye Fren!");

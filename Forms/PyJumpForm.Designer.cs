@@ -55,11 +55,18 @@ namespace pyjump
             panelF = new Panel();
             panelEdit = new Panel();
             panelClear = new Panel();
-            panel1 = new Panel();
-            cbDelW = new CheckBox();
-            cbDelF = new CheckBox();
-            cbClearW = new CheckBox();
             cbClearF = new CheckBox();
+            cbClearW = new CheckBox();
+            panel1 = new Panel();
+            cbDelF = new CheckBox();
+            cbDelW = new CheckBox();
+            cbFrenDelLinksW = new CheckBox();
+            cbFrenScanF = new CheckBox();
+            cbFrenScanW = new CheckBox();
+            cbFrenBuildSheets = new CheckBox();
+            cbFrenDelLinksF = new CheckBox();
+            panelFren = new Panel();
+            cbFrenOpenSheet = new CheckBox();
             panelThreading.SuspendLayout();
             panelImpExp.SuspendLayout();
             panelW.SuspendLayout();
@@ -67,6 +74,7 @@ namespace pyjump
             panelEdit.SuspendLayout();
             panelClear.SuspendLayout();
             panel1.SuspendLayout();
+            panelFren.SuspendLayout();
             SuspendLayout();
             // 
             // btnScanFile
@@ -143,9 +151,9 @@ namespace pyjump
             // btnFren
             // 
             btnFren.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-            btnFren.Location = new Point(484, 266);
+            btnFren.Location = new Point(3, 21);
             btnFren.Name = "btnFren";
-            btnFren.Size = new Size(295, 172);
+            btnFren.Size = new Size(221, 142);
             btnFren.TabIndex = 10;
             btnFren.Text = ":)";
             btnFren.UseVisualStyleBackColor = true;
@@ -321,36 +329,15 @@ namespace pyjump
             panelClear.Size = new Size(179, 100);
             panelClear.TabIndex = 25;
             // 
-            // panel1
+            // cbClearF
             // 
-            panel1.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
-            panel1.Controls.Add(cbDelF);
-            panel1.Controls.Add(cbDelW);
-            panel1.Controls.Add(btnDeleteBroken);
-            panel1.Location = new Point(12, 232);
-            panel1.Name = "panel1";
-            panel1.Size = new Size(179, 100);
-            panel1.TabIndex = 26;
-            // 
-            // cbDelW
-            // 
-            cbDelW.AutoSize = true;
-            cbDelW.Location = new Point(87, 31);
-            cbDelW.Name = "cbDelW";
-            cbDelW.Size = new Size(72, 19);
-            cbDelW.TabIndex = 14;
-            cbDelW.Text = "Whitelist";
-            cbDelW.UseVisualStyleBackColor = true;
-            // 
-            // cbDelF
-            // 
-            cbDelF.AutoSize = true;
-            cbDelF.Location = new Point(87, 56);
-            cbDelF.Name = "cbDelF";
-            cbDelF.Size = new Size(49, 19);
-            cbDelF.TabIndex = 15;
-            cbDelF.Text = "Files";
-            cbDelF.UseVisualStyleBackColor = true;
+            cbClearF.AutoSize = true;
+            cbClearF.Location = new Point(87, 51);
+            cbClearF.Name = "cbClearF";
+            cbClearF.Size = new Size(49, 19);
+            cbClearF.TabIndex = 14;
+            cbClearF.Text = "Files";
+            cbClearF.UseVisualStyleBackColor = true;
             // 
             // cbClearW
             // 
@@ -362,21 +349,126 @@ namespace pyjump
             cbClearW.Text = "Whitelist";
             cbClearW.UseVisualStyleBackColor = true;
             // 
-            // cbClearF
+            // panel1
             // 
-            cbClearF.AutoSize = true;
-            cbClearF.Location = new Point(87, 51);
-            cbClearF.Name = "cbClearF";
-            cbClearF.Size = new Size(49, 19);
-            cbClearF.TabIndex = 14;
-            cbClearF.Text = "Files";
-            cbClearF.UseVisualStyleBackColor = true;
+            panel1.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+            panel1.Controls.Add(cbDelF);
+            panel1.Controls.Add(cbDelW);
+            panel1.Controls.Add(btnDeleteBroken);
+            panel1.Location = new Point(12, 232);
+            panel1.Name = "panel1";
+            panel1.Size = new Size(179, 100);
+            panel1.TabIndex = 26;
+            // 
+            // cbDelF
+            // 
+            cbDelF.AutoSize = true;
+            cbDelF.Location = new Point(87, 56);
+            cbDelF.Name = "cbDelF";
+            cbDelF.Size = new Size(49, 19);
+            cbDelF.TabIndex = 15;
+            cbDelF.Text = "Files";
+            cbDelF.UseVisualStyleBackColor = true;
+            // 
+            // cbDelW
+            // 
+            cbDelW.AutoSize = true;
+            cbDelW.Location = new Point(87, 31);
+            cbDelW.Name = "cbDelW";
+            cbDelW.Size = new Size(72, 19);
+            cbDelW.TabIndex = 14;
+            cbDelW.Text = "Whitelist";
+            cbDelW.UseVisualStyleBackColor = true;
+            // 
+            // cbFrenDelLinksW
+            // 
+            cbFrenDelLinksW.AutoSize = true;
+            cbFrenDelLinksW.Location = new Point(230, 73);
+            cbFrenDelLinksW.Name = "cbFrenDelLinksW";
+            cbFrenDelLinksW.Size = new Size(112, 19);
+            cbFrenDelLinksW.TabIndex = 27;
+            cbFrenDelLinksW.Text = "Broken Whitelist";
+            cbFrenDelLinksW.UseVisualStyleBackColor = true;
+            // 
+            // cbFrenScanF
+            // 
+            cbFrenScanF.AutoSize = true;
+            cbFrenScanF.Checked = true;
+            cbFrenScanF.CheckState = CheckState.Checked;
+            cbFrenScanF.Location = new Point(230, 48);
+            cbFrenScanF.Name = "cbFrenScanF";
+            cbFrenScanF.Size = new Size(77, 19);
+            cbFrenScanF.TabIndex = 28;
+            cbFrenScanF.Text = "Scan Files";
+            cbFrenScanF.UseVisualStyleBackColor = true;
+            // 
+            // cbFrenScanW
+            // 
+            cbFrenScanW.AutoSize = true;
+            cbFrenScanW.Checked = true;
+            cbFrenScanW.CheckState = CheckState.Checked;
+            cbFrenScanW.Location = new Point(230, 25);
+            cbFrenScanW.Name = "cbFrenScanW";
+            cbFrenScanW.Size = new Size(100, 19);
+            cbFrenScanW.TabIndex = 29;
+            cbFrenScanW.Text = "Scan Whitelist";
+            cbFrenScanW.UseVisualStyleBackColor = true;
+            // 
+            // cbFrenBuildSheets
+            // 
+            cbFrenBuildSheets.AutoSize = true;
+            cbFrenBuildSheets.Checked = true;
+            cbFrenBuildSheets.CheckState = CheckState.Checked;
+            cbFrenBuildSheets.Location = new Point(230, 121);
+            cbFrenBuildSheets.Name = "cbFrenBuildSheets";
+            cbFrenBuildSheets.Size = new Size(89, 19);
+            cbFrenBuildSheets.TabIndex = 30;
+            cbFrenBuildSheets.Text = "Build sheets";
+            cbFrenBuildSheets.UseVisualStyleBackColor = true;
+            // 
+            // cbFrenDelLinksF
+            // 
+            cbFrenDelLinksF.AutoSize = true;
+            cbFrenDelLinksF.Location = new Point(230, 98);
+            cbFrenDelLinksF.Name = "cbFrenDelLinksF";
+            cbFrenDelLinksF.Size = new Size(89, 19);
+            cbFrenDelLinksF.TabIndex = 31;
+            cbFrenDelLinksF.Text = "Broken Files";
+            cbFrenDelLinksF.UseVisualStyleBackColor = true;
+            // 
+            // panelFren
+            // 
+            panelFren.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+            panelFren.Controls.Add(cbFrenOpenSheet);
+            panelFren.Controls.Add(btnFren);
+            panelFren.Controls.Add(cbFrenBuildSheets);
+            panelFren.Controls.Add(cbFrenDelLinksF);
+            panelFren.Controls.Add(cbFrenScanW);
+            panelFren.Controls.Add(cbFrenScanF);
+            panelFren.Controls.Add(cbFrenDelLinksW);
+            panelFren.Location = new Point(452, 263);
+            panelFren.Name = "panelFren";
+            panelFren.Size = new Size(344, 175);
+            panelFren.TabIndex = 32;
+            // 
+            // cbFrenOpenSheet
+            // 
+            cbFrenOpenSheet.AutoSize = true;
+            cbFrenOpenSheet.Checked = true;
+            cbFrenOpenSheet.CheckState = CheckState.Checked;
+            cbFrenOpenSheet.Location = new Point(230, 144);
+            cbFrenOpenSheet.Name = "cbFrenOpenSheet";
+            cbFrenOpenSheet.Size = new Size(86, 19);
+            cbFrenOpenSheet.TabIndex = 32;
+            cbFrenOpenSheet.Text = "Open sheet";
+            cbFrenOpenSheet.UseVisualStyleBackColor = true;
             // 
             // PyJumpForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
+            Controls.Add(panelFren);
             Controls.Add(panel1);
             Controls.Add(panelClear);
             Controls.Add(panelEdit);
@@ -385,7 +477,6 @@ namespace pyjump
             Controls.Add(panelImpExp);
             Controls.Add(panelThreading);
             Controls.Add(btnLogging);
-            Controls.Add(btnFren);
             Controls.Add(btnGoToSheet);
             Controls.Add(btnBuildSheets);
             Name = "PyJumpForm";
@@ -400,6 +491,8 @@ namespace pyjump
             panelClear.PerformLayout();
             panel1.ResumeLayout(false);
             panel1.PerformLayout();
+            panelFren.ResumeLayout(false);
+            panelFren.PerformLayout();
             ResumeLayout(false);
         }
 
@@ -435,5 +528,12 @@ namespace pyjump
         private CheckBox cbClearW;
         private CheckBox cbDelF;
         private CheckBox cbDelW;
+        private CheckBox cbFrenDelLinksW;
+        private CheckBox cbFrenScanF;
+        private CheckBox cbFrenScanW;
+        private CheckBox cbFrenBuildSheets;
+        private CheckBox cbFrenDelLinksF;
+        private Panel panelFren;
+        private CheckBox cbFrenOpenSheet;
     }
 }
