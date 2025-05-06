@@ -8,6 +8,15 @@ namespace pyjump.Services
         private const string CheckboxPreferencesFileName = "checkbox_preferences.json";
         private static string CheckboxPreferencesFilePath => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", CheckboxPreferencesFileName);
 
+        public static void OverwriteCheckboxPreferences(CheckboxPreferences preferences)
+        {
+            var jsonString = JsonSerializer.Serialize(preferences);
+            File.WriteAllText(CheckboxPreferencesFilePath, jsonString);
+
+            // ping the checkboxes to update their state
+            SingletonServices.MainForm.LoadCheckboxPreferences();
+        }
+
         public static CheckboxPreferences GetCheckboxPreferences()
         {
             if (File.Exists(CheckboxPreferencesFilePath))

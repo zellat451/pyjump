@@ -13,6 +13,7 @@ namespace pyjump.Services
         public static MainDrives MainDrives { get; private set; }
         public static string SpreadsheetId { get; private set; }
         public static bool AllowLogFile { get; private set; }
+        public static PyJumpForm MainForm { get; private set; }
         public static LogForm LogForm { get; private set; }
         public static bool AllowThreading { get; private set; }
         public static int MaxThreads { get; private set; }
@@ -92,6 +93,11 @@ namespace pyjump.Services
                 Debug.WriteLine("Error reading maxThreads from appsettings: " + e.Message);
                 throw;
             }
+        }
+
+        public static void RegisterForm(PyJumpForm form)
+        {
+            MainForm = form;
         }
 
         public static void RegisterForm(LogForm form)

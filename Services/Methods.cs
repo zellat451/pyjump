@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Text.Json;
 using Google.Apis.Sheets.v4.Data;
 using pyjump.Entities;
+using pyjump.Entities.Data;
 using pyjump.Infrastructure;
 using pyjump.Interfaces;
 
@@ -1239,6 +1240,7 @@ namespace pyjump.Services
                     SingletonServices.LogForm.Log($"❌ File not found: {filePath}");
                     return;
                 }
+
                 var datajson = await File.ReadAllTextAsync(filePath, cancellationToken);
                 if (datajson == null || datajson.Length == 0)
                 {
@@ -1248,30 +1250,48 @@ namespace pyjump.Services
 
                 var data = JsonSerializer.Deserialize<DataSet>(datajson, new JsonSerializerOptions() { PropertyNameCaseInsensitive = true });
 
-                // 2. load the data into the database (erase exisintg data)
-                if (data == null || ((data.FileEntries == null || data.FileEntries.Count == 0) && (data.WhitelistEntries == null || data.WhitelistEntries.Count == 0)))
+                var dbData = data?.Data;
+                var preferences = data?.Preferences;
+
+                // 2. load the db data into the database (erase exisintg data)
+                if (dbData == null || ((dbData.FileEntries == null || dbData.FileEntries.Count == 0) && (dbData.WhitelistEntries == null || dbData.WhitelistEntries.Count == 0)))
                 {
-                    SingletonServices.LogForm.Log("❌ No data found in the file.");
-                    return;
+                    SingletonServices.LogForm.Log("❌ No db data found in the file.");
+                }
+                else
+                {
+                    using (var db = new AppDbContext())
+                    {
+                        // 2.b. add the data to the database
+                        if (dbData.FileEntries != null && dbData.FileEntries.Count > 0)
+                        {
+                            // remove the existing file entries
+                            db.Files.RemoveRange(db.Files);
+                            await db.Files.AddRangeAsync(dbData.FileEntries, cancellationToken);
+                        }
+                        if (dbData.WhitelistEntries != null && dbData.WhitelistEntries.Count > 0)
+                        {
+                            // remove the existing whitelist entries
+                            db.Whitelist.RemoveRange(db.Whitelist);
+                            await db.Whitelist.AddRangeAsync(dbData.WhitelistEntries, cancellationToken);
+                        }
+                        // 2.c. save the changes to the database
+                        await db.SaveChangesAsync(cancellationToken);
+                    } 
                 }
 
-                using (var db = new AppDbContext())
+                // 3. load the preferences into the preferences files
+                if (preferences == null || preferences.CheckboxPreferences == null || preferences.CheckboxPreferences.Count == 0)
                 {
-                    // 2.b. add the data to the database
-                    if (data.FileEntries != null && data.FileEntries.Count > 0)
+                    SingletonServices.LogForm.Log("❌ No preferences found in the file.");
+                }
+                else
+                {
+                    if (preferences.CheckboxPreferences != null && preferences.CheckboxPreferences.Count != 0)
                     {
-                        // remove the existing file entries
-                        db.Files.RemoveRange(db.Files);
-                        await db.Files.AddRangeAsync(data.FileEntries, cancellationToken);
+                        // overwrite the preferences
+                        PreferenceService.OverwriteCheckboxPreferences(preferences.CheckboxPreferences); 
                     }
-                    if (data.WhitelistEntries != null && data.WhitelistEntries.Count > 0)
-                    {
-                        // remove the existing whitelist entries
-                        db.Whitelist.RemoveRange(db.Whitelist);
-                        await db.Whitelist.AddRangeAsync(data.WhitelistEntries, cancellationToken);
-                    }
-                    // 2.c. save the changes to the database
-                    await db.SaveChangesAsync(cancellationToken);
                 }
             }
             catch (OperationCanceledException)
@@ -1307,19 +1327,30 @@ namespace pyjump.Services
                 var filePath = Path.Combine(folderPath, fileName);
 
                 // 3. get all data from the database
-                DataSet data;
+                DBDataSet dbData;
                 using (var db = new AppDbContext())
                 {
-                    data = new DataSet
+                    dbData = new DBDataSet
                     {
                         FileEntries = [.. db.Files],
                         WhitelistEntries = [.. db.Whitelist]
                     };
                 }
-                // 4. serialize the data to json
+
+                // 4. get the preferences
+                PrefDataSet preferences = new();
+                var cbPref = PreferenceService.GetCheckboxPreferences();
+                preferences.CheckboxPreferences = cbPref;
+
+                // 5. serialize the data to json
+                var data = new DataSet
+                {
+                    Data = dbData,
+                    Preferences = preferences
+                };
                 var json = JsonSerializer.Serialize(data, new JsonSerializerOptions() { WriteIndented = true });
 
-                // 5. write the json to the file
+                // 6. write the json to the file
                 await File.WriteAllTextAsync(filePath, json, cancellationToken);
             }
             catch (OperationCanceledException)

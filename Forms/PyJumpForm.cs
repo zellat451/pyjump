@@ -738,7 +738,7 @@ namespace pyjump
             return controls;
         }
 
-        private void LoadCheckboxPreferences()
+        public void LoadCheckboxPreferences()
         {
             try
             {
