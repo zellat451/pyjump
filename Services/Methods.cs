@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.Text.Json;
 using Google.Apis.Sheets.v4.Data;
 using pyjump.Entities;
-using pyjump.Forms;
 using pyjump.Infrastructure;
 using pyjump.Interfaces;
 
@@ -115,6 +114,50 @@ namespace pyjump.Services
             catch (Exception e)
             {
                 SingletonServices.LogForm.Log($"Error scanning whitelist: {e}");
+                throw;
+            }
+        }
+
+        public static async Task MatchWhitelistToDrives(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                // get all drives
+                var driveNames = SingletonServices.MainDrives?.Data?.Select(x => x.Name).ToList();
+                if (driveNames == null || driveNames.Count == 0)
+                {
+                    SingletonServices.LogForm.Log("❌ No drives found.");
+                    return;
+                }
+
+                // delete all the whitelist entries that are not in the drives
+                using (var db = new AppDbContext())
+                {
+                    var allWhitelistEntries = db.Whitelist.ToList();
+                    var entriesToDelete = allWhitelistEntries.Where(x => !driveNames.Contains(x.Name)).ToList();
+                    db.Whitelist.RemoveRange(entriesToDelete);
+
+                    try
+                    {
+                        await db.SaveChangesAsync(cancellationToken);
+                    }
+                    catch (Exception e)
+                    {
+                        SingletonServices.LogForm.Log($"Error deleting whitelist entries: {e}");
+                        db.Dispose();
+                        throw;
+                    }
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                SingletonServices.LogForm.Log("❌ Scan cancelled.");
+                return;
+            }
+            catch (Exception e)
+            {
+                SingletonServices.LogForm.Log($"Error matching whitelist to drives: {e}");
                 throw;
             }
         }
@@ -1111,7 +1154,7 @@ namespace pyjump.Services
                 List<WhitelistEntry> allWhitelistEntries = null;
                 using (var db = new AppDbContext())
                 {
-                    if(deleteFiles)
+                    if (deleteFiles)
                         allFileEntries = [.. db.Files];
                     if (deleteWhitelist)
                         allWhitelistEntries = [.. db.Whitelist];

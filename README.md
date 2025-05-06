@@ -152,6 +152,7 @@ All checkboxes have a default value. You can change them if you want, and the ap
 1. `Scan Whitelist`: Scans the `mainDrives` for their folders recursively. This may take some time.
 1. `Scan Files`: Scans the whitelist for their files recursively. This may take some time. Only scans new files from the last time the whitelist entry was checked, to go quicker.
 1. `Reset Whitelist Times`: Resets the `LastChecked` date of all whitelist entries to null. This will force a complete scan of all files in the whitelist.
+1. `Match Whitelist to Drives`: Removes from the DB all whitelist entries with a name that doesn't match any of the `mainDrives` entries. This is useful if you removed a folder from the `mainDrives` and want to remove all its entries from the DB.
 1. `Delete broken entries`: Removes all broken entries from the DB, such as trashed files or folders, or those you don't have the permissions for anymore. This may take some time. This does not delete the folders or files which return an error `404 Not Found`, because it is possible that the API simply doesn't have the permissions to check them despite them being there.
 	- You can select to delete either the files, or the folders, or both using the checkboxes next to the button.
 1. `Build sheets`: Uploads the files to the Google Sheets document.

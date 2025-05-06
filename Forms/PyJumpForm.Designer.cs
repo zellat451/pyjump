@@ -50,7 +50,7 @@ namespace pyjump
             btnDataImport = new Button();
             panelImpExp = new Panel();
             btnDataExport = new Button();
-            button1 = new Button();
+            btnMatchWhitelistToDrives = new Button();
             panelW = new Panel();
             panelF = new Panel();
             panelEdit = new Panel();
@@ -162,7 +162,7 @@ namespace pyjump
             // btnForceMatch
             // 
             btnForceMatch.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-            btnForceMatch.Location = new Point(59, 94);
+            btnForceMatch.Location = new Point(60, 96);
             btnForceMatch.Name = "btnForceMatch";
             btnForceMatch.Size = new Size(122, 30);
             btnForceMatch.TabIndex = 11;
@@ -194,7 +194,7 @@ namespace pyjump
             // btnLogging
             // 
             btnLogging.Anchor = AnchorStyles.Bottom;
-            btnLogging.Location = new Point(210, 384);
+            btnLogging.Location = new Point(206, 381);
             btnLogging.Name = "btnLogging";
             btnLogging.Size = new Size(86, 54);
             btnLogging.TabIndex = 14;
@@ -281,20 +281,21 @@ namespace pyjump
             btnDataExport.UseVisualStyleBackColor = true;
             btnDataExport.Click += btnDataExport_Click;
             // 
-            // button1
+            // btnMatchWhitelistToDrives
             // 
-            button1.Location = new Point(129, 96);
-            button1.Name = "button1";
-            button1.Size = new Size(107, 39);
-            button1.TabIndex = 19;
-            button1.Text = "button1";
-            button1.UseVisualStyleBackColor = true;
+            btnMatchWhitelistToDrives.Location = new Point(129, 96);
+            btnMatchWhitelistToDrives.Name = "btnMatchWhitelistToDrives";
+            btnMatchWhitelistToDrives.Size = new Size(107, 39);
+            btnMatchWhitelistToDrives.TabIndex = 19;
+            btnMatchWhitelistToDrives.Text = "Match Whitelist to drives";
+            btnMatchWhitelistToDrives.UseVisualStyleBackColor = true;
+            btnMatchWhitelistToDrives.Click += btnMatchWhitelistToDrives_Click;
             // 
             // panelW
             // 
             panelW.Controls.Add(btnScanWhitelist);
             panelW.Controls.Add(btnResetWhitelistTimes);
-            panelW.Controls.Add(button1);
+            panelW.Controls.Add(btnMatchWhitelistToDrives);
             panelW.Location = new Point(12, 83);
             panelW.Name = "panelW";
             panelW.Size = new Size(243, 141);
@@ -518,7 +519,7 @@ namespace pyjump
         private Button btnDataImport;
         private Panel panelImpExp;
         private Button btnDataExport;
-        private Button button1;
+        private Button btnMatchWhitelistToDrives;
         private Panel panelW;
         private Panel panelF;
         private Panel panelEdit;

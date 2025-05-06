@@ -536,6 +536,38 @@ namespace pyjump
                 ClearEverything();
             }
         }
+        private async void btnMatchWhitelistToDrives_Click(object sender, EventArgs e)
+        {
+            var result = MessageBox.Show(
+                "Are you sure you want to match the whitelist to the drives? This will delete all existing entries in the whitelist which are not in the drives (as specified in appsettings).",
+                "Confirmation",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning);
+            if (result != DialogResult.Yes)
+            {
+                return; // If user says No, exit the function early
+            }
+
+            try
+            {
+                InitializeEverything();
+
+                SingletonServices.LogForm.Log("Matching whitelist to drives...");
+
+                await Methods.MatchWhitelistToDrives(ScopedServices.CancellationTokenSource.Token);
+
+                SingletonServices.LogForm.Log("Whitelist matched to drives successfully.");
+                MessageBox.Show("Whitelist matched to drives successfully.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Something went wrong: {ex}");
+            }
+            finally
+            {
+                ClearEverything();
+            }
+        }
         #endregion
 
         #region private methods
@@ -665,5 +697,6 @@ namespace pyjump
             }
         }
         #endregion
+
     }
 }
