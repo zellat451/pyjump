@@ -19,7 +19,7 @@ namespace pyjump.Services
         public static CancellationTokenSource CancellationTokenSource { get; private set; }
         public static LoadingForm LoadingForm { get; set; }
 
-        public static void Clear()
+        public static void ClearServices()
         {
             DriveService = null;
             SheetsService = null;
@@ -31,9 +31,6 @@ namespace pyjump.Services
             }
             catch (ObjectDisposedException) { }
             CancellationTokenSource.Dispose();
-
-            LoadingForm?.Close();
-            LoadingForm = null;
         }
 
         public static void Initialize()
@@ -93,6 +90,12 @@ namespace pyjump.Services
             LoadingForm?.Close();
             LoadingForm = new LoadingForm();
             LoadingForm.Hide();
+        }
+
+        public static void ClearLoadingForm()
+        {
+            LoadingForm?.Close();
+            LoadingForm = null;
         }
 
         private static Sheet EnsureSheetCreated<T>(string sheetName) where T : ISheetDataEntity

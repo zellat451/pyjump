@@ -14,6 +14,7 @@ namespace pyjump.Services
         /// <summary>
         /// Scans all drives and folders in the registered main drives and updates the database with the new whitelist entries.
         /// </summary>
+        /// <param name="cancellationToken"></param>
         /// <returns></returns>
         public static async Task ScanWhitelist(CancellationToken cancellationToken = default)
         {
@@ -118,6 +119,11 @@ namespace pyjump.Services
             }
         }
 
+        /// <summary>
+        /// Matches the whitelist entries to the drives in the database.
+        /// </summary>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public static async Task MatchWhitelistToDrives(CancellationToken cancellationToken = default)
         {
             try
@@ -167,7 +173,7 @@ namespace pyjump.Services
         /// <summary>
         /// Scans all files in the whitelist entries and updates the database with the new file entries.
         /// </summary>
-        /// <param name="loadingForm"></param>
+        /// <param name="cancellationToken"></param>
         /// <returns></returns>
         public static async Task ScanFiles(CancellationToken cancellationToken = default)
         {
@@ -226,6 +232,13 @@ namespace pyjump.Services
             }
         }
 
+        /// <summary>
+        /// Scans all files in the whitelist entries and updates the database with the new file entries.
+        /// Uses a single thread to scan the files.
+        /// </summary>
+        /// <param name="whitelistEntries"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         private static async Task ScanFilesSingleThread(List<WhitelistEntry> whitelistEntries, CancellationToken cancellationToken = default)
         {
             try
@@ -265,6 +278,13 @@ namespace pyjump.Services
             }
         }
 
+        /// <summary>
+        /// Scans all files in the whitelist entries and updates the database with the new file entries.
+        /// Uses multiple threads to scan the files.
+        /// </summary>
+        /// <param name="whitelistEntries"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public static async Task ScanFilesMultiThread(List<WhitelistEntry> whitelistEntries, CancellationToken cancellationToken = default)
         {
             try
@@ -361,6 +381,12 @@ namespace pyjump.Services
             }
         }
 
+        /// <summary>
+        /// Saves the scanned files to the database.
+        /// </summary>
+        /// <param name="sets"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         private static async Task ScannedFilesToDb(List<(WhitelistEntry whitelist, List<FileEntry> scannedFileEntries)> sets = null, CancellationToken cancellationToken = default)
         {
             try
@@ -511,7 +537,7 @@ namespace pyjump.Services
         /// Chooses the file with the most recent 'LastModified' date as the owner of the set.
         /// </summary>
         /// <param name="fileEntries"></param>
-        /// <param name="loadingForm"></param>
+        /// <param name="cancellationToken"></param>
         /// <returns></returns>
         private static async Task TreatSetsForFiles(List<FileEntry> fileEntries, CancellationToken cancellationToken = default)
         {
@@ -733,7 +759,7 @@ namespace pyjump.Services
         /// <summary>
         /// Forces the file type to match the folder type for all files in the database.
         /// </summary>
-        /// <param name="loadingForm"></param>
+        /// <param name="cancellationToken"></param>
         /// <returns></returns>
         public static async Task ForceMatchType(CancellationToken cancellationToken = default)
         {
@@ -811,11 +837,11 @@ namespace pyjump.Services
         /// <summary>
         /// Uploads the entries to the specified sheet in the Google Sheets.
         /// </summary>
+        /// <typeparam name="T"></typeparam>
         /// <param name="entries"></param>
         /// <param name="sheetName"></param>
-        /// <param name="loadingForm"></param>
+        /// <param name="cancellationToken"></param>
         /// <returns></returns>
-        /// <exception cref="Exception"></exception>
         private static async Task UploadToSheetAsync<T>(List<T> entries, string sheetName, CancellationToken cancellationToken = default)
             where T : ISheetDataEntity
         {
@@ -945,7 +971,7 @@ namespace pyjump.Services
         /// <summary>
         /// Builds the sheets for all the data in the database.
         /// </summary>
-        /// <param name="loadingForm"></param>
+        /// <param name="cancellationToken"></param>
         /// <returns></returns>
         public static async Task BuildSheets(CancellationToken cancellationToken = default)
         {
@@ -1066,6 +1092,11 @@ namespace pyjump.Services
             }
         }
 
+        /// <summary>
+        /// Escapes a string for use in a Google Sheets formula.
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
         public static string EscapeForFormula(string input) => input?.Replace("\"", "\"\"") ?? string.Empty;
 
         /// <summary>
@@ -1097,6 +1128,8 @@ namespace pyjump.Services
         /// </summary>
         /// <param name="filesToDelete"></param>
         /// <param name="foldersToDelete"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public static async Task ClearAllData(List<FileEntry> filesToDelete = null, List<WhitelistEntry> foldersToDelete = null, CancellationToken cancellationToken = default)
         {
             try
@@ -1143,6 +1176,13 @@ namespace pyjump.Services
             }
         }
 
+        /// <summary>
+        /// Delete all broken entries from the database.
+        /// </summary>
+        /// <param name="deleteFiles"></param>
+        /// <param name="deleteWhitelist"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public static async Task DeleteBrokenEntries(bool deleteFiles, bool deleteWhitelist, CancellationToken cancellationToken = default)
         {
             try

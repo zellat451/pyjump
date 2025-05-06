@@ -42,6 +42,7 @@ namespace pyjump
                 SingletonServices.LogForm.Log("Starting file scan...");
 
                 await Methods.ScanFiles(ScopedServices.CancellationTokenSource.Token);
+                ScopedServices.ClearLoadingForm();
 
                 SingletonServices.LogForm.Log("File scan completed.");
                 MessageBox.Show("File scan completed.");
@@ -64,6 +65,7 @@ namespace pyjump
                 SingletonServices.LogForm.Log("Starting whitelist scan...");
 
                 await Methods.ScanWhitelist(ScopedServices.CancellationTokenSource.Token);
+                ScopedServices.ClearLoadingForm();
 
                 SingletonServices.LogForm.Log("Whitelist scan completed.");
                 MessageBox.Show("Whitelist scan completed.");
@@ -116,6 +118,7 @@ namespace pyjump
                 SingletonServices.LogForm.Log("Building sheets...");
 
                 await Methods.BuildSheets(ScopedServices.CancellationTokenSource.Token);
+                ScopedServices.ClearLoadingForm();
 
                 SingletonServices.LogForm.Log("Sheets built successfully.");
                 MessageBox.Show("Sheets built successfully.");
@@ -192,6 +195,7 @@ namespace pyjump
                     ClearEverything(true);
                     InitializeEverything();
                     await Methods.ScanWhitelist(ScopedServices.CancellationTokenSource.Token);
+                    ScopedServices.ClearLoadingForm();
                 }
 
                 if (cbFrenScanF.Checked)
@@ -201,6 +205,7 @@ namespace pyjump
                     InitializeEverything();
 
                     await Methods.ScanFiles(ScopedServices.CancellationTokenSource.Token);
+                    ScopedServices.ClearLoadingForm();
                 }
 
                 if (cbFrenDelLinksW.Checked || cbFrenDelLinksF.Checked)
@@ -216,6 +221,7 @@ namespace pyjump
                         isDeleteFiles,
                         isDeleteWhitelist,
                         ScopedServices.CancellationTokenSource.Token);
+                    ScopedServices.ClearLoadingForm();
                 }
 
                 if (cbFrenBuildSheets.Checked)
@@ -225,6 +231,7 @@ namespace pyjump
                     InitializeEverything();
 
                     await Methods.BuildSheets(ScopedServices.CancellationTokenSource.Token);
+                    ScopedServices.ClearLoadingForm();
                 }
 
                 if (cbFrenOpenSheet.Checked)
@@ -233,6 +240,7 @@ namespace pyjump
                     ClearEverything(true);
                     InitializeEverything();
                     Methods.GoToSheet();
+                    ScopedServices.ClearLoadingForm();
                 }
 
                 SingletonServices.LogForm.Log("Fren done. Fren does good work. Enjoy Fren's work, Fren's fren. :)");
@@ -267,6 +275,7 @@ namespace pyjump
                 SingletonServices.LogForm.Log("Starting force match...");
 
                 await Methods.ForceMatchType(ScopedServices.CancellationTokenSource.Token);
+                ScopedServices.ClearLoadingForm();
 
                 SingletonServices.LogForm.Log("Force match completed.");
                 MessageBox.Show("Force match completed.");
@@ -319,6 +328,7 @@ namespace pyjump
                     isClearWhitelist ? null : [],
                     cancellationToken: ScopedServices.CancellationTokenSource.Token
                 );
+                ScopedServices.ClearLoadingForm();
 
                 SingletonServices.LogForm.Log("All data cleared successfully.");
                 MessageBox.Show("All data cleared successfully.");
@@ -368,6 +378,7 @@ namespace pyjump
                     isDeleteFiles,
                     isDeleteWhitelist,
                     ScopedServices.CancellationTokenSource.Token);
+                ScopedServices.ClearLoadingForm();
 
                 SingletonServices.LogForm.Log("Broken entries deleted successfully.");
                 MessageBox.Show("Broken entries deleted successfully.");
@@ -483,6 +494,7 @@ namespace pyjump
                 }
 
                 await Methods.ImportData(filePath, ScopedServices.CancellationTokenSource.Token);
+                ScopedServices.ClearLoadingForm();
 
                 SingletonServices.LogForm.Log("Data imported successfully.");
                 MessageBox.Show("Data imported successfully.");
@@ -523,6 +535,7 @@ namespace pyjump
                 }
 
                 await Methods.ExportData(folderPath, ScopedServices.CancellationTokenSource.Token);
+                ScopedServices.ClearLoadingForm();
 
                 SingletonServices.LogForm.Log("Data exported successfully.");
                 MessageBox.Show("Data exported successfully.");
@@ -555,6 +568,7 @@ namespace pyjump
                 SingletonServices.LogForm.Log("Matching whitelist to drives...");
 
                 await Methods.MatchWhitelistToDrives(ScopedServices.CancellationTokenSource.Token);
+                ScopedServices.ClearLoadingForm();
 
                 SingletonServices.LogForm.Log("Whitelist matched to drives successfully.");
                 MessageBox.Show("Whitelist matched to drives successfully.");
@@ -622,7 +636,7 @@ namespace pyjump
 
         private void ClearEverything(bool keepLog = false)
         {
-            ScopedServices.Clear();
+            ScopedServices.ClearServices();
             if (!keepLog) SingletonServices.LogForm.Hide();
             this.Enabled = true;
             Cursor.Current = Cursors.Default;
