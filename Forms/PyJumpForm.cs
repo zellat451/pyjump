@@ -53,6 +53,7 @@ namespace pyjump
             }
             finally
             {
+                ScopedServices.ClearLoadingForm();
                 ClearEverything();
             }
         }
@@ -76,6 +77,7 @@ namespace pyjump
             }
             finally
             {
+                ScopedServices.ClearLoadingForm();
                 ClearEverything();
             }
         }
@@ -105,6 +107,7 @@ namespace pyjump
             }
             finally
             {
+                ScopedServices.ClearLoadingForm();
                 ClearEverything();
             }
         }
@@ -129,6 +132,7 @@ namespace pyjump
             }
             finally
             {
+                ScopedServices.ClearLoadingForm();
                 ClearEverything();
             }
         }
@@ -175,6 +179,7 @@ namespace pyjump
             }
             finally
             {
+                ScopedServices.ClearLoadingForm();
                 ClearEverything();
             }
         }
@@ -252,6 +257,7 @@ namespace pyjump
             }
             finally
             {
+                ScopedServices.ClearLoadingForm();
                 ClearEverything();
             }
         }
@@ -286,6 +292,7 @@ namespace pyjump
             }
             finally
             {
+                ScopedServices.ClearLoadingForm();
                 ClearEverything();
             }
         }
@@ -339,6 +346,7 @@ namespace pyjump
             }
             finally
             {
+                ScopedServices.ClearLoadingForm();
                 ClearEverything();
             }
         }
@@ -389,6 +397,7 @@ namespace pyjump
             }
             finally
             {
+                ScopedServices.ClearLoadingForm();
                 ClearEverything();
             }
         }
@@ -505,6 +514,7 @@ namespace pyjump
             }
             finally
             {
+                ScopedServices.ClearLoadingForm();
                 ClearEverything();
             }
         }
@@ -546,6 +556,7 @@ namespace pyjump
             }
             finally
             {
+                ScopedServices.ClearLoadingForm();
                 ClearEverything();
             }
         }
@@ -579,6 +590,7 @@ namespace pyjump
             }
             finally
             {
+                ScopedServices.ClearLoadingForm();
                 ClearEverything();
             }
         }
