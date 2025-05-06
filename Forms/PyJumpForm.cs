@@ -742,22 +742,14 @@ namespace pyjump
         {
             try
             {
-                // Load checkbox preferences from a file
-                var filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "checkbox_preferences.json");
-                if (File.Exists(filePath))
+                // get checkbox preferences
+                var preferences = PreferenceService.GetCheckboxPreferences();
+                var controls = GetAllControls(this);
+                foreach (var checkBox in controls.OfType<CheckBox>())
                 {
-                    var json = File.ReadAllText(filePath);
-                    var preferences = JsonSerializer.Deserialize<Dictionary<string, bool>>(json);
-                    if (preferences != null)
+                    if (preferences.TryGetValue(checkBox.Name, out bool value))
                     {
-                        List<Control> controls = GetAllControls(this);
-                        foreach (var checkBox in controls.OfType<CheckBox>())
-                        {
-                            if (preferences.TryGetValue(checkBox.Name, out bool value))
-                            {
-                                checkBox.Checked = value;
-                            }
-                        }
+                        checkBox.Checked = value;
                     }
                 }
             }
@@ -776,16 +768,7 @@ namespace pyjump
                 var name = checkBox.Name;
                 var isChecked = checkBox.Checked;
 
-                var filePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "checkbox_preferences.json");
-                var preferences = new Dictionary<string, bool>();
-                if (File.Exists(filePath))
-                {
-                    var json = File.ReadAllText(filePath);
-                    preferences = JsonSerializer.Deserialize<Dictionary<string, bool>>(json);
-                }
-                preferences[name] = isChecked;
-                var jsonString = JsonSerializer.Serialize(preferences);
-                File.WriteAllText(filePath, jsonString);
+                PreferenceService.SaveNewCheckboxPreferences(name, isChecked);
             }
             catch (Exception ex)
             {
