@@ -1281,7 +1281,10 @@ namespace pyjump.Services
                 }
 
                 // 3. load the preferences into the preferences files
-                if (preferences == null || preferences.CheckboxPreferences == null || preferences.CheckboxPreferences.Count == 0)
+                if (preferences == null || 
+                    ((preferences.CheckboxPreferences == null || preferences.CheckboxPreferences.Count == 0)
+                    && preferences.OtherPreferences == null)
+                )
                 {
                     SingletonServices.LogForm.Log("❌ No preferences found in the file.");
                 }
@@ -1291,6 +1294,12 @@ namespace pyjump.Services
                     {
                         // overwrite the preferences
                         PreferenceService.OverwriteCheckboxPreferences(preferences.CheckboxPreferences); 
+                    }
+
+                    if (preferences.OtherPreferences != null)
+                    {
+                        // overwrite the preferences
+                        PreferenceService.OverwriteOtherPreferences(preferences.OtherPreferences);
                     }
                 }
             }
@@ -1340,7 +1349,9 @@ namespace pyjump.Services
                 // 4. get the preferences
                 PrefDataSet preferences = new();
                 var cbPref = PreferenceService.GetCheckboxPreferences();
+                var otherPref = PreferenceService.GetOtherPreferences();
                 preferences.CheckboxPreferences = cbPref;
+                preferences.OtherPreferences = otherPref;
 
                 // 5. serialize the data to json
                 var data = new DataSet

@@ -54,45 +54,10 @@ namespace pyjump.Services
                 throw;
             }
 
-            try
-            {
-                // open the appsettings.json file as json, and get the value 'allowLogFile'
-                var allowLogFile = GetAppsettingsValue("allowLogFile");
-                AllowLogFile = bool.Parse(allowLogFile);
-            }
-            catch (Exception e)
-            {
-                Debug.WriteLine("Error reading allowLogFile from appsettings: " + e.Message);
-                throw;
-            }
-
-            try
-            {
-                // open the appsettings.json file as json, and get the value 'allowThreading'
-                var allowThreading = GetAppsettingsValue("allowThreading");
-                AllowThreading = bool.Parse(allowThreading);
-            }
-            catch (Exception e)
-            {
-                Debug.WriteLine("Error reading allowThreading from appsettings: " + e.Message);
-                throw;
-            }
-
-            try
-            {
-                // open the appsettings.json file as json, and get the value 'maxThreads'
-                var maxThread = GetAppsettingsValue("maxThreads");
-                MaxThreads = int.Parse(maxThread);
-                if (MaxThreads < 1)
-                {
-                    MaxThreads = 1;
-                }
-            }
-            catch (Exception e)
-            {
-                Debug.WriteLine("Error reading maxThreads from appsettings: " + e.Message);
-                throw;
-            }
+            var otherPref = PreferenceService.GetOtherPreferences();
+            AllowLogFile = otherPref.AllowLogFile;
+            AllowThreading = otherPref.AllowThreading;
+            MaxThreads = otherPref.MaxThreads;
         }
 
         public static void RegisterForm(PyJumpForm form)
@@ -106,8 +71,10 @@ namespace pyjump.Services
             LogForm.Hide();
         }
 
+        public static void SetPermissionFileLogging(bool permission) => AllowLogFile = permission;
         public static void InvertPermissionFileLogging() => AllowLogFile = !AllowLogFile;
 
+        public static void SetPermissionThreading(bool permission) => AllowThreading = permission;
         public static void InvertPermissionThreading() => AllowThreading = !AllowThreading;
 
         public static void SetMaxThreads(int max)

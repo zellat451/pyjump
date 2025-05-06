@@ -167,8 +167,10 @@ All checkboxes have a default value. You can change them if you want, and the ap
 	- `Go to sheet`: Opens the Google Sheets document in your browser. (Checked by default)
 1. `Enable/Disable Logging`: Enables or disables copying logs in a local file. If active, all logs will be copied in a file named after today's date in the `logs` folder. The folder/file will be created if it doesn't exist, and appended to if it does. `false` by default, so we don't spam your disk with logs.
 1. `Enable/Disable Threading`: Enables or disables multithreading. If active, the application will use multiple threads to scan the files and folders. This is much faster, but it may cause issues with the Google API request limits. `true` by default with `5` threads, which should be within limit. 
-You can dynamically change the number of threads with the text box above the Enabling button, or before launch in the appsettings.json file. The application will use the number of threads specified in the file. It will use the default value of `5` threads. If you set it to a negative number, it will use `1` thread.
-1. `Import/Export data`: Imports or exports the data in the DB to a json file. This is useful if you want to backup your data, especially between version updates. You can decide on the export folder, but the name is automatically generated from the current date. Imported data will overwrite the current data in the DB. The import file must be a json file, and it must be in the same format as the export file.
+You can dynamically change the number of threads with the text box above the Enabling button, or before launch in the other_preferences.json file if it has been generated. The application will use the number of threads specified in the file. It will use the default value of `5` threads. If you set it to a negative number, it will use `1` thread.
+1. `Import/Export data`: Imports or exports the data in the DB to a json file. This is useful if you want to backup your data, especially between version updates. 
+It also exports the preferences from the multiple `xxx_preferences.json` files, which contain among other things: the max number of threads, the permissions for threading and file logging, and the checkbox states at the time of export.
+You can decide on the export folder, but the name is automatically generated from the current date. Imported data will overwrite the current data in the DB. The import file must be a json file, and it must be in the same format as the export file.
 
 ---
 

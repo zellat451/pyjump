@@ -1,4 +1,3 @@
-using System.Text.Json;
 using pyjump.Forms;
 using pyjump.Infrastructure;
 using pyjump.Services;
@@ -11,13 +10,11 @@ namespace pyjump
         {
             InitializeComponent();
 
-            this.btnLogging.Text = GetCurrentLoggingButtonText();
+            this.LoadCheckboxPreferences();
+            this.LoadOtherPreferences();
 
-            this.btnThreading.Text = GetCurrentThreadingButtonText();
-            this.UpdateThreadCountInfos();
             this.textBoxThreadCountLoad.KeyDown += new KeyEventHandler(ThreadCountBox_KeyDown);
 
-            this.LoadCheckboxPreferences();
             cbClearW.CheckedChanged += cbAll_CheckedChanged;
             cbClearF.CheckedChanged += cbAll_CheckedChanged;
             cbDelW.CheckedChanged += cbAll_CheckedChanged;
@@ -460,6 +457,8 @@ namespace pyjump
             {
                 SingletonServices.InvertPermissionFileLogging();
                 this.btnLogging.Text = GetCurrentLoggingButtonText();
+
+                PreferenceService.SaveOtherPreferences();
             }
             catch (Exception ex)
             {
@@ -474,6 +473,7 @@ namespace pyjump
                 SingletonServices.InvertPermissionThreading();
                 this.btnThreading.Text = GetCurrentThreadingButtonText();
                 this.UpdateThreadCountInfos();
+                PreferenceService.SaveOtherPreferences();
             }
             catch (Exception ex)
             {
@@ -507,6 +507,8 @@ namespace pyjump
                     MessageBox.Show($"Thread count higer than 100: set to {value}. Warning, Google apis have a limit on request number per second.");
                 }
                 else MessageBox.Show($"Thread count set to {value}.");
+                
+                PreferenceService.SaveOtherPreferences();
             }
             catch (Exception ex)
             {
@@ -757,6 +759,13 @@ namespace pyjump
             {
                 MessageBox.Show("Something went wrong: " + ex);
             }
+        }
+
+        public void LoadOtherPreferences()
+        {
+            this.btnLogging.Text = GetCurrentLoggingButtonText();
+            this.btnThreading.Text = GetCurrentThreadingButtonText();
+            this.UpdateThreadCountInfos();
         }
 
         private void cbAll_CheckedChanged(object sender, EventArgs e)
