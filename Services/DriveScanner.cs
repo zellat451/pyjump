@@ -44,18 +44,21 @@ namespace pyjump.Services
         /// </summary>
         /// <param name="folderUrls"></param>
         /// <returns></returns>
-        public async Task<List<WhitelistEntry>> GetAllFolderNamesRecursiveAsync(IEnumerable<string> folderUrls, CancellationToken cancellationToken = default)
+        public async Task<List<WhitelistEntry>> GetAllFolderNamesRecursiveAsync(List<Entities.Drive> drives, CancellationToken cancellationToken = default)
         {
             try
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var rootFolderIds = folderUrls.Select(ExtractFolderInfosFromUrl)
-                                              .Where(inf => !string.IsNullOrEmpty(inf.folderId))
-                                              .Distinct();
+                var rootFolderIds = drives.Select(drive => (drive.Name, ExtractFolderInfosFromUrl(drive.Url))).DistinctBy(x => x.Item2.folderId);
 
-                foreach (var (folderId, resourceKey, driveId) in rootFolderIds)
-                    _folderQueue.Add((folderId, resourceKey, driveId, string.Empty), cancellationToken);
+                foreach (var (driveName, (folderId, resourceKey, driveId)) in rootFolderIds)
+                {
+                    if (string.IsNullOrEmpty(folderId))
+                        continue;
+                    var folderName = string.IsNullOrEmpty(driveName) ? folderId : driveName;
+                    _folderQueue.Add((folderId, resourceKey, driveId, folderName), cancellationToken);
+                }
 
                 if (!SingletonServices.AllowThreading)
                 {

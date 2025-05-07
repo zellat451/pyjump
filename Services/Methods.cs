@@ -29,7 +29,7 @@ namespace pyjump.Services
                 cancellationToken.ThrowIfCancellationRequested();
 
                 var scanner = new DriveScanner();
-                var allWhitelistEntries = await scanner.GetAllFolderNamesRecursiveAsync(drives.Data.Select(x => x.Url), cancellationToken);
+                var allWhitelistEntries = await scanner.GetAllFolderNamesRecursiveAsync(drives.Data, cancellationToken);
 
                 cancellationToken.ThrowIfCancellationRequested();
 
