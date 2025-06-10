@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace pyjump.Migrations
 {
     /// <inheritdoc />
-    public partial class Init : Migration
+    public partial class InitDB : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -43,7 +43,7 @@ namespace pyjump.Migrations
                     FolderName = table.Column<string>(type: "TEXT", nullable: false),
                     FolderUrl = table.Column<string>(type: "TEXT", nullable: false),
                     Type = table.Column<string>(type: "TEXT", nullable: false),
-                    Accessible = table.Column<bool>(type: "INTEGER", nullable: false, defaultValue: true)
+                    FilterIgnored = table.Column<bool>(type: "INTEGER", nullable: false, defaultValue: false)
                 },
                 constraints: table =>
                 {

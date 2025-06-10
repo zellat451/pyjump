@@ -50,8 +50,8 @@ namespace pyjump.Infrastructure
                     .IsRequired();
                 x.Property(e => e.Type)
                     .IsRequired();
-                x.Property(e => e.Accessible)
-                    .HasDefaultValue(true);
+                x.Property(e => e.FilterIgnored)
+                    .HasDefaultValue(false);
 
                 x.HasOne<WhitelistEntry>()
                     .WithMany()

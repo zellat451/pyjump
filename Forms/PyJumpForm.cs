@@ -182,12 +182,12 @@ namespace pyjump
             Cursor.Current = Cursors.Default;
         }
 
-        private async void btnInaccessible_Click(object sender, EventArgs e)
+        private async void btnBatchIgnore_Click(object sender, EventArgs e)
         {
             try
             {
                 InitializeEverything();
-                SingletonServices.LogForm.Log("Reading data to set inaccessible files...");
+                SingletonServices.LogForm.Log("Reading data to filter-ignore files in batch...");
 
                 string filePath;
                 using (OpenFileDialog openFileDialog = new OpenFileDialog())
@@ -207,7 +207,7 @@ namespace pyjump
                     }
                 }
 
-                await Methods.BatchSetInaccessible(filePath, ScopedServices.CancellationTokenSource.Token);
+                await Methods.BatchIgnoreFiles(filePath, ScopedServices.CancellationTokenSource.Token);
                 ScopedServices.CancellationTokenSource.Token.ThrowIfCancellationRequested();
                 ScopedServices.ClearLoadingForm();
 

@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using System.Threading;
 using Google.Apis.Sheets.v4.Data;
 using pyjump.Entities;
 using pyjump.Entities.Data;
@@ -752,13 +751,13 @@ namespace pyjump.Services
                 // we want to skip files that are marked Accessible = false.
                 // we want to get the most recent file of each set.
                 var sheetJumpFiles = allFiles
-                    .Where(x => x.Type == Statics.FolderType.Jump && x.Accessible)
+                    .Where(x => x.Type == Statics.FolderType.Jump && !x.FilterIgnored)
                     .GroupBy(x => new { x.Name, x.Owner })
                     .Select(g => g.OrderByDescending(x => x.LastModified).First())
                     .ToList();
 
                 var sheetStoryFiles = allFiles
-                    .Where(x => x.Type == Statics.FolderType.Story && x.Accessible)
+                    .Where(x => x.Type == Statics.FolderType.Story && !x.FilterIgnored)
                     .GroupBy(x => new { x.Name, x.Owner })
                     .Select(g => g.OrderByDescending(x => x.LastModified).First())
                     .ToList();
@@ -854,7 +853,7 @@ namespace pyjump.Services
             }
         }
 
-        public static async Task BatchSetInaccessible(string filePath, CancellationToken cancellationToken = default)
+        public static async Task BatchIgnoreFiles(string filePath, CancellationToken cancellationToken = default)
         {
             var ids = new List<string>();
             try
@@ -880,7 +879,7 @@ namespace pyjump.Services
 
                 cancellationToken.ThrowIfCancellationRequested();
 
-                // 2. for all ids in the FileEntry database, set Accessible = false
+                // 2. for all ids in the FileEntry database, set FilterIgnored = true
                 List<FileEntry> entriesToUpdate;
                 using (var db = new AppDbContext())
                 {
@@ -899,7 +898,7 @@ namespace pyjump.Services
                 {
                     foreach (var entry in entriesToUpdate)
                     {
-                        entry.Accessible = false;
+                        entry.FilterIgnored = true;
                     }
                     db.Files.UpdateRange(entriesToUpdate);
                     await SafeSaveAsync(db, cancellationToken);
