@@ -67,6 +67,7 @@ namespace pyjump
             cbFrenDelLinksF = new CheckBox();
             panelFren = new Panel();
             cbFrenOpenSheet = new CheckBox();
+            btnInaccessibles = new Button();
             panelThreading.SuspendLayout();
             panelImpExp.SuspendLayout();
             panelW.SuspendLayout();
@@ -312,11 +313,12 @@ namespace pyjump
             // 
             // panelEdit
             // 
+            panelEdit.Controls.Add(btnInaccessibles);
             panelEdit.Controls.Add(btnEditWhitelist);
             panelEdit.Controls.Add(btnEditFiles);
             panelEdit.Location = new Point(268, 9);
             panelEdit.Name = "panelEdit";
-            panelEdit.Size = new Size(222, 68);
+            panelEdit.Size = new Size(354, 68);
             panelEdit.TabIndex = 22;
             // 
             // panelClear
@@ -464,6 +466,16 @@ namespace pyjump
             cbFrenOpenSheet.Text = "Open sheet";
             cbFrenOpenSheet.UseVisualStyleBackColor = true;
             // 
+            // btnInaccessibles
+            // 
+            btnInaccessibles.Location = new Point(242, 9);
+            btnInaccessibles.Name = "btnInaccessibles";
+            btnInaccessibles.Size = new Size(85, 33);
+            btnInaccessibles.TabIndex = 19;
+            btnInaccessibles.Text = "Inaccessibles";
+            btnInaccessibles.UseVisualStyleBackColor = true;
+            btnInaccessibles.Click += btnInaccessible_Click;
+            // 
             // PyJumpForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -536,5 +548,6 @@ namespace pyjump
         private CheckBox cbFrenDelLinksF;
         private Panel panelFren;
         private CheckBox cbFrenOpenSheet;
+        private Button btnInaccessibles;
     }
 }

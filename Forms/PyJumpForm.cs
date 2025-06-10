@@ -182,6 +182,49 @@ namespace pyjump
             Cursor.Current = Cursors.Default;
         }
 
+        private async void btnInaccessible_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                InitializeEverything();
+                SingletonServices.LogForm.Log("Reading data to set inaccessible files...");
+
+                string filePath;
+                using (OpenFileDialog openFileDialog = new OpenFileDialog())
+                {
+                    openFileDialog.Title = "Select a file to read from";
+                    openFileDialog.Filter = "All files (*.*)|*.txt";
+
+                    if (openFileDialog.ShowDialog() == DialogResult.OK)
+                    {
+                        // Get the path of the selected file
+                        filePath = openFileDialog.FileName;
+                    }
+                    else
+                    {
+                        SingletonServices.LogForm.Log("Operation cancelled by user.");
+                        return;
+                    }
+                }
+
+                await Methods.BatchSetInaccessible(filePath, ScopedServices.CancellationTokenSource.Token);
+                ScopedServices.CancellationTokenSource.Token.ThrowIfCancellationRequested();
+                ScopedServices.ClearLoadingForm();
+
+                SingletonServices.LogForm.Log("Data modified successfully.");
+                MessageBox.Show("Data modified successfully.");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Something went wrong: {ex}");
+            }
+            finally
+            {
+                ScopedServices.ClearLoadingForm();
+                ClearEverything();
+            }
+        }
+
         private void btnGoToSheet_Click(object sender, EventArgs e)
         {
             try
@@ -507,7 +550,7 @@ namespace pyjump
                     MessageBox.Show($"Thread count higer than 100: set to {value}. Warning, Google apis have a limit on request number per second.");
                 }
                 else MessageBox.Show($"Thread count set to {value}.");
-                
+
                 PreferenceService.SaveOtherPreferences();
             }
             catch (Exception ex)

@@ -1,6 +1,8 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Text.Json;
+using System.Text.RegularExpressions;
+using System.Threading;
 using Google.Apis.Sheets.v4.Data;
 using pyjump.Entities;
 using pyjump.Entities.Data;
@@ -105,7 +107,7 @@ namespace pyjump.Services
                     }
 
                     // 3. commit the changes to the database
-                    await db.SaveChangesAsync(cancellationToken);
+                    await SafeSaveAsync(db, cancellationToken);
                 }
             }
             catch (OperationCanceledException)
@@ -145,16 +147,7 @@ namespace pyjump.Services
                     var entriesToDelete = allWhitelistEntries.Where(x => !driveNames.Contains(x.Name)).ToList();
                     db.Whitelist.RemoveRange(entriesToDelete);
 
-                    try
-                    {
-                        await db.SaveChangesAsync(cancellationToken);
-                    }
-                    catch (Exception e)
-                    {
-                        SingletonServices.LogForm.Log($"Error deleting whitelist entries: {e}");
-                        db.Dispose();
-                        throw;
-                    }
+                    await SafeSaveAsync(db, cancellationToken);
                 }
             }
             catch (OperationCanceledException)
@@ -494,16 +487,7 @@ namespace pyjump.Services
                             return;
                         }
 
-                        try
-                        {
-                            await db.SaveChangesAsync(cancellationToken);
-                        }
-                        catch (Exception e)
-                        {
-                            SingletonServices.LogForm.Log($"Error saving changes to the database: {e}");
-                            db.Dispose();
-                            throw;
-                        }
+                        await SafeSaveAsync(db, cancellationToken);
                     }
 
                     ScopedServices.LoadingForm?.IncrementProgress();
@@ -576,7 +560,7 @@ namespace pyjump.Services
                                     ScopedServices.LoadingForm.IncrementProgress();
                                     continue;
                                 }
-                                await db.SaveChangesAsync(cancellationToken);
+                                await SafeSaveAsync(db, cancellationToken);
                             }
                             SingletonServices.LogForm.Log($"✅ File {file.Name} ({file.Id}) updated to match folder type {whitelistEntry.Type}.");
                         }
@@ -870,6 +854,69 @@ namespace pyjump.Services
             }
         }
 
+        public static async Task BatchSetInaccessible(string filePath, CancellationToken cancellationToken = default)
+        {
+            var ids = new List<string>();
+            try
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                // 1. get the ids from the file
+                string content = await File.ReadAllTextAsync(filePath, cancellationToken);
+                string[] lines = content.Split(['\n', '\r'], StringSplitOptions.RemoveEmptyEntries);
+
+                var regex = new Regex(@"(?:https:\/\/drive\.google\.com\/file\/d\/|^)([a-zA-Z0-9_-]{25,})(?=\/|$)", RegexOptions.Compiled);
+
+                foreach (var line in lines)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                    var match = regex.Match(line);
+                    if (match.Success)
+                    {
+                        ids.Add(match.Groups[1].Value);
+                    }
+                }
+
+                cancellationToken.ThrowIfCancellationRequested();
+
+                // 2. for all ids in the FileEntry database, set Accessible = false
+                List<FileEntry> entriesToUpdate;
+                using (var db = new AppDbContext())
+                {
+                    entriesToUpdate = db.Files.Where(x => ids.Contains(x.Id)).ToList();
+                }
+
+                if (entriesToUpdate == null || entriesToUpdate.Count == 0)
+                {
+                    SingletonServices.LogForm.Log("❌ No entries found to update.");
+                    return;
+                }
+
+                cancellationToken.ThrowIfCancellationRequested();
+
+                using (var db = new AppDbContext())
+                {
+                    foreach (var entry in entriesToUpdate)
+                    {
+                        entry.Accessible = false;
+                    }
+                    db.Files.UpdateRange(entriesToUpdate);
+                    await SafeSaveAsync(db, cancellationToken);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                SingletonServices.LogForm.Log("❌ Data modification cancelled.");
+                return;
+            }
+            catch (Exception e)
+            {
+                SingletonServices.LogForm.Log($"Error while modifying data: {e}");
+                throw;
+            }
+        }
+
         /// <summary>
         /// Clears a range of files and folders from the database.
         /// If 'null' is passed, all files or folders will be deleted.
@@ -911,7 +958,7 @@ namespace pyjump.Services
                         db.Whitelist.RemoveRange(db.Whitelist);
                     }
 
-                    await db.SaveChangesAsync(cancellationToken);
+                    await SafeSaveAsync(db, cancellationToken);
                 }
             }
             catch (OperationCanceledException)
@@ -1025,7 +1072,7 @@ namespace pyjump.Services
                             await db.Whitelist.AddRangeAsync(dbData.WhitelistEntries, cancellationToken);
                         }
                         // 2.c. save the changes to the database
-                        await db.SaveChangesAsync(cancellationToken);
+                        await SafeSaveAsync(db, cancellationToken);
                     }
                 }
 
@@ -1121,6 +1168,20 @@ namespace pyjump.Services
             catch (Exception e)
             {
                 SingletonServices.LogForm.Log($"Error exporting data: {e}");
+                throw;
+            }
+        }
+
+        private static async Task SafeSaveAsync(AppDbContext db, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                await db.SaveChangesAsync(cancellationToken);
+            }
+            catch (Exception e)
+            {
+                SingletonServices.LogForm.Log($"Error deleting whitelist entries: {e}");
+                db.Dispose();
                 throw;
             }
         }
