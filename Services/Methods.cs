@@ -208,18 +208,6 @@ namespace pyjump.Services
                 }
 
                 cancellationToken.ThrowIfCancellationRequested();
-
-                List<FileEntry> allFiles;
-                using (var db = new AppDbContext())
-                {
-                    allFiles = [.. db.Files];
-                }
-
-                cancellationToken.ThrowIfCancellationRequested();
-
-                ScopedServices.LoadingForm.PrepareLoadingBar("Treating sets for files", allFiles.Count);
-
-                await TreatSetsForFiles(allFiles, cancellationToken);
             }
             catch (OperationCanceledException)
             {
@@ -534,230 +522,6 @@ namespace pyjump.Services
         }
 
         /// <summary>
-        /// Create sets for all files with the same name and owner, irrespective of the folder they are in.
-        /// Chooses the file with the most recent 'LastModified' date as the owner of the set.
-        /// </summary>
-        /// <param name="fileEntries"></param>
-        /// <param name="cancellationToken"></param>
-        /// <returns></returns>
-        private static async Task TreatSetsForFiles(List<FileEntry> fileEntries, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                // regroup the files under sets
-                List<FileEntry> allFiles;
-                using (var db = new AppDbContext())
-                {
-                    allFiles = [.. db.Files];
-                }
-
-                List<string> treatedIds = [];
-                foreach (var file in fileEntries)
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                    // 1. check if the file is already treated
-                    if (treatedIds.Contains(file.Id))
-                    {
-                        ScopedServices.LoadingForm.IncrementProgress();
-                        continue;
-                    }
-
-                    // 2. find all files with the same name and owner (contains the current file)
-                    var similarFiles = allFiles.Where(x => x.Name == file.Name && x.Owner == file.Owner).ToList();
-                    similarFiles.AddRange(fileEntries.Where(x => x.Name == file.Name && x.Owner == file.Owner));
-                    similarFiles = [.. similarFiles.DistinctBy(x => x.Id)];
-
-                    // 3. check if a set already exists for the files
-                    LNKSimilarSetFile existingSet;
-                    using (var db = new AppDbContext())
-                    {
-                        var similarIds = similarFiles.Select(x => x.Id).ToList();
-                        existingSet = db.LNKSimilarSetFiles.FirstOrDefault(x => similarIds.Contains(x.FileEntryId));
-                    }
-
-                    cancellationToken.ThrowIfCancellationRequested();
-
-                    if (existingSet == null)
-                    {
-                        // There is no set created for that file, or it would be registered in the LNKSimilarSetFile table
-                        // 3.a.1. create a new set for the similar files (OwnerFileEntryId is the file with the most recent 'LastModified' date)
-                        var similarSet = new SimilarSet
-                        {
-                            OwnerFileEntryId = similarFiles.OrderByDescending(x => x.LastModified).FirstOrDefault()?.Id
-                        };
-                        using (var db = new AppDbContext())
-                        {
-                            try
-                            {
-                                await db.SimilarSets.AddAsync(similarSet, cancellationToken);
-                            }
-                            catch (Exception e)
-                            {
-                                SingletonServices.LogForm.Log($"Error adding similar set: {e}");
-                                throw;
-                            }
-                            // 3.a.2. save the set to the database (this will generate the Id for the set)
-                            try
-                            {
-                                await db.SaveChangesAsync(cancellationToken);
-                            }
-                            catch (Exception e)
-                            {
-                                SingletonServices.LogForm.Log($"Error saving changes to the database: {e}");
-                                throw;
-                            }
-                        }
-                        using (var db = new AppDbContext())
-                        {
-                            // 3.a.3. add the similar files to the set
-                            foreach (var similarFile in similarFiles)
-                            {
-                                try
-                                {
-                                    cancellationToken.ThrowIfCancellationRequested();
-                                }
-                                catch (Exception)
-                                {
-                                    SingletonServices.LogForm.Log("❌ Sets creation cancelled.");
-                                    db.Dispose();
-                                    return;
-                                }
-
-                                var lnkSimilarSetFile = new LNKSimilarSetFile
-                                {
-                                    SimilarSetId = similarSet.Id,
-                                    FileEntryId = similarFile.Id
-                                };
-                                try
-                                {
-                                    await db.LNKSimilarSetFiles.AddAsync(lnkSimilarSetFile, cancellationToken);
-                                }
-                                catch (Exception e)
-                                {
-                                    SingletonServices.LogForm.Log($"Error adding file to similar set: {e}");
-                                    throw;
-                                }
-                                treatedIds.Add(similarFile.Id);
-                            }
-                            // 3.a.4. save the changes to the database
-                            try
-                            {
-                                await db.SaveChangesAsync(cancellationToken);
-                            }
-                            catch (Exception e)
-                            {
-                                SingletonServices.LogForm.Log($"Error saving changes to the database: {e}");
-                                throw;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        // There is already a set created for that file
-                        // 3.b.1. check in similarFiles all the files that are not in a set
-                        var similarIds = similarFiles.Select(x => x.Id).ToList();
-                        var filesNotInSet = similarFiles.Where(x => !existingSet.FileEntryId.Contains(x.Id)).Distinct().ToList();
-
-                        // 3.b.2. add the files to the set
-                        using (var db = new AppDbContext())
-                        {
-                            foreach (var similarFile in filesNotInSet)
-                            {
-                                try
-                                {
-                                    cancellationToken.ThrowIfCancellationRequested();
-                                }
-                                catch (Exception)
-                                {
-                                    SingletonServices.LogForm.Log("❌ Sets creation cancelled.");
-                                    db.Dispose();
-                                    return;
-                                }
-
-                                var lnkSimilarSetFile = new LNKSimilarSetFile
-                                {
-                                    SimilarSetId = existingSet.SimilarSetId,
-                                    FileEntryId = similarFile.Id
-                                };
-                                try
-                                {
-                                    if (!db.LNKSimilarSetFiles.Contains(lnkSimilarSetFile))
-                                        await db.LNKSimilarSetFiles.AddAsync(lnkSimilarSetFile, cancellationToken);
-                                }
-                                catch (Exception e)
-                                {
-                                    SingletonServices.LogForm.Log($"Error adding file to similar set: {e}");
-                                    throw;
-                                }
-                                treatedIds.Add(similarFile.Id);
-                            }
-
-                            // 3.b.3. save the changes to the database
-                            try
-                            {
-                                await db.SaveChangesAsync(cancellationToken);
-                            }
-                            catch (Exception e)
-                            {
-                                SingletonServices.LogForm.Log($"Error saving changes to the database: {e}");
-                                throw;
-                            }
-                        }
-
-                        cancellationToken.ThrowIfCancellationRequested();
-
-                        // 3.b.4. update the owner file entry id of the set
-                        using (var db = new AppDbContext())
-                        {
-                            var set = db.SimilarSets.FirstOrDefault(x => x.Id == existingSet.SimilarSetId);
-                            if (set != null)
-                            {
-                                set.OwnerFileEntryId = similarFiles.OrderByDescending(x => x.LastModified).FirstOrDefault()?.Id;
-                                try
-                                {
-                                    if (!db.SimilarSets.Contains(set))
-                                        db.SimilarSets.Update(set);
-                                }
-                                catch (Exception e)
-                                {
-                                    SingletonServices.LogForm.Log($"Error updating similar set: {e}");
-                                    throw;
-                                }
-
-                                // 3.b.5. save the changes to the database
-                                try
-                                {
-                                    await db.SaveChangesAsync(cancellationToken);
-                                }
-                                catch (Exception e)
-                                {
-                                    SingletonServices.LogForm.Log($"Error saving changes to the database: {e}");
-                                    throw;
-                                }
-                            }
-                        }
-                    }
-
-                    SingletonServices.LogForm.Log($"✅ Set created/updated for {similarFiles.Count} files.");
-                    ScopedServices.LoadingForm.IncrementProgress();
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                SingletonServices.LogForm.Log("❌ Sets creation cancelled.");
-                return;
-            }
-            catch (Exception e)
-            {
-                SingletonServices.LogForm.Log($"Error treating sets for files: {e}");
-                throw;
-            }
-        }
-
-        /// <summary>
         /// Forces the file type to match the folder type for all files in the database.
         /// </summary>
         /// <param name="cancellationToken"></param>
@@ -997,50 +761,35 @@ namespace pyjump.Services
 
                 ScopedServices.LoadingForm.IncrementProgress();
 
-                // 1. get all files which are not registered in the LNKSimilarSetFile table
-                List<LNKSimilarSetFile> lnkSimilarSetFiles;
-                using (var db = new AppDbContext())
-                {
-                    lnkSimilarSetFiles = [.. db.LNKSimilarSetFiles];
-                }
-
-                var filesNotInSet = allFiles.Where(x => !lnkSimilarSetFiles.Select(y => y.FileEntryId).Contains(x.Id)).ToList();
-
-                ScopedServices.LoadingForm.IncrementProgress();
-
-                // 2. generate sets for the files not in a set
-                if (filesNotInSet.Count > 0)
-                {
-                    SingletonServices.LogForm.Log($"Found {filesNotInSet.Count} files not in a set.");
-                    ScopedServices.LoadingForm.PrepareLoadingBar("Treating sets for files", filesNotInSet.Count);
-                    await TreatSetsForFiles(filesNotInSet, cancellationToken);
-                }
-
                 cancellationToken.ThrowIfCancellationRequested();
 
-                // 3. get all sets from the database
-                List<SimilarSet> allSets;
-                using (var db = new AppDbContext())
-                {
-                    allSets = [.. db.SimilarSets];
-                }
+                // 1. filter similar results for jumps / stories
+                // we want to group all files by name / owner.
+                // we want to skip files that are marked Accessible = false.
+                // we want to get the most recent file of each set.
+                var sheetJumpFiles = allFiles
+                    .Where(x => x.Type == Statics.FolderType.Jump && x.Accessible)
+                    .GroupBy(x => new { x.Name, x.Owner })
+                    .Select(g => g.OrderByDescending(x => x.LastModified).First())
+                    .ToList();
 
-                // 4. generate sheets data
-                // get all owner file entries in sets
-                var ownerFileEntriesIds = allSets.Select(x => x.OwnerFileEntryId).Distinct().ToList();
-                var ownerFileEntries = allFiles.Where(x => ownerFileEntriesIds.Contains(x.Id)).ToList();
+                var sheetStoryFiles = allFiles
+                    .Where(x => x.Type == Statics.FolderType.Story && x.Accessible)
+                    .GroupBy(x => new { x.Name, x.Owner })
+                    .Select(g => g.OrderByDescending(x => x.LastModified).First())
+                    .ToList();
 
-                // separate the Jump / Story / Other / Blacklisted files (must join on Folder)
+                // 3. separate the Jump / Story / Other / Blacklisted files (must join on Folder)
                 // we want 5 sheets: Jumps, Stories, Others, Jumps (Unfiltered) & Stories (Unfiltered)
                 // order them by descending date modified
 
                 // Filter and group files by type
-                var dataSheetJump = ownerFileEntries
+                var dataSheetJump = sheetJumpFiles
                     .Where(x => x.Type == Statics.FolderType.Jump)
                     .OrderByDescending(x => x.LastModified)
                     .ToList();
 
-                var dataSheetStory = ownerFileEntries
+                var dataSheetStory = sheetStoryFiles
                     .Where(x => x.Type == Statics.FolderType.Story)
                     .OrderByDescending(x => x.LastModified)
                     .ToList();
@@ -1062,7 +811,7 @@ namespace pyjump.Services
 
                 cancellationToken.ThrowIfCancellationRequested();
 
-                // 5. upload the data to the sheets
+                // 4. upload the data to the sheets
                 ScopedServices.LoadingForm.PrepareLoadingBar("Building Jumps sheet", dataSheetJump.Count);
                 await UploadToSheetAsync(dataSheetJump, Statics.Sheet.File.SHEET_J, cancellationToken);
 
@@ -1277,11 +1026,11 @@ namespace pyjump.Services
                         }
                         // 2.c. save the changes to the database
                         await db.SaveChangesAsync(cancellationToken);
-                    } 
+                    }
                 }
 
                 // 3. load the preferences into the preferences files
-                if (preferences == null || 
+                if (preferences == null ||
                     ((preferences.CheckboxPreferences == null || preferences.CheckboxPreferences.Count == 0)
                     && preferences.OtherPreferences == null)
                 )
@@ -1293,7 +1042,7 @@ namespace pyjump.Services
                     if (preferences.CheckboxPreferences != null && preferences.CheckboxPreferences.Count != 0)
                     {
                         // overwrite the preferences
-                        PreferenceService.OverwriteCheckboxPreferences(preferences.CheckboxPreferences); 
+                        PreferenceService.OverwriteCheckboxPreferences(preferences.CheckboxPreferences);
                     }
 
                     if (preferences.OtherPreferences != null)

@@ -7,8 +7,6 @@ namespace pyjump.Infrastructure
     {
         public DbSet<WhitelistEntry> Whitelist { get; set; }
         public DbSet<FileEntry> Files { get; set; }
-        public DbSet<SimilarSet> SimilarSets { get; set; }
-        public DbSet<LNKSimilarSetFile> LNKSimilarSetFiles { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder options)
         => options.UseSqlite("Data Source=data.sqlite").UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
@@ -52,43 +50,13 @@ namespace pyjump.Infrastructure
                     .IsRequired();
                 x.Property(e => e.Type)
                     .IsRequired();
+                x.Property(e => e.Accessible)
+                    .HasDefaultValue(true);
 
                 x.HasOne<WhitelistEntry>()
                     .WithMany()
                     .HasForeignKey(e => e.FolderId)
                     .OnDelete(DeleteBehavior.SetNull);
-            });
-
-            modelBuilder.Entity<SimilarSet>(x =>
-            {
-                x.HasKey(e => e.Id);
-                x.Property(e => e.Id)
-                    .ValueGeneratedOnAdd();
-                x.Property(e => e.OwnerFileEntryId)
-                    .IsRequired();
-                x.HasOne<FileEntry>()
-                    .WithMany()
-                    .HasForeignKey(e => e.OwnerFileEntryId)
-                    .OnDelete(DeleteBehavior.Cascade);
-            });
-
-            modelBuilder.Entity<LNKSimilarSetFile>(x =>
-            {
-                x.HasKey(e => new { e.SimilarSetId, e.FileEntryId });
-                x.Property(e => e.SimilarSetId)
-                    .IsRequired();
-                x.Property(e => e.FileEntryId)
-                    .IsRequired();
-
-                x.HasOne<SimilarSet>()
-                    .WithMany()
-                    .HasForeignKey(e => e.SimilarSetId)
-                    .OnDelete(DeleteBehavior.Cascade);
-
-                x.HasOne<FileEntry>()
-                    .WithMany()
-                    .HasForeignKey(e => e.FileEntryId)
-                    .OnDelete(DeleteBehavior.Cascade);
             });
         }
     }

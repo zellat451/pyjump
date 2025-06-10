@@ -17,6 +17,7 @@ namespace pyjump.Entities
         public string FolderName { get; set; }
         public string FolderUrl { get; set; }
         public string Type { get; set; }
+        public bool Accessible { get; set; } = true;
 
         public static (int colNumber, List<object> cols) GetSheetColumns()
         {

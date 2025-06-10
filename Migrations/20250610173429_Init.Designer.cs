@@ -11,8 +11,8 @@ using pyjump.Infrastructure;
 namespace pyjump.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250426190117_initial_migration")]
-    partial class initial_migration
+    [Migration("20250610173429_Init")]
+    partial class Init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,6 +24,11 @@ namespace pyjump.Migrations
                 {
                     b.Property<string>("Id")
                         .HasColumnType("TEXT");
+
+                    b.Property<bool>("Accessible")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(true);
 
                     b.Property<string>("DriveId")
                         .ValueGeneratedOnAdd()
@@ -73,38 +78,6 @@ namespace pyjump.Migrations
                     b.ToTable("Files");
                 });
 
-            modelBuilder.Entity("pyjump.Entities.LNKSimilarSetFile", b =>
-                {
-                    b.Property<int>("SimilarSetId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("FileEntryId")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("SimilarSetId", "FileEntryId");
-
-                    b.HasIndex("FileEntryId");
-
-                    b.ToTable("LNKSimilarSetFiles");
-                });
-
-            modelBuilder.Entity("pyjump.Entities.SimilarSet", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("OwnerFileEntryId")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("OwnerFileEntryId");
-
-                    b.ToTable("SimilarSets");
-                });
-
             modelBuilder.Entity("pyjump.Entities.WhitelistEntry", b =>
                 {
                     b.Property<string>("Id")
@@ -147,30 +120,6 @@ namespace pyjump.Migrations
                         .WithMany()
                         .HasForeignKey("FolderId")
                         .OnDelete(DeleteBehavior.SetNull);
-                });
-
-            modelBuilder.Entity("pyjump.Entities.LNKSimilarSetFile", b =>
-                {
-                    b.HasOne("pyjump.Entities.FileEntry", null)
-                        .WithMany()
-                        .HasForeignKey("FileEntryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("pyjump.Entities.SimilarSet", null)
-                        .WithMany()
-                        .HasForeignKey("SimilarSetId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("pyjump.Entities.SimilarSet", b =>
-                {
-                    b.HasOne("pyjump.Entities.FileEntry", null)
-                        .WithMany()
-                        .HasForeignKey("OwnerFileEntryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }
