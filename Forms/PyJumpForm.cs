@@ -182,6 +182,18 @@ namespace pyjump
             Cursor.Current = Cursors.Default;
         }
 
+        private void btnEditIdentities_Click(object sender, EventArgs e)
+        {
+            this.Enabled = false;
+            Cursor.Current = Cursors.WaitCursor;
+            using (var form = new OwnerEditorForm())
+            {
+                form.ShowDialog();
+            }
+            this.Enabled = true;
+            Cursor.Current = Cursors.Default;
+        }
+
         private async void btnBatchIgnore_Click(object sender, EventArgs e)
         {
             try
@@ -828,6 +840,5 @@ namespace pyjump
             }
         }
         #endregion
-
     }
 }

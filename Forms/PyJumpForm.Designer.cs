@@ -490,6 +490,7 @@ namespace pyjump
             btnEditIdentities.TabIndex = 20;
             btnEditIdentities.Text = "Edit Identities";
             btnEditIdentities.UseVisualStyleBackColor = true;
+            btnEditIdentities.Click += btnEditIdentities_Click;
             // 
             // PyJumpForm
             // 
