@@ -6,11 +6,23 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace pyjump.Migrations
 {
     /// <inheritdoc />
-    public partial class InitDB : Migration
+    public partial class Init_owner : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.CreateTable(
+                name: "LNKOwners",
+                columns: table => new
+                {
+                    Name1 = table.Column<string>(type: "TEXT", nullable: false),
+                    Name2 = table.Column<string>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_LNKOwners", x => new { x.Name1, x.Name2 });
+                });
+
             migrationBuilder.CreateTable(
                 name: "Whitelist",
                 columns: table => new
@@ -67,6 +79,9 @@ namespace pyjump.Migrations
         {
             migrationBuilder.DropTable(
                 name: "Files");
+
+            migrationBuilder.DropTable(
+                name: "LNKOwners");
 
             migrationBuilder.DropTable(
                 name: "Whitelist");

@@ -106,7 +106,7 @@ namespace pyjump.Forms
         #region buttons & grid
         public void EntityEditorForm_Load()
         {
-            var entries = _context.Set<LNKOwner>().OrderBy(x => x.Name1).ToList();
+            var entries = _context.LNKOwners.OrderBy(x => x.Name1).ToList();
 
             _entryBinding = new BindingList<LNKOwner>(entries);
             _entryBinding.AllowNew = true;
@@ -140,12 +140,24 @@ namespace pyjump.Forms
             {
                 // Update existing entries
                 // Warning, LNKOwner is considered the same in both orders of Name1 and Name2
-                var existingEntries = _context.Set<LNKOwner>().ToList();
+                var existingEntries = _context.LNKOwners.ToList();
                 var reversedExistingEntries = existingEntries.Select(x => new LNKOwner { Name1 = x.Name2, Name2 = x.Name1 }).ToList();
 
                 var allExistingEntries = existingEntries.Concat(reversedExistingEntries).ToList();
 
                 var addedEntries = _entryBinding.Where(x => !allExistingEntries.Contains(x)).ToList();
+
+                // remove potential duplicates in addedEntries
+                addedEntries = addedEntries
+                    .GroupBy(x =>
+                    {
+                        var names = new[] { x.Name1?.Trim().ToLowerInvariant(), x.Name2?.Trim().ToLowerInvariant() };
+                        Array.Sort(names); // ensures ("a", "b") and ("b", "a") have the same key
+                        return string.Join("|", names);
+                    })
+                    .Select(g => g.First())
+                    .ToList();
+
                 if (addedEntries.Count > 0)
                 {
                     _context.AddRange(addedEntries);
@@ -193,7 +205,7 @@ namespace pyjump.Forms
             else
             {
                 // If it's already in the database, mark it for deletion
-                _context.Set<LNKOwner>().Remove(entry);
+                _context.LNKOwners.Remove(entry);
             }
 
             _entryBinding.Remove(entry); // Update UI

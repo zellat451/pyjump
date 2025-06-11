@@ -61,6 +61,7 @@
             btnNext.TabIndex = 7;
             btnNext.Text = "↓";
             btnNext.UseVisualStyleBackColor = true;
+            btnNext.Click += btnNext_Click;
             // 
             // lblSearchResults
             // 
@@ -79,6 +80,7 @@
             btnPrev.TabIndex = 6;
             btnPrev.Text = "↑";
             btnPrev.UseVisualStyleBackColor = true;
+            btnPrev.Click += btnPrev_Click;
             // 
             // txtSearch
             // 
@@ -86,6 +88,8 @@
             txtSearch.Name = "txtSearch";
             txtSearch.Size = new Size(100, 23);
             txtSearch.TabIndex = 4;
+            txtSearch.TextChanged += txtSearch_TextChanged;
+            txtSearch.KeyDown += txtSearch_KeyDown;
             // 
             // countBox
             // 
