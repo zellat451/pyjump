@@ -717,6 +717,66 @@ namespace pyjump.Services
         }
 
         /// <summary>
+        /// Applies a filter to remove duplicate files based on their name and owner.
+        /// </summary>
+        /// <param name="entries"></param>
+        /// <param name="folderType"></param>
+        /// <param name="owners"></param>
+        /// <returns></returns>
+        private static List<FileEntry> ApplyFileDuplicateFilter(List<FileEntry> entries, string folderType, List<LNKOwner> owners = null)
+        {
+            Dictionary<string, string> ownerCanonicalMap = null;
+
+            if (owners != null && owners.Count > 0)
+            {
+                // Normalize owner links into a canonical mapping
+                ownerCanonicalMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+                foreach (var owner in owners)
+                {
+                    var name1 = owner.Name1?.Trim();
+                    var name2 = owner.Name2?.Trim();
+
+                    if (string.IsNullOrEmpty(name1) || string.IsNullOrEmpty(name2))
+                        continue;
+
+                    // Pick one canonical name — here we choose lexicographically smaller one
+                    var canonical = string.Compare(name1, name2, StringComparison.OrdinalIgnoreCase) <= 0 ? name1 : name2;
+
+                    // Map both directions
+                    if (!ownerCanonicalMap.ContainsKey(name1))
+                        ownerCanonicalMap[name1] = canonical;
+
+                    if (!ownerCanonicalMap.ContainsKey(name2))
+                        ownerCanonicalMap[name2] = canonical;
+                }
+            }
+
+            // Normalize owner name if mapping exists
+            string GetCanonicalOwner(string owner)
+            {
+                if (string.IsNullOrWhiteSpace(owner))
+                    return owner;
+
+                var trimmed = owner.Trim();
+                return ownerCanonicalMap != null && ownerCanonicalMap.TryGetValue(trimmed, out var canonical)
+                    ? canonical
+                    : trimmed;
+            }
+
+            return entries
+                .Where(x => x.Type == folderType && !x.FilterIgnored)
+                .GroupBy(x => new
+                {
+                    x.Name,
+                    CanonicalOwner = GetCanonicalOwner(x.Owner)
+                })
+                .Select(g => g.OrderByDescending(x => x.LastModified).First())
+                .ToList();
+        }
+
+
+        /// <summary>
         /// Builds the sheets for all the data in the database.
         /// </summary>
         /// <param name="cancellationToken"></param>
@@ -742,6 +802,12 @@ namespace pyjump.Services
                     allWhitelistEntries = [.. db.Whitelist];
                 }
 
+                List<LNKOwner> allOwners;
+                using (var db = new AppDbContext())
+                {
+                    allOwners = [.. db.LNKOwners];
+                }
+
                 ScopedServices.LoadingForm.IncrementProgress();
 
                 cancellationToken.ThrowIfCancellationRequested();
@@ -750,17 +816,9 @@ namespace pyjump.Services
                 // we want to group all files by name / owner.
                 // we want to skip files that are marked Accessible = false.
                 // we want to get the most recent file of each set.
-                var sheetJumpFiles = allFiles
-                    .Where(x => x.Type == Statics.FolderType.Jump && !x.FilterIgnored)
-                    .GroupBy(x => new { x.Name, x.Owner })
-                    .Select(g => g.OrderByDescending(x => x.LastModified).First())
-                    .ToList();
+                var sheetJumpFiles = ApplyFileDuplicateFilter(allFiles, Statics.FolderType.Jump, allOwners);
 
-                var sheetStoryFiles = allFiles
-                    .Where(x => x.Type == Statics.FolderType.Story && !x.FilterIgnored)
-                    .GroupBy(x => new { x.Name, x.Owner })
-                    .Select(g => g.OrderByDescending(x => x.LastModified).First())
-                    .ToList();
+                var sheetStoryFiles = ApplyFileDuplicateFilter(allFiles, Statics.FolderType.Story, allOwners);
 
                 // 3. separate the Jump / Story / Other / Blacklisted files (must join on Folder)
                 // we want 5 sheets: Jumps, Stories, Others, Jumps (Unfiltered) & Stories (Unfiltered)
