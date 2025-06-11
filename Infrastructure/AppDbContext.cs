@@ -7,8 +7,7 @@ namespace pyjump.Infrastructure
     {
         public DbSet<WhitelistEntry> Whitelist { get; set; }
         public DbSet<FileEntry> Files { get; set; }
-        public DbSet<OwnerIdentity> OwnerIdentities { get; set; }
-        public DbSet<LNKIdentity> LNKIdentities { get; set; }
+        public DbSet<LNKOwner> LNKOwners { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder options)
         => options.UseSqlite("Data Source=data.sqlite").UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
@@ -61,30 +60,13 @@ namespace pyjump.Infrastructure
                     .OnDelete(DeleteBehavior.SetNull);
             });
 
-            modelBuilder.Entity<OwnerIdentity>(x =>
+            modelBuilder.Entity<LNKOwner>(x =>
             {
-                x.HasKey(e => e.Id);
-                x.Property(e => e.Name)
+                x.HasKey(e => new { e.Name1, e.Name2 });
+                x.Property(e => e.Name1)
                     .IsRequired();
-            });
-
-            modelBuilder.Entity<LNKIdentity>(x =>
-            {
-                x.HasKey(e => new { e.Identity1, e.Identity2 });
-                x.Property(e => e.Identity1)
+                x.Property(e => e.Name2)
                     .IsRequired();
-                x.Property(e => e.Identity2)
-                    .IsRequired();
-
-                x.HasOne<OwnerIdentity>()
-                    .WithMany()
-                    .HasForeignKey(e => e.Identity1)
-                    .OnDelete(DeleteBehavior.Cascade);
-
-                x.HasOne<OwnerIdentity>()
-                    .WithMany()
-                    .HasForeignKey(e => e.Identity2)
-                    .OnDelete(DeleteBehavior.Cascade);
             });
         }
     }
