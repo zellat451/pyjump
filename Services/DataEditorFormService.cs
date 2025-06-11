@@ -151,11 +151,9 @@ namespace pyjump.Services
                 return;
             }
 
-            string lowerSearch = searchText.ToLower();
-
             for (int i = 0; i < _entryBinding.Count; i++)
             {
-                if (HasAnyMatch(_entryBinding[i], lowerSearch))
+                if (HasAnyMatch(_entryBinding[i], searchText))
                     _searchMatchIndexes.Add(i);
             }
 
@@ -202,7 +200,6 @@ namespace pyjump.Services
 
             rowToHighlight.Selected = true;
             rowToHighlight.DefaultCellStyle.BackColor = Color.LightYellow;
-            _dataGridViewEntries.FirstDisplayedScrollingRowIndex = rowIndex;
 
             _lblSearchResults.Text = $"{_currentSearchIndex + 1} / {_searchMatchIndexes.Count}";
 
