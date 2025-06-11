@@ -1107,7 +1107,12 @@ namespace pyjump.Services
                 var preferences = data?.Preferences;
 
                 // 2. load the db data into the database (erase exisintg data)
-                if (dbData == null || ((dbData.FileEntries == null || dbData.FileEntries.Count == 0) && (dbData.WhitelistEntries == null || dbData.WhitelistEntries.Count == 0)))
+                if (dbData == null || (
+                        (dbData.FileEntries == null || dbData.FileEntries.Count == 0)
+                        && (dbData.WhitelistEntries == null || dbData.WhitelistEntries.Count == 0)
+                        && (dbData.LNKOwners == null || dbData.LNKOwners.Count == 0)
+                    )
+                )
                 {
                     SingletonServices.LogForm.Log("❌ No db data found in the file.");
                 }
@@ -1127,6 +1132,12 @@ namespace pyjump.Services
                             // remove the existing whitelist entries
                             db.Whitelist.RemoveRange(db.Whitelist);
                             await db.Whitelist.AddRangeAsync(dbData.WhitelistEntries, cancellationToken);
+                        }
+                        if (dbData.LNKOwners != null && dbData.LNKOwners.Count > 0)
+                        {
+                            // remove the existing LNK owners
+                            db.LNKOwners.RemoveRange(db.LNKOwners);
+                            await db.LNKOwners.AddRangeAsync(dbData.LNKOwners, cancellationToken);
                         }
                         // 2.c. save the changes to the database
                         await SafeSaveAsync(db, cancellationToken);
@@ -1195,7 +1206,8 @@ namespace pyjump.Services
                     dbData = new DBDataSet
                     {
                         FileEntries = [.. db.Files],
-                        WhitelistEntries = [.. db.Whitelist]
+                        WhitelistEntries = [.. db.Whitelist],
+                        LNKOwners = [.. db.LNKOwners]
                     };
                 }
 
