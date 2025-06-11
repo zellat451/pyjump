@@ -40,7 +40,7 @@ namespace pyjump
 
                 await Methods.ScanFiles(ScopedServices.CancellationTokenSource.Token);
                 ScopedServices.CancellationTokenSource.Token.ThrowIfCancellationRequested();
-                ScopedServices.ClearLoadingForm();
+                SingletonServices.ResetProgressBar();
 
                 SingletonServices.LogForm.Log("File scan completed.");
                 MessageBox.Show("File scan completed.");
@@ -56,7 +56,7 @@ namespace pyjump
             }
             finally
             {
-                ScopedServices.ClearLoadingForm();
+                SingletonServices.ResetProgressBar();
                 ClearEverything();
             }
         }
@@ -70,7 +70,7 @@ namespace pyjump
 
                 await Methods.ScanWhitelist(ScopedServices.CancellationTokenSource.Token);
                 ScopedServices.CancellationTokenSource.Token.ThrowIfCancellationRequested();
-                ScopedServices.ClearLoadingForm();
+                SingletonServices.ResetProgressBar();
 
                 SingletonServices.LogForm.Log("Whitelist scan completed.");
                 MessageBox.Show("Whitelist scan completed.");
@@ -86,7 +86,7 @@ namespace pyjump
             }
             finally
             {
-                ScopedServices.ClearLoadingForm();
+                SingletonServices.ResetProgressBar();
                 ClearEverything();
             }
         }
@@ -122,7 +122,7 @@ namespace pyjump
             }
             finally
             {
-                ScopedServices.ClearLoadingForm();
+                SingletonServices.ResetProgressBar();
                 ClearEverything();
             }
         }
@@ -137,7 +137,7 @@ namespace pyjump
 
                 await Methods.BuildSheets(ScopedServices.CancellationTokenSource.Token);
                 ScopedServices.CancellationTokenSource.Token.ThrowIfCancellationRequested();
-                ScopedServices.ClearLoadingForm();
+                SingletonServices.ResetProgressBar();
 
                 SingletonServices.LogForm.Log("Sheets built successfully.");
                 MessageBox.Show("Sheets built successfully.");
@@ -153,45 +153,27 @@ namespace pyjump
             }
             finally
             {
-                ScopedServices.ClearLoadingForm();
+                SingletonServices.ResetProgressBar();
                 ClearEverything();
             }
         }
 
         private void btnEditWhitelist_Click(object sender, EventArgs e)
         {
-            this.Enabled = false;
-            Cursor.Current = Cursors.WaitCursor;
-            using (var form = new WhitelistEditorForm())
-            {
-                form.ShowDialog();
-            }
-            this.Enabled = true;
-            Cursor.Current = Cursors.Default;
+            var form = new WhitelistEditorForm();
+            SingletonServices.ContainerForm.LoadChildForm(form);
         }
 
         private void btnEditFiles_Click(object sender, EventArgs e)
         {
-            this.Enabled = false;
-            Cursor.Current = Cursors.WaitCursor;
-            using (var form = new FilesEditorForm())
-            {
-                form.ShowDialog();
-            }
-            this.Enabled = true;
-            Cursor.Current = Cursors.Default;
+            var form = new FilesEditorForm();
+            SingletonServices.ContainerForm.LoadChildForm(form);
         }
 
         private void btnEditIdentities_Click(object sender, EventArgs e)
         {
-            this.Enabled = false;
-            Cursor.Current = Cursors.WaitCursor;
-            using (var form = new OwnerEditorForm())
-            {
-                form.ShowDialog();
-            }
-            this.Enabled = true;
-            Cursor.Current = Cursors.Default;
+            var form = new OwnerEditorForm();
+            SingletonServices.ContainerForm.LoadChildForm(form);
         }
 
         private async void btnBatchIgnore_Click(object sender, EventArgs e)
@@ -221,7 +203,7 @@ namespace pyjump
 
                 await Methods.BatchIgnoreFiles(filePath, ScopedServices.CancellationTokenSource.Token);
                 ScopedServices.CancellationTokenSource.Token.ThrowIfCancellationRequested();
-                ScopedServices.ClearLoadingForm();
+                SingletonServices.ResetProgressBar();
 
                 SingletonServices.LogForm.Log("Data modified successfully.");
                 MessageBox.Show("Data modified successfully.");
@@ -232,7 +214,7 @@ namespace pyjump
             }
             finally
             {
-                ScopedServices.ClearLoadingForm();
+                SingletonServices.ResetProgressBar();
                 ClearEverything();
             }
         }
@@ -255,7 +237,7 @@ namespace pyjump
             }
             finally
             {
-                ScopedServices.ClearLoadingForm();
+                SingletonServices.ResetProgressBar();
                 ClearEverything();
             }
         }
@@ -273,22 +255,22 @@ namespace pyjump
                 if (cbFrenScanW.Checked)
                 {
                     // scan whitelist
-                    ClearEverything(true);
+                    ClearEverything(false);
                     InitializeEverything();
                     await Methods.ScanWhitelist(ScopedServices.CancellationTokenSource.Token);
                     ScopedServices.CancellationTokenSource.Token.ThrowIfCancellationRequested();
-                    ScopedServices.ClearLoadingForm();
+                    SingletonServices.ResetProgressBar();
                 }
 
                 if (cbFrenScanF.Checked)
                 {
                     // scan files
-                    ClearEverything(true);
+                    ClearEverything(false);
                     InitializeEverything();
 
                     await Methods.ScanFiles(ScopedServices.CancellationTokenSource.Token);
                     ScopedServices.CancellationTokenSource.Token.ThrowIfCancellationRequested();
-                    ScopedServices.ClearLoadingForm();
+                    SingletonServices.ResetProgressBar();
                 }
 
                 if (cbFrenDelLinksW.Checked || cbFrenDelLinksF.Checked)
@@ -297,7 +279,7 @@ namespace pyjump
                     var isDeleteFiles = cbFrenDelLinksF.Checked;
 
                     // delete links
-                    ClearEverything(true);
+                    ClearEverything(false);
                     InitializeEverything();
 
                     await Methods.DeleteBrokenEntries(
@@ -305,28 +287,28 @@ namespace pyjump
                         isDeleteWhitelist,
                         ScopedServices.CancellationTokenSource.Token);
                     ScopedServices.CancellationTokenSource.Token.ThrowIfCancellationRequested();
-                    ScopedServices.ClearLoadingForm();
+                    SingletonServices.ResetProgressBar();
                 }
 
                 if (cbFrenBuildSheets.Checked)
                 {
                     // build sheets
-                    ClearEverything(true);
+                    ClearEverything(false);
                     InitializeEverything();
 
                     await Methods.BuildSheets(ScopedServices.CancellationTokenSource.Token);
                     ScopedServices.CancellationTokenSource.Token.ThrowIfCancellationRequested();
-                    ScopedServices.ClearLoadingForm();
+                    SingletonServices.ResetProgressBar();
                 }
 
                 if (cbFrenOpenSheet.Checked)
                 {
                     // go to spreadsheet
-                    ClearEverything(true);
+                    ClearEverything(false);
                     InitializeEverything();
                     Methods.GoToSheet();
                     ScopedServices.CancellationTokenSource.Token.ThrowIfCancellationRequested();
-                    ScopedServices.ClearLoadingForm();
+                    SingletonServices.ResetProgressBar();
                 }
 
                 SingletonServices.LogForm.Log("Fren done. Fren does good work. Enjoy Fren's work, Fren's fren. :)");
@@ -343,7 +325,7 @@ namespace pyjump
             }
             finally
             {
-                ScopedServices.ClearLoadingForm();
+                SingletonServices.ResetProgressBar();
                 ClearEverything();
             }
         }
@@ -368,7 +350,7 @@ namespace pyjump
 
                 await Methods.ForceMatchType(ScopedServices.CancellationTokenSource.Token);
                 ScopedServices.CancellationTokenSource.Token.ThrowIfCancellationRequested();
-                ScopedServices.ClearLoadingForm();
+                SingletonServices.ResetProgressBar();
 
                 SingletonServices.LogForm.Log("Force match completed.");
                 MessageBox.Show("Force match completed.");
@@ -384,7 +366,7 @@ namespace pyjump
             }
             finally
             {
-                ScopedServices.ClearLoadingForm();
+                SingletonServices.ResetProgressBar();
                 ClearEverything();
             }
         }
@@ -428,7 +410,7 @@ namespace pyjump
                     cancellationToken: ScopedServices.CancellationTokenSource.Token
                 );
                 ScopedServices.CancellationTokenSource.Token.ThrowIfCancellationRequested();
-                ScopedServices.ClearLoadingForm();
+                SingletonServices.ResetProgressBar();
 
                 SingletonServices.LogForm.Log("All data cleared successfully.");
                 MessageBox.Show("All data cleared successfully.");
@@ -444,7 +426,7 @@ namespace pyjump
             }
             finally
             {
-                ScopedServices.ClearLoadingForm();
+                SingletonServices.ResetProgressBar();
                 ClearEverything();
             }
         }
@@ -485,7 +467,7 @@ namespace pyjump
                     isDeleteWhitelist,
                     ScopedServices.CancellationTokenSource.Token);
                 ScopedServices.CancellationTokenSource.Token.ThrowIfCancellationRequested();
-                ScopedServices.ClearLoadingForm();
+                SingletonServices.ResetProgressBar();
 
                 SingletonServices.LogForm.Log("Broken entries deleted successfully.");
                 MessageBox.Show("Broken entries deleted successfully.");
@@ -501,7 +483,7 @@ namespace pyjump
             }
             finally
             {
-                ScopedServices.ClearLoadingForm();
+                SingletonServices.ResetProgressBar();
                 ClearEverything();
             }
         }
@@ -613,7 +595,7 @@ namespace pyjump
 
                 await Methods.ImportData(filePath, ScopedServices.CancellationTokenSource.Token);
                 ScopedServices.CancellationTokenSource.Token.ThrowIfCancellationRequested();
-                ScopedServices.ClearLoadingForm();
+                SingletonServices.ResetProgressBar();
 
                 SingletonServices.LogForm.Log("Data imported successfully.");
                 MessageBox.Show("Data imported successfully.");
@@ -629,7 +611,7 @@ namespace pyjump
             }
             finally
             {
-                ScopedServices.ClearLoadingForm();
+                SingletonServices.ResetProgressBar();
                 ClearEverything();
             }
         }
@@ -661,7 +643,7 @@ namespace pyjump
 
                 await Methods.ExportData(folderPath, ScopedServices.CancellationTokenSource.Token);
                 ScopedServices.CancellationTokenSource.Token.ThrowIfCancellationRequested();
-                ScopedServices.ClearLoadingForm();
+                SingletonServices.ResetProgressBar();
 
                 SingletonServices.LogForm.Log("Data exported successfully.");
                 MessageBox.Show("Data exported successfully.");
@@ -677,7 +659,7 @@ namespace pyjump
             }
             finally
             {
-                ScopedServices.ClearLoadingForm();
+                SingletonServices.ResetProgressBar();
                 ClearEverything();
             }
         }
@@ -701,7 +683,7 @@ namespace pyjump
 
                 await Methods.MatchWhitelistToDrives(ScopedServices.CancellationTokenSource.Token);
                 ScopedServices.CancellationTokenSource.Token.ThrowIfCancellationRequested();
-                ScopedServices.ClearLoadingForm();
+                SingletonServices.ResetProgressBar();
 
                 SingletonServices.LogForm.Log("Whitelist matched to drives successfully.");
                 MessageBox.Show("Whitelist matched to drives successfully.");
@@ -717,7 +699,7 @@ namespace pyjump
             }
             finally
             {
-                ScopedServices.ClearLoadingForm();
+                SingletonServices.ResetProgressBar();
                 ClearEverything();
             }
         }
@@ -768,15 +750,15 @@ namespace pyjump
         {
             this.Enabled = false;
             Cursor.Current = Cursors.WaitCursor;
-            SingletonServices.LogForm.Show();
             ScopedServices.Initialize();
-            ScopedServices.ResetProgressBar();
+            SingletonServices.ResetProgressBar();
         }
 
-        private void ClearEverything(bool keepLog = false)
+        private void ClearEverything(bool canEnable = true)
         {
             ScopedServices.ClearServices();
-            if (!keepLog) SingletonServices.LogForm.Hide();
+            SingletonServices.ResetProgressBar();
+            if (!canEnable) return;
             this.Enabled = true;
             Cursor.Current = Cursors.Default;
         }

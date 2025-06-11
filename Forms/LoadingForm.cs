@@ -1,14 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-
-namespace pyjump.Forms
+﻿namespace pyjump.Forms
 {
     public partial class LoadingForm : Form
     {
@@ -21,7 +11,23 @@ namespace pyjump.Forms
             labelProgress.Text = LabelText;
         }
 
-        private string LabelText = "Loading... 0%";
+        private string LabelText = "N/A";
+
+        public void FullReset()
+        {
+            if (InvokeRequired)
+            {
+                Invoke(() => FullReset());
+            }
+            else
+            {
+                this.Hide();
+                progressBar.Value = 0;
+                progressBar.Maximum = 100;
+                labelProgress.Text = "N/A";
+                LabelText = "N/A";
+            }
+        }
 
         public void SetMax(int max)
         {

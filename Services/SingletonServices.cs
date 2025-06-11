@@ -14,7 +14,9 @@ namespace pyjump.Services
         public static string SpreadsheetId { get; private set; }
         public static bool AllowLogFile { get; private set; }
         public static PyJumpForm MainForm { get; private set; }
+        public static ContainerForm ContainerForm { get; private set; }
         public static LogForm LogForm { get; private set; }
+        public static LoadingForm LoadingForm { get; private set; }
         public static bool AllowThreading { get; private set; }
         public static int MaxThreads { get; private set; }
 
@@ -65,10 +67,26 @@ namespace pyjump.Services
             MainForm = form;
         }
 
+        public static void RegisterForm(ContainerForm form)
+        {
+            ContainerForm = form;
+        }
+
         public static void RegisterForm(LogForm form)
         {
             LogForm = form;
             LogForm.Hide();
+        }
+
+        public static void RegisterForm(LoadingForm form)
+        {
+            LoadingForm = form;
+            LoadingForm.Hide();
+        }
+
+        public static void ResetProgressBar()
+        {
+            LoadingForm.FullReset();
         }
 
         public static void SetPermissionFileLogging(bool permission) => AllowLogFile = permission;

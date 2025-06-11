@@ -183,7 +183,7 @@ namespace pyjump.Services
                 }
                 #endregion
 
-                ScopedServices.LoadingForm.PrepareLoadingBar("Scanning files", whitelistEntries.Count);
+                SingletonServices.LoadingForm.PrepareLoadingBar("Scanning files", whitelistEntries.Count);
 
                 cancellationToken.ThrowIfCancellationRequested();
 
@@ -243,7 +243,7 @@ namespace pyjump.Services
 
                     await ScannedFilesToDb([(w, scannedFileEntries)], cancellationToken: cancellationToken);
 
-                    ScopedServices.LoadingForm.IncrementProgress();
+                    SingletonServices.LoadingForm.IncrementProgress();
                 }
 
             }
@@ -310,7 +310,7 @@ namespace pyjump.Services
                                         whitelistUpdates.Add(w);
                                     }
 
-                                    ScopedServices.LoadingForm.IncrementProgress();
+                                    SingletonServices.LoadingForm.IncrementProgress();
                                 }
                                 catch (OperationCanceledException)
                                 {
@@ -372,7 +372,7 @@ namespace pyjump.Services
         {
             try
             {
-                ScopedServices.LoadingForm?.PrepareLoadingBar("Saving files to database", sets.Count);
+                SingletonServices.LoadingForm?.PrepareLoadingBar("Saving files to database", sets.Count);
                 foreach (var (whitelist, scannedFileEntries) in sets)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
@@ -489,7 +489,7 @@ namespace pyjump.Services
                         await SafeSaveAsync(db, cancellationToken);
                     }
 
-                    ScopedServices.LoadingForm?.IncrementProgress();
+                    SingletonServices.LoadingForm?.IncrementProgress();
                 }
             }
             catch (OperationCanceledException)
@@ -526,7 +526,7 @@ namespace pyjump.Services
 
                 var filesToCheck = allFiles.Where(x => !string.IsNullOrWhiteSpace(x.FolderId)).ToList();
 
-                ScopedServices.LoadingForm.PrepareLoadingBar("Forcing files to match type with folder", filesToCheck.Count);
+                SingletonServices.LoadingForm.PrepareLoadingBar("Forcing files to match type with folder", filesToCheck.Count);
 
                 foreach (var file in filesToCheck)
                 {
@@ -537,7 +537,7 @@ namespace pyjump.Services
                     if (whitelistEntry == null)
                     {
                         SingletonServices.LogForm.Log($"❌ Whitelist entry not found for file {file.Name} ({file.Id})");
-                        ScopedServices.LoadingForm.IncrementProgress();
+                        SingletonServices.LoadingForm.IncrementProgress();
                         continue;
                     }
                     else
@@ -556,7 +556,7 @@ namespace pyjump.Services
                                 catch (Exception e)
                                 {
                                     SingletonServices.LogForm.Log($"Error updating file type: {e}");
-                                    ScopedServices.LoadingForm.IncrementProgress();
+                                    SingletonServices.LoadingForm.IncrementProgress();
                                     continue;
                                 }
                                 await SafeSaveAsync(db, cancellationToken);
@@ -564,7 +564,7 @@ namespace pyjump.Services
                             SingletonServices.LogForm.Log($"✅ File {file.Name} ({file.Id}) updated to match folder type {whitelistEntry.Type}.");
                         }
 
-                        ScopedServices.LoadingForm.IncrementProgress();
+                        SingletonServices.LoadingForm.IncrementProgress();
                     }
                 }
             }
@@ -684,7 +684,7 @@ namespace pyjump.Services
                         Values = data
                     });
 
-                    ScopedServices.LoadingForm.IncrementProgress();
+                    SingletonServices.LoadingForm.IncrementProgress();
                 }
 
                 // 3.3: Write data starting from row 1 (avoiding header)
@@ -787,7 +787,7 @@ namespace pyjump.Services
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                ScopedServices.LoadingForm.PrepareLoadingBar("Building sheets - Initialization", 2);
+                SingletonServices.LoadingForm.PrepareLoadingBar("Building sheets - Initialization", 2);
 
                 // 0. initialize by getting all file entries from the database
                 List<FileEntry> allFiles;
@@ -808,7 +808,7 @@ namespace pyjump.Services
                     allOwners = [.. db.LNKOwners];
                 }
 
-                ScopedServices.LoadingForm.IncrementProgress();
+                SingletonServices.LoadingForm.IncrementProgress();
 
                 cancellationToken.ThrowIfCancellationRequested();
 
@@ -853,22 +853,22 @@ namespace pyjump.Services
                 cancellationToken.ThrowIfCancellationRequested();
 
                 // 4. upload the data to the sheets
-                ScopedServices.LoadingForm.PrepareLoadingBar("Building Jumps sheet", dataSheetJump.Count);
+                SingletonServices.LoadingForm.PrepareLoadingBar("Building Jumps sheet", dataSheetJump.Count);
                 await UploadToSheetAsync(dataSheetJump, Statics.Sheet.File.SHEET_J, cancellationToken);
 
-                ScopedServices.LoadingForm.PrepareLoadingBar("Building Stories sheet", dataSheetStory.Count);
+                SingletonServices.LoadingForm.PrepareLoadingBar("Building Stories sheet", dataSheetStory.Count);
                 await UploadToSheetAsync(dataSheetStory, Statics.Sheet.File.SHEET_S, cancellationToken);
 
-                ScopedServices.LoadingForm.PrepareLoadingBar("Building Others sheet", dataSheetOther.Count);
+                SingletonServices.LoadingForm.PrepareLoadingBar("Building Others sheet", dataSheetOther.Count);
                 await UploadToSheetAsync(dataSheetOther, Statics.Sheet.File.SHEET_O, cancellationToken);
 
-                ScopedServices.LoadingForm.PrepareLoadingBar("Building Jumps (Unfiltered) sheet", dataSheetJumpUnfiltered.Count);
+                SingletonServices.LoadingForm.PrepareLoadingBar("Building Jumps (Unfiltered) sheet", dataSheetJumpUnfiltered.Count);
                 await UploadToSheetAsync(dataSheetJumpUnfiltered, Statics.Sheet.File.SHEET_J_1, cancellationToken);
 
-                ScopedServices.LoadingForm.PrepareLoadingBar("Building Stories (Unfiltered) sheet", dataSheetStoryUnfiltered.Count);
+                SingletonServices.LoadingForm.PrepareLoadingBar("Building Stories (Unfiltered) sheet", dataSheetStoryUnfiltered.Count);
                 await UploadToSheetAsync(dataSheetStoryUnfiltered, Statics.Sheet.File.SHEET_S_1, cancellationToken);
 
-                ScopedServices.LoadingForm.PrepareLoadingBar("Building Whitelist sheet", allWhitelistEntries.Count);
+                SingletonServices.LoadingForm.PrepareLoadingBar("Building Whitelist sheet", allWhitelistEntries.Count);
                 await UploadToSheetAsync(allWhitelistEntries.OrderBy(x => x.Name).ToList(), Statics.Sheet.Whitelist.SHEET_W, cancellationToken);
             }
             catch (OperationCanceledException)

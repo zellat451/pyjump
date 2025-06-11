@@ -1,4 +1,5 @@
-﻿using pyjump.Entities;
+﻿using System.Windows.Forms;
+using pyjump.Entities;
 using pyjump.Services;
 
 namespace pyjump.Forms
@@ -9,10 +10,18 @@ namespace pyjump.Forms
         public FilesEditorForm()
         {
             InitializeComponent();
+            this.FormClosed += FileEditorForm_FormClosed;
             this.KeyPreview = true;
             this.KeyDown += new KeyEventHandler(FilesEditorForm_KeyDown);
             _searchService = new DataEditorFormService<FileEntry>(dataGridViewEntries, countBox, lblSearchResults);
             _searchService.EntityEditorForm_Load();
+        }
+
+        private void FileEditorForm_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            _searchService?.Dispose();
+
+            SingletonServices.ContainerForm.LoadChildForm(SingletonServices.MainForm);
         }
 
         #region data listing / editing

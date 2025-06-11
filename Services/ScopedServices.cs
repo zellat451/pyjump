@@ -6,7 +6,6 @@ using Google.Apis.Sheets.v4;
 using Google.Apis.Sheets.v4.Data;
 using Google.Apis.Util.Store;
 using pyjump.Entities;
-using pyjump.Forms;
 using pyjump.Interfaces;
 
 namespace pyjump.Services
@@ -17,7 +16,6 @@ namespace pyjump.Services
         public static SheetsService SheetsService { get; private set; }
         public static Spreadsheet ActiveSpreadsheet { get; set; }
         public static CancellationTokenSource CancellationTokenSource { get; private set; }
-        public static LoadingForm LoadingForm { get; set; }
 
         public static void ClearServices()
         {
@@ -83,19 +81,6 @@ namespace pyjump.Services
 
             // Optional: Log or show message
             Debug.WriteLine("Google services initialized.");
-        }
-
-        public static void ResetProgressBar()
-        {
-            LoadingForm?.Close();
-            LoadingForm = new LoadingForm();
-            LoadingForm.Hide();
-        }
-
-        public static void ClearLoadingForm()
-        {
-            LoadingForm?.Close();
-            LoadingForm = null;
         }
 
         private static Sheet EnsureSheetCreated<T>(string sheetName) where T : ISheetDataEntity

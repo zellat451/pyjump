@@ -487,7 +487,7 @@ namespace pyjump.Services
 
                 var isFolderCheck = typeof(T) == typeof(WhitelistEntry);
 
-                ScopedServices.LoadingForm.PrepareLoadingBar($"Checking {(isFolderCheck ? "folders" : "files")}", entries.Count);
+                SingletonServices.LoadingForm.PrepareLoadingBar($"Checking {(isFolderCheck ? "folders" : "files")}", entries.Count);
 
                 if (SingletonServices.AllowThreading)
                 {
@@ -522,7 +522,7 @@ namespace pyjump.Services
 
                 var brokenEntries = new List<T>();
 
-                ScopedServices.LoadingForm.PrepareLoadingBar($"Checking {(isFolderCheck ? "folders" : "files")}", entries.Count);
+                SingletonServices.LoadingForm.PrepareLoadingBar($"Checking {(isFolderCheck ? "folders" : "files")}", entries.Count);
 
                 foreach (var entry in entries)
                 {
@@ -578,7 +578,7 @@ namespace pyjump.Services
                     }
                     finally
                     {
-                        ScopedServices.LoadingForm.IncrementProgress();
+                        SingletonServices.LoadingForm.IncrementProgress();
                     }
                 }
 
@@ -667,7 +667,7 @@ namespace pyjump.Services
                                     }
                                     finally
                                     {
-                                        ScopedServices.LoadingForm.IncrementProgress();
+                                        SingletonServices.LoadingForm.IncrementProgress();
                                     }
                                 }
                                 catch (OperationCanceledException)

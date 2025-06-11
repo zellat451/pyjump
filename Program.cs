@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using pyjump.Forms;
 using pyjump.Infrastructure;
 using pyjump.Services;
 
@@ -26,9 +27,9 @@ namespace pyjump
             // To customize application configuration such as set high DPI settings or default font,
             // see https://aka.ms/applicationconfiguration.
             ApplicationConfiguration.Initialize();
-            var mainForm = new PyJumpForm();
-            SingletonServices.RegisterForm(mainForm);
-            Application.Run(mainForm);
+            var containerForm = new ContainerForm();
+            SingletonServices.RegisterForm(containerForm);
+            Application.Run(containerForm);
         }
     }
 }

@@ -6,7 +6,7 @@ using pyjump.Interfaces;
 
 namespace pyjump.Services
 {
-    public class DataEditorFormService<T> where T : class, ISheetDataEntity, new()
+    public class DataEditorFormService<T> : IDisposable where T : class, ISheetDataEntity, new()
     {
         public DataEditorFormService(DataGridView dataGridViewFiles, TextBox countBox, Label lblSearchResults)
         {
@@ -207,5 +207,13 @@ namespace pyjump.Services
 
         }
         #endregion
+
+        public void Dispose()
+        {
+            _context?.Dispose();
+            _dataGridViewEntries?.Dispose();
+            _countBox?.Dispose();
+            _lblSearchResults?.Dispose();
+        }
     }
 }

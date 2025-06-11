@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using pyjump.Entities;
 using pyjump.Infrastructure;
+using pyjump.Services;
 
 namespace pyjump.Forms
 {
@@ -33,6 +34,8 @@ namespace pyjump.Forms
         private void OwnerEditorForm_FormClosed(object sender, FormClosedEventArgs e)
         {
             _context?.Dispose();
+
+            SingletonServices.ContainerForm.LoadChildForm(SingletonServices.MainForm);
         }
 
 
