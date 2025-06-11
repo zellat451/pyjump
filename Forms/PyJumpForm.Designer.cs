@@ -68,6 +68,7 @@ namespace pyjump
             cbFrenDelLinksF = new CheckBox();
             panelFren = new Panel();
             cbFrenOpenSheet = new CheckBox();
+            btnEditIdentities = new Button();
             panelThreading.SuspendLayout();
             panelImpExp.SuspendLayout();
             panelW.SuspendLayout();
@@ -91,7 +92,7 @@ namespace pyjump
             // 
             // btnEditWhitelist
             // 
-            btnEditWhitelist.Location = new Point(3, 3);
+            btnEditWhitelist.Location = new Point(127, 4);
             btnEditWhitelist.Name = "btnEditWhitelist";
             btnEditWhitelist.Size = new Size(107, 45);
             btnEditWhitelist.TabIndex = 4;
@@ -111,7 +112,7 @@ namespace pyjump
             // 
             // btnEditFiles
             // 
-            btnEditFiles.Location = new Point(112, 3);
+            btnEditFiles.Location = new Point(253, 3);
             btnEditFiles.Name = "btnEditFiles";
             btnEditFiles.Size = new Size(107, 45);
             btnEditFiles.TabIndex = 6;
@@ -131,6 +132,7 @@ namespace pyjump
             // 
             // btnBuildSheets
             // 
+            btnBuildSheets.Anchor = AnchorStyles.Top;
             btnBuildSheets.Location = new Point(510, 86);
             btnBuildSheets.Name = "btnBuildSheets";
             btnBuildSheets.Size = new Size(210, 87);
@@ -294,6 +296,7 @@ namespace pyjump
             // 
             // panelW
             // 
+            panelW.Anchor = AnchorStyles.Top;
             panelW.Controls.Add(btnScanWhitelist);
             panelW.Controls.Add(btnResetWhitelistTimes);
             panelW.Controls.Add(btnMatchWhitelistToDrives);
@@ -304,6 +307,7 @@ namespace pyjump
             // 
             // panelF
             // 
+            panelF.Anchor = AnchorStyles.Top;
             panelF.Controls.Add(btnScanFile);
             panelF.Controls.Add(btnForceMatch);
             panelF.Location = new Point(261, 83);
@@ -313,21 +317,23 @@ namespace pyjump
             // 
             // panelEdit
             // 
+            panelEdit.Anchor = AnchorStyles.Top;
+            panelEdit.Controls.Add(btnEditIdentities);
             panelEdit.Controls.Add(btnBatchIgnore);
             panelEdit.Controls.Add(btnEditWhitelist);
             panelEdit.Controls.Add(btnEditFiles);
-            panelEdit.Location = new Point(268, 9);
+            panelEdit.Location = new Point(141, 9);
             panelEdit.Name = "panelEdit";
-            panelEdit.Size = new Size(354, 68);
+            panelEdit.Size = new Size(481, 68);
             panelEdit.TabIndex = 22;
             // 
             // btnBatchIgnore
             // 
-            btnBatchIgnore.Location = new Point(242, 9);
+            btnBatchIgnore.Location = new Point(369, 4);
             btnBatchIgnore.Name = "btnBatchIgnore";
-            btnBatchIgnore.Size = new Size(85, 33);
+            btnBatchIgnore.Size = new Size(100, 44);
             btnBatchIgnore.TabIndex = 19;
-            btnBatchIgnore.Text = "BatchIgnore";
+            btnBatchIgnore.Text = "Batch Ignore";
             btnBatchIgnore.UseVisualStyleBackColor = true;
             btnBatchIgnore.Click += btnBatchIgnore_Click;
             // 
@@ -476,6 +482,15 @@ namespace pyjump
             cbFrenOpenSheet.Text = "Open sheet";
             cbFrenOpenSheet.UseVisualStyleBackColor = true;
             // 
+            // btnEditIdentities
+            // 
+            btnEditIdentities.Location = new Point(3, 4);
+            btnEditIdentities.Name = "btnEditIdentities";
+            btnEditIdentities.Size = new Size(107, 45);
+            btnEditIdentities.TabIndex = 20;
+            btnEditIdentities.Text = "Edit Identities";
+            btnEditIdentities.UseVisualStyleBackColor = true;
+            // 
             // PyJumpForm
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -549,5 +564,6 @@ namespace pyjump
         private Panel panelFren;
         private CheckBox cbFrenOpenSheet;
         private Button btnBatchIgnore;
+        private Button btnEditIdentities;
     }
 }
