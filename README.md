@@ -148,7 +148,10 @@ All checkboxes have a default value. You can change them if you want, and the ap
 1. `Go to sheet`: Opens the Google Sheets document in your browser.
 1. `Edit Whitelist`: Opens the whitelist editor. You can add, remove, and edit whitelist entries in DB.
 1. `Edit Files`: Opens the files editor. You can add, remove, and edit files in DB.
-1. `BatchIgnore`: Allows you to read a `.txt` file. Each line must contain either a hyperlink to a file (the excel formula present in the sheet), or a Google Drive file id. This will read each line, parse the fileId, find it in the database if it exists, and then set all the corresponding files as FilterIgnored = true. These files will not be considered during the Jumps/Stories sheet data filtering. This information can be changed manually in the `Edit Files` table.
+1. `Edit Identities`: Opens the identities editor. You can add, remove, and edit Owner identities in DB.
+	- Owner identities are used to group files by their owner in the filtered sheets. If you find recurrent owners posting the same files with different accounts, you can create a link between their different identities. The filter will take these different identities when searching for duplicate files.
+1. `Batch Ignore`: Allows you to set a large number of files as `FilterIgnored` simultaneously.
+    - This takes a `.txt` file. Each line must contain either a hyperlink to a file (the excel formula present in the sheet), or a Google Drive file id. This will read each line, parse the fileId, find it in the database if it exists, and then set all the corresponding files as FilterIgnored = true. These files will not be considered during the Jumps/Stories sheet data filtering. This information can be changed manually in the `Edit Files` table.
 1. `Force match Type`: Updates all files in DB to match the type of their linked whitelist entry. This is useful if you edited the whitelist entries and want to update the files to match.
 1. `Scan Whitelist`: Scans the `mainDrives` for their folders recursively. This may take some time.
 1. `Scan Files`: Scans the whitelist for their files recursively. This may take some time. Only scans new files from the last time the whitelist entry was checked, to go quicker.
