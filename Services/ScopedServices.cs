@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using Google.Apis.Auth.OAuth2;
+using Google.Apis.Auth.OAuth2.Responses;
 using Google.Apis.Drive.v3;
 using Google.Apis.Services;
 using Google.Apis.Sheets.v4;
@@ -54,33 +55,67 @@ namespace pyjump.Services
                 SheetsService.Scope.Spreadsheets
             ];
 
-            UserCredential credential;
+            UserCredential credential = null;
             var credPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "credentials.json");
-            using (var stream = new FileStream(credPath, FileMode.Open, FileAccess.Read))
+            string tokPath = "token.json";
+
+            bool success = false;
+            int maxAttempts = 2;
+
+            for (int attempt = 1; attempt <= maxAttempts && !success; attempt++)
             {
-                string tokPath = "token.json";
-                credential = GoogleWebAuthorizationBroker.AuthorizeAsync(
-                    GoogleClientSecrets.FromStream(stream).Secrets,
-                    scopes,
-                    "user",
-                    CancellationToken.None,
-                    new FileDataStore(tokPath, true)).Result;
+                try
+                {
+                    using (var stream = new FileStream(credPath, FileMode.Open, FileAccess.Read))
+                    {
+                        credential = GoogleWebAuthorizationBroker.AuthorizeAsync(
+                            GoogleClientSecrets.FromStream(stream).Secrets,
+                            scopes,
+                            "user",
+                            CancellationToken.None,
+                            new FileDataStore(tokPath, true)).Result;
+                    }
+
+                    success = true; // Authorized successfully
+
+                    // Initialize Google services
+                    DriveService = new DriveService(new BaseClientService.Initializer()
+                    {
+                        HttpClientInitializer = credential,
+                        ApplicationName = "MyGoogleDriveApp",
+                    });
+
+                    SheetsService = new SheetsService(new BaseClientService.Initializer()
+                    {
+                        HttpClientInitializer = credential,
+                        ApplicationName = "MyGoogleSheetsApp",
+                    });
+
+                    Debug.WriteLine("Google services initialized.");
+                }
+                catch (AggregateException ex) when (ex.InnerException is TokenResponseException tokenEx && attempt < maxAttempts)
+                {
+                    // Handle token errors like expired, invalid_grant, etc.
+                    Debug.WriteLine($"Token error: {tokenEx.Message}. Retrying by deleting token.json.");
+
+                    // Delete token.json to force re-authorization
+                    if (Directory.Exists(tokPath))
+                    {
+                        Directory.Delete(tokPath, true);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Unexpected error initializing Google services: {ex}");
+                    throw; // Rethrow or handle depending on your error strategy
+                }
             }
 
-            DriveService = new DriveService(new BaseClientService.Initializer()
+            if (!success)
             {
-                HttpClientInitializer = credential,
-                ApplicationName = "MyGoogleDriveApp",
-            });
-
-            SheetsService = new SheetsService(new BaseClientService.Initializer()
-            {
-                HttpClientInitializer = credential,
-                ApplicationName = "MyGoogleSheetsApp",
-            });
-
-            // Optional: Log or show message
-            Debug.WriteLine("Google services initialized.");
+                MessageBox.Show("Failed to authenticate with Google services.", "Authentication Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Environment.Exit(1); // Or handle gracefully
+            }
         }
 
         private static Sheet EnsureSheetCreated<T>(string sheetName) where T : ISheetDataEntity
